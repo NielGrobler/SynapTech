@@ -19,5 +19,13 @@
   "dependencies": {
     "dotenv": "^16.4.7",
     "mssql": "^11.0.1"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NielGrobler/SynapTech.git"
+  },
+  "bugs": {
+    "url": "https://github.com/NielGrobler/SynapTech/issues"
+  },
+  "homepage": "https://github.com/NielGrobler/SynapTech#readme"
 }
