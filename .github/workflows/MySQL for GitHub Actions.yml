@@ -2,9 +2,15 @@ name: MySQL for GitHub Actions
 
 on:
   push:
-    branches: [master]
+    branches: [master, dev]
   pull_request:
-    branches: [master]
+    branches: [master, dev]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
     build:
         runs-on: windows-latest
