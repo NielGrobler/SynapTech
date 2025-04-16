@@ -2,9 +2,9 @@ name: MySQL for GitHub Actions
 
 on:
   push:
-      branches: [ master ]
+    branches: [master]
   pull_request:
-      branches: [ master ]
+    branches: [master]
 jobs:
     build:
         runs-on: windows-latest
@@ -21,7 +21,6 @@ jobs:
               connection-string: ${{ secrets.AZURE_MYSQL_CONNECTION_STRING }}
               sql-file: './data.sql'
 
-# Azure logout
           - name: logout
             run: |
               az logout
