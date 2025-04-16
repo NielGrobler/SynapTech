@@ -21,15 +21,17 @@ jobs:
               client-id: ${{ secrets.AZURE_CLIENT_ID }}
               tenant-id: ${{ secrets.AZURE_TENANT_ID }}
               subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          - uses: azure/mysql@v1
-            with:
-              server-name: synaptech.mysql.database.azure.com
-              connection-string: ${{ secrets.AZURE_MYSQL_CONNECTION_STRING }}
-              sql-file: './data.sql'
 
-          - name: Azure CLI script
-            uses: azure/cli@v2
+          - uses: azure/cli@v2
             with:
               azcliversion: latest
               inlineScript: |
                 az account show
+
+          #- uses: azure/mysql@v1
+          #  with:
+          #    server-name: synaptech.mysql.database.azure.com
+          #    connection-string: ${{ secrets.AZURE_MYSQL_CONNECTION_STRING }}
+          #    sql-file: './data.sql'
+
+          
