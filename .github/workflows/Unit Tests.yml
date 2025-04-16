@@ -17,7 +17,6 @@ jobs:
           node-version: '10'  # or your preferred version
           cache: 'npm'
 
-      - working-directory: ./frontend
       - name: Run Tests
         run: |
           npm install 
