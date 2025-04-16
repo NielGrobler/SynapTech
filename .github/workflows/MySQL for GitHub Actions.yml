@@ -13,7 +13,7 @@ permissions:
 
 jobs:
     build:
-        runs-on: windows-latest
+        runs-on: ubuntu-latest
         steps:
           - uses: actions/checkout@v1
           - uses: azure/login@v2
@@ -27,6 +27,9 @@ jobs:
               connection-string: ${{ secrets.AZURE_MYSQL_CONNECTION_STRING }}
               sql-file: './data.sql'
 
-          - name: logout
-            run: |
-              az logout
+          - name: Azure CLI script
+            uses: azure/cli@v2
+            with:
+              azcliversion: latest
+              inlineScript: |
+                az account show
