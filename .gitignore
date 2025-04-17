@@ -1,0 +1,11 @@
+# Node modules
+node_modules/
+
+# Log files
+*.log
+
+# Environment files
+.env
+
+# Optional: ignore any other build artifacts or OS-specific files
+*.swp             # For vim users

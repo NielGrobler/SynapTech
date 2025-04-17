@@ -1,0 +1,15 @@
+{
+  "name": "sprint2",
+  "version": "1.0.0",
+  "description": "User interacts with the system and interacts with features",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Pabii",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.1.0",
+    "express-session": "^1.18.1"
+  }
+}
