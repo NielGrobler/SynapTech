@@ -269,3 +269,23 @@ padding: 1rem;
 	transform: scale(1.05);
 }
 
+.dropdown button {
+	display: flex;
+	flex-direction: row;
+	border: none;
+	background-color: blue;
+	cursor: pointer;
+	padding: 1rem;
+	border-radius: 1rem;
+	justify-content: center;
+}
+
+.dropdown-menu li {
+	display: none;
+	text-decoration: none;
+}
+
+.dropdown button:hover {
+	background-color: red;
+}
+

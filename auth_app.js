@@ -36,7 +36,7 @@ app.use(passport.session());
 // Specify public directory for express.js
 app.use(express.static(path.join(__dirname, 'public')));
 
-
+/* passport.js Strategies */
 
 // Specify strategy for how to handle Google Authentication
 passport.use(new GoogleStrategy({
@@ -88,9 +88,11 @@ app.get('/home', (req, res) => {
 
 app.get('/auth/orcid', passport.authenticate('orcid'));
 
-app.get('/auth/orcid/callback', passport.authenticate('orcid', { failureRedirect: '/' }), (req, res) => {
-	res.redirect('/home');
-});
+app.get('/auth/orcid/callback', 
+	passport.authenticate('orcid', { failureRedirect: '/' }), (req, res) => {
+		res.redirect('/home');
+	}
+);
 
 // Default route
 app.get('/', (req, res) => {
@@ -100,6 +102,20 @@ app.get('/', (req, res) => {
 	} else {
 		res.sendFile(path.join(__dirname, "public", "signup.html"));
 	}
+});
+
+// Logout
+app.get('/logout', (req, res, next) => {
+	req.logout(function(err) {
+		if (err) { return next(err); }
+
+		req.session.destroy((err) => {
+			if (err) {
+				console.log('Error destroying session during logout:', err);
+			}
+			res.redirect('/'); 
+		});
+	});
 });
 
 /* Create and start HTTPS server */
