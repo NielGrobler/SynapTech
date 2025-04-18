@@ -1,5 +1,0 @@
-CREATE TABLE Users (
-  user_id INT IDENTITY(1,1) PRIMARY KEY,
-  created_at DATETIME DEFAULT GETDATE()
-);
-
