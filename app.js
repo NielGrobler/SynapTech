@@ -97,11 +97,21 @@ passport.serializeUser((user, done) => {
 	done(null, user.id);
 });
 
-passport.deserializeUser((id, done) => {
-	done(null, { id });
+passport.deserializeUser(async (id, done) => {
+	try {
+		const user = await getUserByGUID(id);
+		if (!user) {
+			return done(null, false);
+		}
+		done(null, user);
+	} catch (err) {
+		done(err, null);
+	}
 });
 
 /* Routes */
+
+/* Authorization routes */
 app.get('/auth/google', passport.authenticate('google', {
 	scope: ['profile', 'email'],
 }));
@@ -112,11 +122,20 @@ app.get('/auth/google/callback',
 	}
 );
 
+/* Normal Routes */
 app.get('/home', (req, res) => {
 	if (req.isAuthenticated()) {
 		res.sendFile(path.join(__dirname, "public", "dashboard.html"));
 	} else {
-		res.send(`<h1>Forbidden</h1>`);
+		res.status(403).send(`<h1>Forbidden</h1>`);
+	}
+});
+
+app.get('/dashboard', (req, res) => {
+	if (req.isAuthenticated()) {
+		res.sendFile(path.join(__dirname, "public", "dashboard.html"));
+	} else {
+		res.status(403).send(`<h1>Forbidden</h1>`);
 	}
 });
 
@@ -150,6 +169,50 @@ app.get('/logout', (req, res, next) => {
 		});
 	});
 });
+
+// Create project
+app.get('/create/project', (req, res) => {
+	if (req.isAuthenticated()) {
+		res.sendFile(path.join(__dirname, "public", "addProject.html"));
+	} else {
+		res.status(403).send(`<h1>Forbidden</h1>`);
+	}
+});
+
+app.get('/api/user/info', (req, res) => {
+	if (req.isAuthenticated()) {
+		res.json(req.user);
+	} else {
+		res.status(401).json({ error: 'Not authenticated' });
+	}
+});
+
+// Search public projects
+app.get('/view/public', (req, res) => {
+	if (req.isAuthenticated()) {
+		res.sendFile(path.join(__dirname, "public", "searchPublicProjects.html"));
+	} else {
+		res.status(403).send(`<h1>Forbidden</h1>`);
+	}
+});
+
+// Settings page
+app.get('/settings', (req, res) => {
+	if (req.isAuthenticated()) {
+		res.sendFile(path.join(__dirname, "public", "settings.html"));
+	} else {
+		res.status(401).json({ error: 'Not authenticated' });
+	}
+});
+
+app.get('/api/user/info', (req, res) => {
+	if (req.isAuthenticated()) {
+		res.json(req.user);
+	} else {
+		res.status(401).json({ error: 'Not authenticated' });
+	}
+});
+
 
 /* Create and start HTTPS server */
 

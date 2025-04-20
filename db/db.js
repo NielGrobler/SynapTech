@@ -17,11 +17,6 @@ const config = {
 	}
 };
 
-console.log(`Server:[${process.env.AZURE_DB_SERVER}]`);
-console.log(`Password:[${process.env.AZURE_DB_PASSWORD}]`);
-console.log('user:', process.env.AZURE_DB_USER);
-console.log('database:', process.env.AZURE_DB_NAME);
-
 const poolPromise = new sql.ConnectionPool(config).connect()
 .then(pool => {
 	console.log('Connected to Azure DB with pool');
