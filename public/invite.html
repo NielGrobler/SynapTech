@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Invite Collaborators</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; }
+    input { padding: 0.5rem; width: 300px; }
+    ul { list-style: none; padding: 0; margin-top: 1rem; }
+    li { padding: 0.5rem; background: #f1f1f1; margin-bottom: 0.5rem; border-radius: 6px; display: flex; justify-content: space-between; }
+    button { padding: 0.3rem 0.7rem; }
+  </style>
+</head>
+<body>
+
+  <h1>Invite Collaborators</h1>
+  <input type="text" id="search-input" placeholder="Search by name or email..." />
+
+  <ul id="search-results"></ul>
+
+  <script>
+    const projectId = new URLSearchParams(window.location.search).get('project_id');
+
+    const dummyAccounts = [
+      { account_id: 201, name: "Alice Johnson" },
+      { account_id: 202, name: "Bob Smith" },
+      { account_id: 203, name: "Carla Nguyen" }
+    ];
+
+    const input = document.getElementById("search-input");
+    const results = document.getElementById("search-results");
+
+    input.addEventListener("input", () => {
+      const query = input.value.toLowerCase();
+      results.innerHTML = "";
+      dummyAccounts
+        .filter(a => a.name.toLowerCase().includes(query))
+        .forEach(account => {
+          const li = document.createElement("li");
+          li.innerHTML = `
+            <span>${account.name}</span>
+            <button onclick="invite(${account.account_id})">Invite</button>
+          `;
+          results.appendChild(li);
+        });
+    });
+
+    function invite(accountId) {
+      // You would make a POST request to your backend here
+      alert(`Invited account ID ${accountId} to project ${projectId}`);
+    }
+  </script>
+</body>
+</html>
+

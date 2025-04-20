@@ -9,6 +9,7 @@ function addProjectToPage(project) {
 
 	li.appendChild(title);
 	li.appendChild(description);
+	li.classList.add("highlight-hover");
 
 	projectCardList.appendChild(li);
 }
