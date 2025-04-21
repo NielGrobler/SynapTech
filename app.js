@@ -9,8 +9,9 @@ const https = require('https');
 const http = require('http');
 require('dotenv').config();
 
+
 /* Database imports */
-const { getUserByGUID, createUser } = require('./db/db.js');
+const db = require('./db/db.js');
 
 /*
  * TODO:
@@ -23,12 +24,14 @@ const { getUserByGUID, createUser } = require('./db/db.js');
 const app = express();
 const port = process.env.PORT || 3000;
 
+/* For HTML form */
+app.use(express.urlencoded({ extended: true }));
 // Start app session
 app.use(
-	session({ 
-		secret: process.env.SESSION_SECRET, 
-		resave: false, 
-		saveUninitialized: true 
+	session({
+		secret: process.env.SESSION_SECRET,
+		resave: false,
+		saveUninitialized: true
 	})
 );
 
@@ -54,10 +57,10 @@ passport.use(new GoogleStrategy({
 			source: 'Google',
 		};
 
-		const existingUser = await getUserByGUID(user.id);
+		const existingUser = await db.getUserByGUID(user.id);
 		if (!existingUser) {
 			// new user
-			await createUser(user); 
+			await db.createUser(user);
 		}
 
 		return done(null, user);
@@ -81,9 +84,9 @@ passport.use(new ORCIDStrategy({
 			source: 'Orcid',
 		};
 
-		const existingUser = await getUserByGUID(user.id); // THIS LINE NEEDS TO BE MODIFIED
+		const existingUser = await db.getUserByGUID(user.id); // THIS LINE NEEDS TO BE MODIFIED
 		if (!existingUser) {
-			await createUser(user); 
+			await db.createUser(user);
 		}
 
 		return done(null, user);
@@ -99,7 +102,7 @@ passport.serializeUser((user, done) => {
 
 passport.deserializeUser(async (id, done) => {
 	try {
-		const user = await getUserByGUID(id);
+		const user = await db.getUserByGUID(id);
 		if (!user) {
 			return done(null, false);
 		}
@@ -116,7 +119,7 @@ app.get('/auth/google', passport.authenticate('google', {
 	scope: ['profile', 'email'],
 }));
 
-app.get('/auth/google/callback', 
+app.get('/auth/google/callback',
 	passport.authenticate('google', { failureRedirect: '/' }), (req, res) => {
 		res.redirect('/home');
 	}
@@ -141,7 +144,7 @@ app.get('/dashboard', (req, res) => {
 
 app.get('/auth/orcid', passport.authenticate('orcid'));
 
-app.get('/auth/orcid/callback', 
+app.get('/auth/orcid/callback',
 	passport.authenticate('orcid', { failureRedirect: '/' }), (req, res) => {
 		res.redirect('/home');
 	}
@@ -165,7 +168,7 @@ app.get('/logout', (req, res, next) => {
 			if (err) {
 				console.log('Error destroying session during logout:', err);
 			}
-			res.redirect('/'); 
+			res.redirect('/');
 		});
 	});
 });
@@ -179,14 +182,6 @@ app.get('/create/project', (req, res) => {
 	}
 });
 
-app.get('/api/user/info', (req, res) => {
-	if (req.isAuthenticated()) {
-		res.json(req.user);
-	} else {
-		res.status(401).json({ error: 'Not authenticated' });
-	}
-});
-
 // Search public projects
 app.get('/view/public', (req, res) => {
 	if (req.isAuthenticated()) {
@@ -194,6 +189,15 @@ app.get('/view/public', (req, res) => {
 	} else {
 		res.status(403).send(`<h1>Forbidden</h1>`);
 	}
+});
+
+app.get('/view/project', (req, res) => {
+	if (!req.isAuthenticated()) {
+		res.status(403).send(`<h1>Forbidden</h1>`);
+		return;
+	}
+
+	res.sendFile(path.join(__dirname, "public", "viewProject.html"));
 });
 
 // Settings page
@@ -213,6 +217,40 @@ app.get('/api/user/info', (req, res) => {
 	}
 });
 
+app.get('/api/user/project', async (req, res) => {
+	if (!req.isAuthenticated()) {
+		res.status(401).json({ error: 'Not authenticated' });
+		return;
+	}
+
+	let projects = await db.fetchAssociatedProjects(req.user);
+	await db.appendCollaborators(projects);
+
+	res.json(projects);
+});
+
+app.post('/create/project', async (req, res) => {
+	if (!req.isAuthenticated()) {
+		res.status(401).json({ error: 'Not authenticated' });
+		return;
+	}
+
+	const { projectName, description, field, visibility } = req.body;
+
+	const project = {
+		name: projectName,
+		description,
+		field,
+		isPublic: visibility === 'public',
+	};
+
+	try {
+		await db.createProject(project, req.user);
+		res.status(201).json({ message: 'Project posted!', project });
+	} catch (err) {
+		res.status(400).json({ error: err });
+	}
+});
 
 /* Create and start HTTPS server */
 
