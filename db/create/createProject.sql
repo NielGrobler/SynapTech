@@ -4,7 +4,6 @@ CREATE TABLE Project (
 	name NVARCHAR(255) NOT NULL,
 	description NVARCHAR(255) NOT NULL,
 	is_public BIT NOT NULL,
-	created_by INT,
 
 	created_by_account_id INT NOT NULL,
 
