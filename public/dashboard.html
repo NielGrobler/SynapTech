@@ -1,104 +1,107 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<link rel="stylesheet" href="/styles.css">
-		<link rel="preconnect" href="https://fonts.googleapis.com">
-		<link rel="icon" href="logo.png" type="image/png">
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-		<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-		<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="/styles.css">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="icon" href="logo.png" type="image/png">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+		rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+	<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 
 
-		<title>Unilink | Dashboard</title>
-		<script src="https://accounts.google.com/gsi/client" async defer></script>
+	<title>Unilink | Dashboard</title>
+	<script src="https://accounts.google.com/gsi/client" async defer></script>
 
-	</head>
+</head>
 
-	<body>
-		<section id="navigation" class="flex-row fill-width secondary center-content accent-underline">	
-			<nav class="fill-width"> 
-				<ul class="no-list-style flex-row gap-large center-content">
-					<li>
-						<button 
-							class="nav-item flex-row gap-small center-content-v"
-							onclick="window.location.href='/dashboard'"
-						>
-							<i class='bx bxs-dashboard'></i> 
-							Dashboard
-						</button>
-					</li>
-					<li>
-						<button class="nav-item flex-row gap-small center-content-v">
-							<i class='bx bxs-analyse' ></i>
-							Analytics
-						</button>
-					</li>
-					<li>
-						<button class="nav-item flex-row gap-small center-content-v"
-							onclick="window.location.href='/view/public'"
-						>
-							<i class='bx bx-globe'></i>
-							View Public Projects
-						</button>
-					</li>
-					<li>
-						<button 
-							class="nav-item flex-row gap-small center-content-v"
-							onclick="window.location.href='/create/project'"
-						>
-							<i class='bx bx-book-content' ></i>
-							Create Project
-						</button>
-					</li>
-				</ul>
-			</nav>
-		
-			<span class="dropdown pad-right hover-rotate">
-				<button id="userButton" class="flex-row gap-small padding-vert-small center-content-v">
-					<i class='bx bx-chevron-right'></i>
-					<span id="username">Ellie</span>
-				</button>
+<body>
+	<section id="navigation" class="flex-row fill-width secondary center-content accent-underline">
+		<nav class="fill-width">
+			<ul class="no-list-style flex-row gap-large center-content">
+				<li>
+					<button class="nav-item flex-row gap-small center-content-v"
+						onclick="window.location.href='/dashboard'">
+						<i class='bx bxs-dashboard'></i>
+						Dashboard
+					</button>
+				</li>
+				<li>
+					<button class="nav-item flex-row gap-small center-content-v">
+						<i class='bx bxs-analyse'></i>
+						Analytics
+					</button>
+				</li>
+				<li>
+					<button class="nav-item flex-row gap-small center-content-v"
+						onclick="window.location.href='/view/public'">
+						<i class='bx bx-globe'></i>
+						View Public Projects
+					</button>
+				</li>
+				<li>
+					<button class="nav-item flex-row gap-small center-content-v"
+						onclick="window.location.href='/create/project'">
+						<i class='bx bx-book-content'></i>
+						Create Project
+					</button>
+				</li>
+				<li>
+					<button class="nav-item flex-row gap-small center-content-v"
+						onclick="window.location.href='/create/project'">
+						<i class='bx bx-user-voice'></i>
+						Collaboration Requests
+					</button>
+				</li>
+			</ul>
+		</nav>
 
-				<ul class="dropdown-menu">
-					<li><a href="/settings"><i class='bx bx-cog' ></i>Settings</a></li>
-					<li><a href="/logout"><i class='bx bx-run' ></i>Logout</a></li>
-				</ul>
-			</span>
+		<span class="dropdown pad-right hover-rotate">
+			<button id="userButton" class="flex-row gap-small padding-vert-small center-content-v">
+				<i class='bx bx-chevron-right'></i>
+				<span id="username">Ellie</span>
+			</button>
+
+			<ul class="dropdown-menu">
+				<li><a href="/settings"><i class='bx bx-cog'></i>Settings</a></li>
+				<li><a href="/logout"><i class='bx bx-run'></i>Logout</a></li>
+			</ul>
+		</span>
+	</section>
+
+	<main>
+		<header>
+		</header>
+
+		<section class="accent-underline">
+			<section class="inset">
+				<section class="split">
+					<h1>Active Projects</h1>
+					<button class="very-round pad-small-h no-pad-v"
+						onclick="window.location.href='/create/project'">
+						<i class='bx bx-plus'></i>
+					</button>
+				</section>
+				<form type="">
+					<input type="text" placeholder="Search your projects...">
+					<button type="submit">Submit</button>
+				</form>
+			</section>
+			<ul id="projectCardList">
+			</ul>
 		</section>
 
-		<main>
-			<header>
-			</header>
+	</main>
 
-			<section class="accent-underline">
-				<section class="inset">
-					<section class="split">	
-						<h1>Active Projects</h1>
-						<button 
-							class="very-round pad-small-h no-pad-v" 
-							onclick="window.location.href='/create/project'"
-						>
-							<i class='bx bx-plus' ></i>
-						</button>
-					</section>
-					<form type="">
-						<input type="text" placeholder="Search your projects...">
-						<button type="submit">Submit</button>
-					</form>
-				</section>
-				<ul id="projectCardList">
-				</ul>
-			</section>
+	<footer>
+		<p>&copy; 2025 Unilink. All rights reserved.</p>
+	</footer>
+</body>
+<script src="/dashboardProjectAdd.js"></script>
+<script src="/script.js"></script>
 
-		</main>
-
-		<footer>
-			<p>&copy; 2025 Unilink. All rights reserved.</p>
-		</footer>
-	</body>
-	<script src="./projectAdd.js"></script>
-	<script src="./script.js"></script>
 </html>

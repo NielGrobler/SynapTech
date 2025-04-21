@@ -32,7 +32,10 @@ body {
 	line-height: 1.6;
 }
 
-h1, h2, h3, h4 {
+h1,
+h2,
+h3,
+h4 {
 	margin-bottom: 0.5em;
 	font-weight: 700;
 }
@@ -74,7 +77,9 @@ button:hover {
 	color: white;
 }
 
-input, textarea, select {
+input,
+textarea,
+select {
 	font: inherit;
 	padding: 0.3em 1em;
 	border: 1px solid #ccc;
@@ -89,6 +94,7 @@ input, textarea, select {
 .flag {
 	background-color: red;
 }
+
 .inset-small {
 	padding: 0.5rem;
 }
@@ -272,23 +278,25 @@ input, textarea, select {
 .secondary {
 	background-color: var(--color-secondary);
 }
-.hover-rotate > i  {
+
+.hover-rotate>i {
 	transition: var(--transition);
 }
 
-.hover-rotate:hover > i  {
-  transform: rotate(90deg);
+.hover-rotate:hover>i {
+	transform: rotate(90deg);
 }
 
 .split {
-  display: flex;
-  justify-content: space-between;
-  align-items: center; /* vertical centering */
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	/* vertical centering */
 }
 
 
 .cool-beans {
-	all: unset;  
+	all: unset;
 	width: 100%;
 	font-size: 16px;
 	color: #333;
@@ -328,11 +336,11 @@ input, textarea, select {
 }
 
 .dropdown button i.bx-chevron-right {
-  transition: transform 0.3s ease;
+	transition: transform 0.3s ease;
 }
 
 .dropdown:hover button i.bx-chevron-right {
-  transform: rotate(90deg);
+	transform: rotate(90deg);
 }
 
 .dropdown:hover .dropdown-menu {
@@ -342,11 +350,12 @@ input, textarea, select {
 	pointer-events: auto;
 }
 
-.dropdown:hover > button {
+.dropdown:hover>button {
 	background-color: var(--color-accent);
 	color: white;
 	transform: translateY(0);
 }
+
 .dropdown-menu li {
 	padding: 10px;
 }
@@ -376,7 +385,7 @@ input, textarea, select {
 		width: 100%;
 	}
 
-	.dropdown > button {
+	.dropdown>button {
 		width: 100%;
 	}
 }
