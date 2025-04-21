@@ -16,7 +16,6 @@ async function fetchUserInfo() {
 async function setUsername() {
 	let userElement = document.getElementById("username");
 	let userInfo = await fetchUserInfo();
-	console.log(userInfo);
 	userElement.innerHTML = userInfo["name"].trim().split(/\s+/)[0];
 }
 
