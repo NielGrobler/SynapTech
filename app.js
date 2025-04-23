@@ -161,7 +161,7 @@ app.get('/', (req, res) => {
 
 // Logout
 app.get('/logout', (req, res, next) => {
-	req.logout(function(err) {
+	req.logout(function (err) {
 		if (err) { return next(err); }
 
 		req.session.destroy((err) => {
@@ -251,6 +251,36 @@ app.post('/create/project', async (req, res) => {
 		res.status(400).json({ error: err });
 	}
 });
+
+//Reviews Page
+app.post('/submit/review', async (req, res) => {
+	if (!req.isAuthenticated()) {
+		return res.status(401).json({ error: 'Not authenticated' });
+	}
+
+	const { projectId, rating, comment } = req.body;
+
+	if (!projectId || !rating || !comment) {
+		return res.status(400).json({ error: 'Missing required fields' });
+	}
+
+	try {
+		await db.reviews.create({
+			projectId,
+			reviewerId: req.user.id,
+			reviewerName: req.user.name,
+			rating: Number(rating),
+			comment,
+			dateSubmitted: new Date()
+		});
+
+		res.status(201).json({ message: 'Review submitted successfully!' });
+	} catch (err) {
+		console.error('Error submitting review:', err);
+		res.status(500).json({ error: 'Failed to submit review' });
+	}
+});
+
 
 /* Create and start HTTPS server */
 
