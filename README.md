@@ -1,6 +1,7 @@
 # SynapTech University Research Platform
 ---
 https://synaptech-fbc2huaabab8g6e0.southafricanorth-01.azurewebsites.net
+
 ---
 |          |                             |
 |---------:|:----------------------------|
