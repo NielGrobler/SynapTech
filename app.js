@@ -159,7 +159,7 @@ app.get('/', (req, res) => {
 
 // Logout
 app.get('/logout', (req, res, next) => {
-	req.logout(function(err) {
+	req.logout(function (err) {
 		if (err) { return next(err); }
 
 		req.session.destroy((err) => {
@@ -303,28 +303,35 @@ app.post('/create/project', async (req, res) => {
 	}
 });
 
-app.post('/remove/user', async (req, res) => {
+//Reviews Page
+app.post('/submit/review', async (req, res) => {
 	if (!req.isAuthenticated()) {
-		res.status(401).json({ error: 'Not authenticated' });
-		return;
+		return res.status(401).json({ error: 'Not authenticated' });
 	}
 
-	const { reqToDeleteId } = req.body;
+	const { projectId, rating, comment } = req.body;
 
-	if (!req.user.is_admin && req.user.id !== reqToDeleteId) {
-		res.status(400).send("Error deleting account.");
+	if (!projectId || !rating || !comment) {
+		return res.status(400).json({ error: 'Missing required fields' });
 	}
 
 	try {
-		await db.deleteUser(reqUserId);
+		await db.reviews.create({
+			projectId,
+			reviewerId: req.user.id,
+			reviewerName: req.user.name,
+			rating: Number(rating),
+			comment,
+			dateSubmitted: new Date()
+		});
+
+		res.status(201).json({ message: 'Review submitted successfully!' });
 	} catch (err) {
-		res.status(400).json({ error: err });
+		console.error('Error submitting review:', err);
+		res.status(500).json({ error: 'Failed to submit review' });
 	}
 });
 
-app.post('suspend/user', async (req, res) => {
-
-});
 
 /* Create and start HTTPS server */
 

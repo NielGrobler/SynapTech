@@ -1,0 +1,37 @@
+name: MySQL for GitHub Actions
+
+on:
+  push:
+    branches: [master, dev]
+  pull_request:
+    branches: [master, dev]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v1
+          - uses: azure/login@v2
+            with:
+              client-id: ${{ secrets.AZURE_CLIENT_ID }}
+              tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+              subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+          - uses: azure/cli@v2
+            with:
+              azcliversion: latest
+              inlineScript: |
+                az account show
+
+          #- uses: azure/mysql@v1
+          #  with:
+          #    server-name: synaptech.mysql.database.azure.com
+          #    connection-string: ${{ secrets.AZURE_MYSQL_CONNECTION_STRING }}
+          #    sql-file: './data.sql'
+
+          
