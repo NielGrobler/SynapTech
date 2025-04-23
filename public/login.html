@@ -1,40 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
 
-	<head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<link rel="stylesheet" href="/styles.css">
-		<link rel="preconnect" href="https://fonts.googleapis.com">
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-		<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
-		<title>Unilink | Login </title>
-		<script src="https://accounts.google.com/gsi/client" async defer></script>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="/styles.css">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+		rel="stylesheet">
+	<title>Unilink | Login </title>
+	<script src="https://accounts.google.com/gsi/client" async defer></script>
 
-	</head>
+</head>
 
-	<body class="center-content full-vh">
-		<section id="auth" class="flex-col border-solid-thin inset-large">
-			<h1 class="make-title"> Login </h1>
-			<section id="buttons" class="flex-col gap">
-				<button class="auth-button" id="googleButton" onclick="window.location.href='/auth/google'"> 
-					<img 
-						src="https://www.gstatic.com/marketing-cms/assets/images/d5/dc/cfe9ce8b4425b410b49b7f2dd3f3/g.webp=s48-fcrop64=1,00000000ffffffff-rw" alt="Google logo" class="icon-small"
-					>
-					<span>Login with Google</span>
-				</button>
+<body class="center-content full-vh">
+	<section id="auth" class="flex-col border-solid-thin inset-large">
+		<h1 class="make-title"> Login </h1>
+		<section id="buttons" class="flex-col gap">
+			<button class="auth-button" id="googleButton" onclick="window.location.href='/auth/google'">
+				<img src="https://www.gstatic.com/marketing-cms/assets/images/d5/dc/cfe9ce8b4425b410b49b7f2dd3f3/g.webp=s48-fcrop64=1,00000000ffffffff-rw"
+					alt="Google logo" class="icon-small">
+				<span>Login with Google</span>
+			</button>
 
-				<button class="auth-button" id="orcidButton" onclick="window.location.href='/auth/orcid'"> 
-					<img src="https://orcid.org/sites/default/files/images/orcid_16x16.png" alt="ORCID logo" class="icon-small">
-					<span>Login with ORCID</span>
-				</button>
-				<a href='/signup.html'>Don't have an account?</a>
-			</section>
+			<button class="auth-button" id="orcidButton" onclick="window.location.href='/auth/orcid'">
+				<img src="https://orcid.org/sites/default/files/images/orcid_16x16.png" alt="ORCID logo"
+					class="icon-small">
+				<span>Login with ORCID</span>
+			</button>
+			<a href='/signup.html'>Don't have an account?</a>
 		</section>
-		<!-- <button>sign up with google</button> -->
-		<script src="googleSignUp.js"></script>
-		<script src="orcidSignUp.js"></script>
-
-	</body>
+	</section>
+</body>
 
 </html>
