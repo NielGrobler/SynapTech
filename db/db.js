@@ -38,6 +38,7 @@ const getUserByGUID = async (guid) => {
 			SELECT
 				A.account_id AS id,
 				A.name,
+				A.bio,
 				L.uuid,
 				L.source
 			FROM [dbo].[Account] A
@@ -148,9 +149,10 @@ const deleteUser = async (userId) => {
 	await pool.request()
 		.input('id', sql.Int, userId)
 		.query(`
-			DELETE FROM [dbo].[AccountLink] WHERE account_id = @id;
-			DELETE FROM [dbo].[Collaborator] WHERE account_id = @id;
-			DELETE FROM [dbo].[Account] WHERE account_id = @id;
+			DELETE FROM [dbo].[AccountLink] WHERE [dbo].[AccountLink].account_id = @id;
+			DELETE FROM [dbo].[Collaborator] WHERE [dbo].[Collaborator].account_id = @id;
+			DELETE FROM [dbo].[Project] WHERE [dbo].[Project].created_by_account_id = @id;
+			DELETE FROM [dbo].[Account] WHERE [dbo].[Account].account_id = @id;
 		`);
 };
 

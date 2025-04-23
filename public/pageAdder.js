@@ -5,13 +5,14 @@ const addProjectToPage = (elementId, project) => {
 	title.textContent = project.name;
 	const description = document.createElement("p");
 	description.textContent = project.description;
+	const id = !project.id ? project.project_id : project.id;
 
 
 	li.appendChild(title);
 	li.appendChild(description);
 	li.classList.add("highlight-hover");
 	li.addEventListener('click', () => {
-		window.location.href = `/view/project?id=${project.id}`;
+		window.location.href = `/view/project?id=${id}`;
 	});
 
 	projectCardList.appendChild(li);

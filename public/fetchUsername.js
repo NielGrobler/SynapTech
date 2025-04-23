@@ -8,7 +8,6 @@ const fetchUserInfo = async () => {
 	}
 
 	const content = await res.json();
-	console.log(`This is content: ${content}`);
 
 	return content;
 }
@@ -16,6 +15,9 @@ const fetchUserInfo = async () => {
 const setUsername = async () => {
 	let userElement = document.getElementById("username");
 	let userInfo = await fetchUserInfo();
+
+
+
 	userElement.innerHTML = userInfo["name"].trim().split(/\s+/)[0];
 }
 

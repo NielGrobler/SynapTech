@@ -13,7 +13,7 @@ const fetchProject = async () => {
 const populateCollaborators = (project) => {
 	let list = document.getElementById('collaboratorList');
 
-	if (project.collaborators.length === 0) {
+	if (!project.collaborators || project.collaborators.length === 0) {
 		let paragraphMessage = document.createElement("p");
 		paragraphMessage.innerText = "No collaborators.";
 		list.appendChild(paragraphMessage);
