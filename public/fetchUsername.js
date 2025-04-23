@@ -1,6 +1,6 @@
 
 
-async function fetchUserInfo() {
+const fetchUserInfo = async () => {
 	const res = await fetch('/api/user/info', { credentials: 'include' });
 
 	if (!res.ok) {
@@ -13,12 +13,11 @@ async function fetchUserInfo() {
 	return content;
 }
 
-async function setUsername() {
+const setUsername = async () => {
 	let userElement = document.getElementById("username");
 	let userInfo = await fetchUserInfo();
 	userElement.innerHTML = userInfo["name"].trim().split(/\s+/)[0];
 }
-
 
 (async () => {
 	try {
@@ -28,3 +27,7 @@ async function setUsername() {
 	}
 })();
 
+export default {
+	fetchUserInfo,
+	setUsername
+}

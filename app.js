@@ -1,25 +1,23 @@
-const express = require('express');
-const passport = require('passport');
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const ORCIDStrategy = require('passport-orcid').Strategy;
-const session = require('express-session');
-const path = require('path');
-const fs = require('fs');
-const https = require('https');
-const http = require('http');
-require('dotenv').config();
-
+import express from 'express';
+import passport from 'passport';
+import GoogleStrategy from 'passport-google-oauth20';
+import ORCIDStrategy from 'passport-orcid';
+import session from 'express-session';
+import path from 'path';
+import fs from 'fs';
+import https from 'https';
+import dotenv from 'dotenv';
+import url from 'url';
 
 /* Database imports */
-const db = require('./db/db.js');
+import db from './db/db.js';
 
-/*
- * TODO:
- * - Add seperate functionality for signup and login, will rerequire specifying more redirect URI's
- * - Add ORCID support, redirect URI's for ORCID not yet setup.
- * - Use with mock Azure database. The database is setup, will just need to write queries, preferably in a seperate file.
- * - Don't forget to notify group of .env file and add all group members as test users.
- */
+// Configure .env
+dotenv.config();
+
+// For convenience, as these don't exist in ES modules.
+const __filename = url.fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -209,12 +207,64 @@ app.get('/settings', (req, res) => {
 	}
 });
 
+/* API Routing */
 app.get('/api/user/info', (req, res) => {
 	if (req.isAuthenticated()) {
 		res.json(req.user);
 	} else {
 		res.status(401).json({ error: 'Not authenticated' });
 	}
+});
+
+const authenticatedForView = (project, user) => {
+	if (user.id === project.created_by_account_id) {
+		return true;
+	}
+
+	return project.collaborators.some(collaborator => collaborator.account_id === user.id);
+}
+
+// Route for when users want to fetch a specific project (based on id)
+app.get('/api/project', async (req, res) => {
+	if (!req.isAuthenticated()) {
+		res.status(401).json({ error: 'Not authenticated.' });
+		return;
+	}
+
+	const { id } = req.query;
+	if (!id) {
+		res.status(400).json({ error: "Bad Request." });
+		return;
+	}
+
+	const project = await db.fetchProjectById(id);
+
+	if (!project) {
+		res.json(null);
+		return;
+	}
+
+	if (!authenticatedForView(project, req.user)) {
+		res.status(401).json({ error: "Cannot view project." });
+		return;
+	}
+
+	res.json(project);
+});
+
+app.get('/api/search/project', async (req, res) => {
+	if (!req.isAuthenticated()) {
+		res.status(401).json({ error: 'Not authenticated' });
+		return;
+	}
+
+	const { projectName } = req.query;
+	if (!projectName || typeof projectName !== "string") {
+		res.status(400).json({ error: "Bad Request." });
+		return;
+	}
+
+	res.json(await db.searchProjects(projectName));
 });
 
 app.get('/api/user/project', async (req, res) => {
@@ -229,6 +279,7 @@ app.get('/api/user/project', async (req, res) => {
 	res.json(projects);
 });
 
+/* Posts */
 app.post('/create/project', async (req, res) => {
 	if (!req.isAuthenticated()) {
 		res.status(401).json({ error: 'Not authenticated' });
@@ -250,6 +301,29 @@ app.post('/create/project', async (req, res) => {
 	} catch (err) {
 		res.status(400).json({ error: err });
 	}
+});
+
+app.post('/remove/user', async (req, res) => {
+	if (!req.isAuthenticated()) {
+		res.status(401).json({ error: 'Not authenticated' });
+		return;
+	}
+
+	const { reqToDeleteId } = req.body;
+
+	if (!req.user.is_admin && req.user.id !== reqToDeleteId) {
+		res.status(400).send("Error deleting account.");
+	}
+
+	try {
+		await db.deleteUser(reqUserId);
+	} catch (err) {
+		res.status(400).json({ error: err });
+	}
+});
+
+app.post('suspend/user', async (req, res) => {
+
 });
 
 /* Create and start HTTPS server */
