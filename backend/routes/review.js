@@ -1,42 +1,23 @@
-const express = require('express');
-const router = express.Router();
-
-// Assuming db is a database handler that is already set up
-const db = require('../db'); // You may need to adjust this based on your actual db setup
-
-// Save a new review
-router.post('/submit/review', async (req, res) => {
+router.post('/', async (req, res) => {
     const { projectId, rating, comment } = req.body;
-    const userId = req.session.userId;  // Assuming userId is stored in the session
-
-    if (!userId) {
-        return res.status(400).json({ error: 'User is not authenticated' });
-    }
+    //const userId = req.session.userId;
 
     try {
-        // Retrieve user details (e.g., name)
-        const user = await db.users.findById(userId);
+        //const user = await db.users.findById(userId); // assuming you have this
 
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-
-        // Save the review to the database
-        await db.reviews.create({
+        const newReview = await db.reviews.create({
             projectId,
-            reviewerId: userId,
-            reviewerName: user.name,
+            //reviewerName: user.name,
             rating: Number(rating),
             comment,
-            dateSubmitted: new Date(),
+            dateSubmitted: new Date()
         });
 
-        // Respond with success
-        res.status(201).json({ message: 'Review submitted successfully' });
+        res.status(201).json({
+            message: 'Review submitted!',
+            review: newReview
+        });
     } catch (error) {
-        console.error('Error submitting review:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Failed to submit review', details: error.message });
     }
 });
-
-module.exports = router;

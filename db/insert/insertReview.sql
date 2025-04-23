@@ -1,2 +1,2 @@
-INSERT INTO Review(comment, rating, date,userId)
-VALUES(@comment, @rating, @date, @userId);
+INSERT INTO Review(comment, rating, date)
+VALUES(@comment, @rating, @date);

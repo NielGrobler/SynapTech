@@ -4,7 +4,7 @@ const review = {
     comment: 'This is a great project!',
 };
 
-fetch('http://localhost:3000/api/review/submit/review', {
+fetch('http://localhost:3000/api/review', {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json',
