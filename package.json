@@ -14,12 +14,23 @@
     "jest-environment-jsdom": "^29.7.0"
   },
   "jest": {
-    "testEnvironment": "jsdom"
+    "testEnvironment": "jsdom",
+    "roots": ["<rootDir>/public"],
+    "moduleFileExtensions": ["js"],
+    "testMatch": ["**/*.test.js"]
   },
   "dependencies": {
-    "dotenv": "^16.4.7",
+    "dotenv": "^16.5.0",
     "express": "^5.1.0",
-    "mssql": "^11.0.1"
+    "express-session": "^1.18.1",
+    "joi": "^17.13.3",
+    "jsdom": "^26.1.0",
+    "msql": "^1.0.3",
+    "mssql": "^11.0.1",
+    "node-fetch": "^3.3.2",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "passport-orcid": "^0.0.4"
   },
   "repository": {
     "type": "git",
@@ -28,5 +39,6 @@
   "bugs": {
     "url": "https://github.com/NielGrobler/SynapTech/issues"
   },
-  "homepage": "https://github.com/NielGrobler/SynapTech#readme"
+  "homepage": "https://github.com/NielGrobler/SynapTech#readme",
+  "type": "module"
 }

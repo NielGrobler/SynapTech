@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>UniLink | User Profile</title>
+	<link rel="stylesheet" href="/styles.css" />
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+</head>
+
+<body>
+	<nav class="inset secondary fill accent-underline">
+		<a href="javascript:history.back()">&larr; Back</a>
+	</nav>
+
+
+	<main class="inset-large flex-col gap-medium">
+		<section class="flex-col gap-small border-solid-thin inset" aria-label="User Profile">
+			<header>
+				<h2 class="make-title accent-underline">Your Profile</h2>
+			</header>
+
+			<form method="POST" action="/update-profile" class="flex-col gap-small"
+				aria-label="Edit Profile">
+				<fieldset class="flex-col gap-small" style="border: none; padding: 0;">
+					<label for="username"><strong>Username:</strong></label>
+					<input type="text" id="username" name="username" value="john_doe" />
+
+					<label for="bio"><strong>Bio:</strong></label>
+					<textarea id="bio" name="bio" rows="4">Passionate coder. Coffee enthusiast
+						☕.</textarea>
+				</fieldset>
+
+				<footer class="flex-row gap-small">
+					<button type="submit">Save Changes</button>
+					<button type="reset">Cancel</button>
+				</footer>
+			</form>
+		</section>
+	</main>
+</body>
+
+</html>
