@@ -1,8 +1,9 @@
 {
   "name": "testing",
   "version": "1.0.0",
-  "main": "googleSignUp.js",
+  "main": "app.js",
   "scripts": {
+    "start": "node app.js",
     "test": "jest"
   },
   "keywords": [],
@@ -15,9 +16,9 @@
   },
   "jest": {
     "testEnvironment": "jsdom",
-    "roots": ["<rootDir>/public"],
+    "roots": ["<rootDir>/"],
     "moduleFileExtensions": ["js"],
-    "testMatch": ["**/*.test.js"]
+    "testMatch": ["**/**/*.test.js"]
   },
   "dependencies": {
     "dotenv": "^16.5.0",
