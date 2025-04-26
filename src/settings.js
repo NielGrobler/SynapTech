@@ -1,14 +1,14 @@
-import fetchUsername from './fetchUsername.js';
+import userInfo from './userInfo.js';
 
 (async () => {
 	try {
-		const userInfo = await fetchUsername.fetchUserInfo();
-		document.getElementById('username').value = userInfo.name;
+		const info = await userInfo.fetchFromApi();
+		document.getElementById('username').value = info.name;
 
-		if (!userInfo.bio) {
+		if (!info.bio) {
 			document.getElementById('bio').value = "No bio.";
 		} else {
-			document.getElementById('bio').value = userInfo.name;
+			document.getElementById('bio').value = info.name;
 		}
 
 		const deleteButton = document.getElementById('deleteButton');
@@ -22,7 +22,7 @@ import fetchUsername from './fetchUsername.js';
 
 			fetch('/remove/user', {
 				method: 'POST',
-				body: JSON.stringify({ reqToDeleteId: userInfo.id })
+				body: JSON.stringify({ reqToDeleteId: info.id })
 			})
 				.then(response => {
 					if (response.ok) {
@@ -35,7 +35,6 @@ import fetchUsername from './fetchUsername.js';
 				.catch(error => {
 					alert('An error occurred: ' + error.message);
 				});
-			alert("Account deletion initiated!");
 		});
 	} catch (err) {
 		console.error('Error loading user:', err);

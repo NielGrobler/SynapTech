@@ -38,7 +38,20 @@ router.use(passport.initialize());
 router.use(passport.session());
 
 // Specify public directory for express.js
-router.use(express.static(path.join(__dirname, 'public')));
+//router.use(express.static(path.join(__dirname, 'public')));
+
+// Prevent direct access to html pages and move access to javascript pages to send from src
+router.use((req, res, next) => {
+	if (req.url.endsWith('.html')) {
+		return res.redirect('/forbidden');
+	}
+
+	if (req.url.endsWith('.js')) {
+		return res.sendFile(path.join(__dirname, "src", req.url));
+	}
+
+	next();
+});
 
 /* passport.js Strategies */
 
@@ -112,6 +125,11 @@ passport.deserializeUser(async (id, done) => {
 
 /* Routes */
 
+/* GET Request Routing */
+router.get('/forbidden', (req, res) => {
+	res.status(403).sendFile(path.join(__dirname, "public", "forbidden.html"));
+});
+
 /* Authorization routes */
 router.get('/auth/google', passport.authenticate('google', {
 	scope: ['profile', 'email'],
@@ -135,8 +153,7 @@ const authenticateRequest = (req) => {
 /* Normal Routes */
 router.get('/home', (req, res) => {
 	if (!authenticateRequest(req)) {
-		res.status(403).send(`<h1>Forbidden</h1>`);
-		return;
+		return res.redirect('/forbidden');
 	}
 
 	res.redirect('/dashboard');
@@ -144,11 +161,14 @@ router.get('/home', (req, res) => {
 
 router.get('/dashboard', (req, res) => {
 	if (!authenticateRequest(req)) {
-		res.status(403).send(`<h1>Forbidden</h1>`);
-		return;
+		return res.redirect('/forbidden');
 	}
 
 	res.sendFile(path.join(__dirname, "public", "dashboard.html"));
+});
+
+router.get('/styles.css', (req, res) => {
+	res.sendFile(path.join(__dirname, 'public', 'styles.css'));
 });
 
 router.get('/auth/orcid', passport.authenticate('orcid'));
@@ -162,8 +182,7 @@ router.get('/auth/orcid/callback',
 // Default route
 router.get('/', (req, res) => {
 	if (!authenticateRequest(req)) {
-		res.redirect('/login');
-		return;
+		return res.redirect('/login');
 	}
 
 	res.redirect('/dashboard');
@@ -171,6 +190,10 @@ router.get('/', (req, res) => {
 
 router.get('/login', (req, res) => {
 	res.sendFile(path.join(__dirname, "public", "login.html"));
+});
+
+router.get('/signup', (req, res) => {
+	res.sendFile(path.join(__dirname, "public", "signup.html"));
 });
 
 // Logout
@@ -189,35 +212,43 @@ router.get('/logout', (req, res, next) => {
 
 // Create project
 router.get('/create/project', (req, res) => {
-	if (authenticateRequest(req)) {
-		res.sendFile(path.join(__dirname, "public", "addProject.html"));
-	} else {
-		res.status(403).send(`<h1>Forbidden</h1>`);
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
 	}
+
+	res.sendFile(path.join(__dirname, "public", "addProject.html"));
 });
 
 // Search public projects
 router.get('/view/public', (req, res) => {
-	if (authenticateRequest(req)) {
-		res.sendFile(path.join(__dirname, "public", "searchPublicProjects.html"));
-	} else {
-		res.status(403).send(`<h1>Forbidden</h1>`);
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
 	}
+
+	res.sendFile(path.join(__dirname, "public", "searchPublicProjects.html"));
 });
 
 router.get('/view/project', (req, res) => {
 	if (!authenticateRequest(req)) {
-		res.status(403).send(`<h1>Forbidden</h1>`);
-		return;
+		return res.redirect('/forbidden');
 	}
 
 	res.sendFile(path.join(__dirname, "public", "viewProject.html"));
 });
 
-// Settings page
+// Settings Page
 router.get('/settings', (req, res) => {
 	if (authenticateRequest(req)) {
 		res.sendFile(path.join(__dirname, "public", "settings.html"));
+	} else {
+		res.status(401).json({ error: 'Not authenticated' });
+	}
+});
+
+// Invite Collaborator Page
+router.get('/invite', (req, res) => {
+	if (authenticateRequest(req)) {
+		res.sendFile(path.join(__dirname, "public", "invite.html"));
 	} else {
 		res.status(401).json({ error: 'Not authenticated' });
 	}
@@ -285,8 +316,7 @@ router.get('/api/search/project', async (req, res) => {
 
 router.get('/api/user/project', async (req, res) => {
 	if (!authenticateRequest(req)) {
-		res.status(401).json({ error: 'Not authenticated' });
-		return;
+		return res.redirect('/forbidden');
 	}
 
 	let projects = await db.fetchAssociatedProjects(req.user);
@@ -295,10 +325,10 @@ router.get('/api/user/project', async (req, res) => {
 	res.json(projects);
 });
 
-/* Posts */
+/* POST Request Routing */
 router.post('/create/project', async (req, res) => {
 	if (!authenticateRequest(req)) {
-		res.status(401).json({ error: 'Not authenticated' });
+		res.status(403).json({ error: 'Not authenticated' });
 		return;
 	}
 
@@ -313,15 +343,15 @@ router.post('/create/project', async (req, res) => {
 
 	try {
 		await db.createProject(project, req.user);
-		res.status(201).json({ message: 'Project posted!', project });
+		res.sendFile(path.join(__dirname, "public", "successfulProjectPost.html"));
 	} catch (err) {
-		res.status(400).json({ error: err });
+		res.sendFile(path.join(__dirname, "public", "failureProjectPost.html"));
 	}
 });
 
 router.post('/remove/user', async (req, res) => {
 	if (!authenticateRequest(req)) {
-		res.status(401).json({ error: 'Not authenticated' });
+		res.status(403).json({ error: 'Not authenticated' });
 		return;
 	}
 
@@ -362,6 +392,11 @@ router.post('/remove/user', async (req, res) => {
 
 router.post('suspend/user', async (req, res) => {
 
+});
+
+/* PUT Request Routing */
+router.put('user/details', async (req, res) => {
+	const { name, bio } = req.body;
 });
 
 export default router;

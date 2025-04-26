@@ -1,3 +1,5 @@
+import userInfo from './userInfo.js'
+
 const fetchProject = async () => {
 	const params = new URLSearchParams(window.location.search);
 	const projectId = params.get('id');
@@ -28,6 +30,19 @@ const populateCollaborators = (project) => {
 	}
 }
 
+const addCollaboratorButton = async (project) => {
+	const info = await userInfo.fetchFromApi();
+	console.log(info);
+	if (project.created_by_account_id !== info.id) {
+		return;
+	}
+
+	let collaboratorSection = document.getElementById("collaborators");
+	let button = document.createElement("button");
+	button.innerText = "Add Collaborator";
+	collaboratorSection.appendChild(button);
+}
+
 const populateElements = async () => {
 	const project = await fetchProject();
 	if (!project) {
@@ -41,6 +56,7 @@ const populateElements = async () => {
 	document.getElementById('projectDescription').innerHTML = project.description;
 
 	populateCollaborators(project);
+	addCollaboratorButton(project);
 
 	console.log(project);
 }

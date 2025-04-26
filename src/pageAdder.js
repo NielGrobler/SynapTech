@@ -29,7 +29,12 @@ const addProjectsToPage = (elementId, projects) => {
 	}
 }
 
+const clearProjects = (elementId) => {
+	document.getElementById(elementId).innerHTML = "";
+}
+
 export default {
-	addProjectsToPage
+	addProjectsToPage,
+	clearProjects
 };
 

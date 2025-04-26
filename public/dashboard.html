@@ -80,28 +80,32 @@
 		<section class="accent-underline">
 			<section class="inset">
 				<section class="split">
-					<h1>Active Projects</h1>
+					<h1 class="large-text accent-underline">Active Projects</h1>
 					<button class="very-round pad-small-h no-pad-v"
 						onclick="window.location.href='/create/project'">
 						<i class='bx bx-plus'></i>
 					</button>
 				</section>
-				<form type="">
-					<input type="text" placeholder="Search your projects...">
-					<button type="submit">Submit</button>
+				<form id="searchForm" type="">
+					<input id="searchBox" type="text" placeholder="Search your projects...">
+					<button id="searchButton" type="submit"
+						class="nav-item flex-row gap-small center-content-v"> <i
+							class="bx bx-search"></i>
+						Submit
+					</button>
 				</form>
 			</section>
-			<ul id="projectCardList">
+			<ul id="projectCardList" class="minh">
 			</ul>
 		</section>
 
 	</main>
 
-	<footer>
+	<footer class="inset">
 		<p>&copy; 2025 Unilink. All rights reserved.</p>
 	</footer>
 </body>
-<script type="module" src="/dashboardProjectAdd.js"></script>
+<script type="module" src="/dashboard.js"></script>
 <script type="module" src="/fetchUsername.js"></script>
 
 </html>

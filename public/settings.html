@@ -2,17 +2,33 @@
 <html lang="en">
 
 <head>
-	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>UniLink | User Profile</title>
-	<link rel="stylesheet" href="/styles.css" />
-	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="/styles.css">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="icon" href="logo.png" type="image/png">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+		rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+	<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+
+
+	<title>Unilink | Settings</title>
+	<script src="https://accounts.google.com/gsi/client" async defer></script>
+
 </head>
+
 
 <body>
 	<nav class="inset secondary fill accent-underline">
-		<a href="javascript:history.back()">&larr; Back</a>
+		<button class="nav-item flex-row center-content-v gap-small"
+			onclick="window.location.href=history.back()">
+			<i class='bx bx-chevron-left'></i>
+			Back
+		</button>
 	</nav>
+
 
 
 	<main class="inset-large flex-col gap-medium">
@@ -21,7 +37,7 @@
 				<h2 class="make-title accent-underline">Your Profile</h2>
 			</header>
 
-			<form method="POST" action="/update-profile" class="flex-col gap-small"
+			<form method="POST" action="/update/profile" class="flex-col gap-small"
 				aria-label="Edit Profile">
 				<fieldset class="flex-col gap-small" style="border: none; padding: 0;">
 					<label for="username"><strong>Username:</strong></label>
@@ -32,15 +48,17 @@
 						☕.</textarea>
 				</fieldset>
 
-				<footer class="flex-row gap-small">
+			</form>
+			<footer class="split gap">
+				<section class="flex-row gap-small">
 					<button type="submit">Save Changes</button>
 					<button type="reset">Cancel</button>
-				</footer>
-			</form>
+				</section>
+				<button id="deleteButton" class="inset">Delete Account</button>
+			</footer>
 		</section>
 	</main>
 
-	<button id="deleteButton" class="inset">Delete Account</button>
 	<script type="module" src="settings.js"></script>
 </body>
 
