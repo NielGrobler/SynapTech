@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="/styles.css">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="icon" href="logo.png" type="image/png">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+		rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+	<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+
+
+	<title>Unilink | Dashboard</title>
+	<script src="https://accounts.google.com/gsi/client" async defer></script>
+
+</head>
+
+<body>
+	<nav class="inset secondary fill accent-underline">
+		<button class="nav-item flex-row gap-small center-content-v"
+			onclick="window.location.href='/dashboard'">
+			<i class='bx bx-chevron-left'></i>
+			Back
+		</button>
+	</nav>
+
+
+	<main class="inset">
+		<header>
+		</header>
+		<section class="inset shadow border-solid-thin">
+			<h1>Successfully posted project!</h1>
+			<p>You can now view your project on your dashboard</p>
+		</section>
+
+	</main>
+
+	<footer class="inset">
+		<p>&copy; 2025 Unilink. All rights reserved.</p>
+	</footer>
+</body>
+<script type="module" src="/dashboard.js"></script>
+<script type="module" src="/fetchUsername.js"></script>
+
+</html>

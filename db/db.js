@@ -38,6 +38,7 @@ const getUserByGUID = async (guid) => {
 			SELECT
 				A.account_id AS id,
 				A.name,
+				A.bio,
 				L.uuid,
 				L.source
 			FROM [dbo].[Account] A
@@ -70,21 +71,38 @@ const createUser = async (user) => {
 };
 
 const projectSchema = Joi.object({
-	name: Joi.string().trim().min(3).max(255).required(),
-	description: Joi.string().min(3).max(255).required(),
-	field: Joi.string().min(3).max(32).required(),
+	name: Joi.string().trim().min(3).max(255).regex(/^[A-Za-z\s]+$/).required(),
+	description: Joi.string().min(3).max(255).regex(/^[A-Za-z0-9\s,.'"!;?-]+$/).required(),
+	field: Joi.string().min(3).max(32).regex(/^[A-Za-z0-9_-]+$/).required(),
 	isPublic: Joi.boolean().required()
 });
 
-const validateProject = (project) => {
-	const { error } = projectSchema.validate(project);
-	if (error) {
-		throw new Error(`Project validation failed: ${error.details[0].message}`);
-	}
-};
+// Project names are unique up to user id
+const checkProjectNameUniqueness = async (project, user) => {
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('name', sql.NVarChar, project.name)
+		.input('created_by_account_id', sql.Int, user.id)
+		.query(`
+			SELECT *
+			FROM [dbo].[Project]
+			WHERE [dbo].[Project].name = @name AND [dbo].[Project].created_by_account_id = @created_by_account_id;
+		`);
+
+	return result.recordset.length === 0;
+}
 
 const createProject = async (project, user) => {
-	validateProject(project);
+	const { _, error } = projectSchema.validate(project);
+	if (error) {
+		throw new Error(`Malformed project.`);
+	}
+
+	const isUnique = await checkProjectNameUniqueness(project, user);
+	if (!isUnique) {
+		throw new Error(`Project with name ${project.name} already exists.`);
+	}
+
 	const pool = await poolPromise;
 	await pool.request()
 		.input('name', sql.NVarChar, project.name)
@@ -148,9 +166,10 @@ const deleteUser = async (userId) => {
 	await pool.request()
 		.input('id', sql.Int, userId)
 		.query(`
-			DELETE FROM [dbo].[AccountLink] WHERE account_id = @id;
-			DELETE FROM [dbo].[Collaborator] WHERE account_id = @id;
-			DELETE FROM [dbo].[Account] WHERE account_id = @id;
+			DELETE FROM [dbo].[AccountLink] WHERE [dbo].[AccountLink].account_id = @id;
+			DELETE FROM [dbo].[Project] WHERE [dbo].[Project].created_by_account_id = @id;
+			DELETE FROM [dbo].[Collaborator] WHERE [dbo].[Collaborator].account_id = @id;
+			DELETE FROM [dbo].[Account] WHERE [dbo].[Account].account_id = @id;
 		`);
 };
 
@@ -209,10 +228,10 @@ const searchProjects = async (projectName) => {
 	return result.recordset;
 };
 
-const fetchCollaborators = async (id) => {
+const fetchCollaborators = async (projectId) => {
 	const pool = await poolPromise;
 	const result = await pool.request()
-		.input('project_id', sql.Int, id)
+		.input('project_id', sql.Int, projectId)
 		.query(`
 			SELECT [dbo].[Account].account_id AS account_id,
 				[dbo].[Collaborator].is_active AS is_active,
@@ -221,6 +240,21 @@ const fetchCollaborators = async (id) => {
 			FROM [dbo].[Collaborator]
 			INNER JOIN [dbo].[Account] ON [dbo].[Account].account_id = [dbo].[Collaborator].account_id
 			WHERE [dbo].[Collaborator].project_id = @project_id AND [dbo].[Collaborator].is_pending = 0;
+		`);
+
+	return result.recordset;
+}
+
+const fetchPendingCollaborators = async (user) => {
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('id', sql.Int, user.id)
+		.query(`
+			SELECT	*
+			FROM [dbo].[Collaborator]
+			INNER JOIN [dbo].[Account]
+			ON [dbo].[Account].id = [dbo].[Collaborator].account_id
+			WHERE [dbo].[Account].id = @id AND [dbo].[Collaborator].is_pending = 1;
 		`);
 
 	return result.recordset;

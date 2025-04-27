@@ -1,3 +1,5 @@
+import userInfo from './userInfo.js'
+
 const fetchProject = async () => {
 	const params = new URLSearchParams(window.location.search);
 	const projectId = params.get('id');
@@ -13,7 +15,7 @@ const fetchProject = async () => {
 const populateCollaborators = (project) => {
 	let list = document.getElementById('collaboratorList');
 
-	if (project.collaborators.length === 0) {
+	if (!project.collaborators || project.collaborators.length === 0) {
 		let paragraphMessage = document.createElement("p");
 		paragraphMessage.innerText = "No collaborators.";
 		list.appendChild(paragraphMessage);
@@ -26,6 +28,19 @@ const populateCollaborators = (project) => {
 		li.innerText = collaborator.name;
 		list.appendChild(li);
 	}
+}
+
+const addCollaboratorButton = async (project) => {
+	const info = await userInfo.fetchFromApi();
+	console.log(info);
+	if (project.created_by_account_id !== info.id) {
+		return;
+	}
+
+	let collaboratorSection = document.getElementById("collaborators");
+	let button = document.createElement("button");
+	button.innerText = "Add Collaborator";
+	collaboratorSection.appendChild(button);
 }
 
 const populateElements = async () => {
@@ -41,6 +56,7 @@ const populateElements = async () => {
 	document.getElementById('projectDescription').innerHTML = project.description;
 
 	populateCollaborators(project);
+	addCollaboratorButton(project);
 
 	console.log(project);
 }

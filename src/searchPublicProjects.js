@@ -21,7 +21,6 @@ document.getElementById("searchForm").addEventListener("submit", async function(
 	event.preventDefault();
 
 	const query = document.getElementById("searchInput").value;
-	console.log("HELLO WORLD");
 	fetchProjects(query);
 });
 
