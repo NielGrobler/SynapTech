@@ -18,45 +18,39 @@
 </head>
 
 <body>
-	<section id="navigation" class="flex-row fill-width secondary center-content accent-underline">
-		<nav class="fill-width">
-			<ul class="no-list-style flex-row gap-large center-content">
-				<li><button class="nav-item flex-row gap-small center-content-v"><i class='bx bxs-dashboard'></i>
-						Dashboard</button></li>
-				<li><button class="nav-item flex-row gap-small center-content-v"><i
-							class='bx bx-book-content'></i>Create Project</button></li>
-			</ul>
-		</nav>
-	</section>
-
+	<nav class="inset secondary fill accent-underline">
+		<button class="nav-item flex-row center-content-v gap-small"
+			onclick="window.location.href=history.back()">
+			<i class='bx bx-chevron-left'></i>
+			Back
+		</button>
+	</nav>
 
 	<main class="inset flex-col gap-medium">
-		<section id="projectCard" class="border-solid-thin inset">
-			<section class="split gap" id="infoAndName">
-				<h1 id="projectName" class="">Placeholder</h1>
-				<section class="flex-row space-between gap-medium ">
-					<p>Status: <span id="projectIsPublic">Private</span></p>
-					<p>Created by: <span id="projectCreatedBy">Ellie</span></p>
-					<p>Created on: <span id="projectCreatedAt">2024/04/23</span></p>
+		<section class="border-solid-thin shadow">
+			<section id="projectCard" class="inset">
+				<section class="split gap" id="infoAndName">
+					<h1 id="projectName" class="large-text">Placeholder</h1>
+					<section
+						class="flex-row very-round secondary space-between padding-vert-xsmall small-text gap-medium">
+						<p>Status: <span id="projectIsPublic">Private</span></p>
+						<p>Created by: <span id="projectCreatedBy">Ellie</span></p>
+						<p>Created on: <span id="projectCreatedAt">2024/04/23</span></p>
+					</section>
 				</section>
+				<h1 class="accent-underline">Description</h1>
+				<p id="projectDescription">Lorem ipsum dolar sit amet.</p>
 			</section>
-			<p id="projectDescription">Lorem ipsum dolar sit amet.</p>
-		</section>
 
-		<section id="collaborators" class="border-solid-thin inset">
-			<h1>Collaborators</h1>
-			<ul id="collaboratorList">
-			</ul>
+			<section id="collaborators" class="inset">
+				<h1 class="accent-underline">Collaborators</h1>
+				<ul id="collaboratorList">
+				</ul>
+			</section>
 		</section>
-		<section class="border-solid-thin inset">
-			<button id="reviewProject" class="primary-button"
-				onclick="window.location.href='/reviewProject.html';">Review Project</button>
-
-		</section>
-
 	</main>
 
-	<footer>
+	<footer class="inset">
 		<p>&copy; 2025 Unilink. All rights reserved.</p>
 	</footer>
 
