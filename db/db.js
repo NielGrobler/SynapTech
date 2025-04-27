@@ -228,10 +228,10 @@ const searchProjects = async (projectName) => {
 	return result.recordset;
 };
 
-const fetchCollaborators = async (id) => {
+const fetchCollaborators = async (projectId) => {
 	const pool = await poolPromise;
 	const result = await pool.request()
-		.input('project_id', sql.Int, id)
+		.input('project_id', sql.Int, projectId)
 		.query(`
 			SELECT [dbo].[Account].account_id AS account_id,
 				[dbo].[Collaborator].is_active AS is_active,
@@ -240,6 +240,21 @@ const fetchCollaborators = async (id) => {
 			FROM [dbo].[Collaborator]
 			INNER JOIN [dbo].[Account] ON [dbo].[Account].account_id = [dbo].[Collaborator].account_id
 			WHERE [dbo].[Collaborator].project_id = @project_id AND [dbo].[Collaborator].is_pending = 0;
+		`);
+
+	return result.recordset;
+}
+
+const fetchPendingCollaborators = async (user) => {
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('id', sql.Int, user.id)
+		.query(`
+			SELECT	*
+			FROM [dbo].[Collaborator]
+			INNER JOIN [dbo].[Account]
+			ON [dbo].[Account].id = [dbo].[Collaborator].account_id
+			WHERE [dbo].[Account].id = @id AND [dbo].[Collaborator].is_pending = 1;
 		`);
 
 	return result.recordset;

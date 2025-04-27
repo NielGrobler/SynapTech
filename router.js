@@ -394,6 +394,35 @@ router.post('suspend/user', async (req, res) => {
 
 });
 
+//Reviews Page
+app.post('/submit/review', async (req, res) => {
+	if (!req.isAuthenticated()) {
+		return res.status(401).json({ error: 'Not authenticated' });
+	}
+
+	const { projectId, rating, comment } = req.body;
+
+	if (!projectId || !rating || !comment) {
+		return res.status(400).json({ error: 'Missing required fields' });
+	}
+
+	try {
+		await db.reviews.create({
+			projectId,
+			reviewerId: req.user.id,
+			reviewerName: req.user.name,
+			rating: Number(rating),
+			comment,
+			dateSubmitted: new Date()
+		});
+
+		res.status(201).json({ message: 'Review submitted successfully!' });
+	} catch (err) {
+		console.error('Error submitting review:', err);
+		res.status(500).json({ error: 'Failed to submit review' });
+	}
+});
+
 /* PUT Request Routing */
 router.put('user/details', async (req, res) => {
 	const { name, bio } = req.body;
