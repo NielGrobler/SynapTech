@@ -332,6 +332,18 @@ app.post('/submit/review', async (req, res) => {
 	}
 });
 
+//Admin Gets All Users
+app.get('/api/admin/getAllUsers', async (req, res)=>{
+	if (!req.isAuthenticated()){
+		res.status(401).json({error: 'Not authenticated'});
+		return;
+	}
+
+	let users = await db.getAllUsersForAdmin(req.user);
+	
+	res.json(users);
+})
+
 
 /* Create and start HTTPS server */
 
