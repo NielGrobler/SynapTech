@@ -255,6 +255,18 @@ const fetchProjectById = async (id) => {
 	return project;
 }
 
+async function getAllUsersForAdmin(user) {
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('uuid', sql.Int, user.id)
+		.batch(`
+            DECLARE @isAd BIT;
+            SELECT @isAd = is_admin from dbo.Account where account_id = @uuid;
+			IF @isAd = 1  Select * from dbo.Account;
+		`);
+    return result.recordset;
+}
+
 export default {
 	getUserByGUID,
 	createUser,
@@ -267,6 +279,7 @@ export default {
 	addCollaborator,
 	acceptCollaborator,
 	searchProjects,
-	fetchProjectById
+	fetchProjectById,
+	getAllUsersForAdmin
 };
 
