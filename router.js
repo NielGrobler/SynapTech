@@ -198,7 +198,7 @@ router.get('/signup', (req, res) => {
 
 // Logout
 router.get('/logout', (req, res, next) => {
-	req.logout(function(err) {
+	req.logout(function (err) {
 		if (err) { return next(err); }
 
 		req.session.destroy((err) => {
@@ -395,7 +395,7 @@ router.post('suspend/user', async (req, res) => {
 });
 
 //Reviews Page
-app.post('/submit/review', async (req, res) => {
+router.post('/submit/review', async (req, res) => {
 	if (!req.isAuthenticated()) {
 		return res.status(401).json({ error: 'Not authenticated' });
 	}
