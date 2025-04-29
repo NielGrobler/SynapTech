@@ -33,6 +33,8 @@ router.use(
 	})
 );
 
+router.use(express.json());
+
 // Initialize passport.js and link to express.js
 router.use(passport.initialize());
 router.use(passport.session());
@@ -128,6 +130,13 @@ passport.deserializeUser(async (id, done) => {
 /* GET Request Routing */
 router.get('/forbidden', (req, res) => {
 	res.status(403).sendFile(path.join(__dirname, "public", "forbidden.html"));
+});
+
+router.get('/collaboration', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+	res.sendFile(path.join(__dirname, "public", "viewCollaborationRequests.html"));
 });
 
 /* Authorization routes */
@@ -325,6 +334,16 @@ router.get('/api/user/project', async (req, res) => {
 	res.json(projects);
 });
 
+router.get('/api/collaborator', async (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+
+	console.log("foobar");
+	let pending_collaborators = await db.fetchPendingCollaborators(req.user);
+	res.json(pending_collaborators);
+});
+
 /* POST Request Routing */
 router.post('/create/project', async (req, res) => {
 	if (!authenticateRequest(req)) {
@@ -349,6 +368,26 @@ router.post('/create/project', async (req, res) => {
 	}
 });
 
+router.post('/api/collaboration/request', async (req, res) => {
+	console.log("collaboration request");
+	if (!authenticateRequest(req)) {
+		return res.status(403).json({ error: 'Not authenticated' });
+	}
+
+	console.log(req.body);
+	const { projectId } = req.body;
+	if (!projectId || typeof projectId !== 'number') {
+		return res.status(400).send("Bad Request");
+	}
+
+	try {
+		await db.insertPendingCollaborator(req.user.id, projectId);
+		res.send('Successfully sent project');
+	} catch (err) {
+		res.status(400).json({ error: 'Failed' });
+	}
+});
+
 router.post('/remove/user', async (req, res) => {
 	if (!authenticateRequest(req)) {
 		res.status(403).json({ error: 'Not authenticated' });
@@ -359,7 +398,7 @@ router.post('/remove/user', async (req, res) => {
 		let reqToDeleteId = req.user.id;
 		console.log(req.user.id);
 		if (!req.user.is_admin && req.user.id !== reqToDeleteId) {
-			res.status(400).send("Fwuhhh Error deleting account.");
+			res.status(400).send("Error deleting account.");
 			return;
 		}
 
@@ -367,14 +406,12 @@ router.post('/remove/user', async (req, res) => {
 			await db.deleteUser(reqToDeleteId);
 			res.send("Account deletion succesful");
 		} catch (err) {
-			console.log('zxczcxzqwdiuqhdihwq');
 			console.log(err);
 			res.status(400).json({ error: err });
 		}
 		return;
 	}
 
-	console.log(req.body);
 	const { reqToDeleteId } = req.body;
 
 	if (!req.user.is_admin && req.user.id !== reqToDeleteId) {
@@ -395,7 +432,7 @@ router.post('suspend/user', async (req, res) => {
 });
 
 //Reviews Page
-app.post('/submit/review', async (req, res) => {
+router.post('/submit/review', async (req, res) => {
 	if (!req.isAuthenticated()) {
 		return res.status(401).json({ error: 'Not authenticated' });
 	}

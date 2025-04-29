@@ -1,5 +1,5 @@
-const addProjectToPage = (elementId, project) => {
-	let projectCardList = document.getElementById(elementId);
+
+const projectToElement = (project) => {
 	const li = document.createElement("li");
 	const title = document.createElement("strong");
 	title.textContent = project.name;
@@ -15,26 +15,40 @@ const addProjectToPage = (elementId, project) => {
 		window.location.href = `/view/project?id=${id}`;
 	});
 
-	projectCardList.appendChild(li);
+	return li;
 }
 
 const addProjectsToPage = (elementId, projects) => {
-	if (projects.length === 0) {
-		document.getElementById(elementId).innerHTML = "<p>No projects to display.</p>";
-		return;
-	}
-
-	for (let project of projects) {
-		addProjectToPage(elementId, project);
-	}
+	assignListToElement(
+		elementId,
+		projects,
+		projectToElement
+	);
 }
 
 const clearProjects = (elementId) => {
 	document.getElementById(elementId).innerHTML = "";
 }
 
+/*
+ * A function to add a list of elements specified by rawElements formatted by elementHTMLFormatter to the element elementId.
+ */
+const assignListToElement = (elementId, rawElements, elementHTMLFormatter, noDisplayText = "Nothing to display.") => {
+	if (rawElements.length === 0) {
+		document.getElementById(elementId).innerHTML = `<p>${noDisplayText}</p>`;
+		return;
+	}
+
+	let containerElement = document.getElementById(elementId);
+
+	for (const rawElement of rawElements) {
+		containerElement.appendChild(elementHTMLFormatter(rawElement));
+	}
+}
+
 export default {
 	addProjectsToPage,
-	clearProjects
+	clearProjects,
+	assignListToElement
 };
 

@@ -252,12 +252,23 @@ const fetchPendingCollaborators = async (user) => {
 		.query(`
 			SELECT	*
 			FROM [dbo].[Collaborator]
-			INNER JOIN [dbo].[Account]
-			ON [dbo].[Account].id = [dbo].[Collaborator].account_id
-			WHERE [dbo].[Account].id = @id AND [dbo].[Collaborator].is_pending = 1;
+			INNER JOIN [dbo].[Project]
+			ON [dbo].[Project].project_id = [dbo].[Collaborator].project_id
+			WHERE [dbo].[Project].created_by_account_id = @id AND [dbo].[Collaborator].is_pending = 1;
 		`);
 
 	return result.recordset;
+}
+
+const insertPendingCollaborator = async (userId, projectId) => {
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('account_id', sql.Int, userId)
+		.input('project_id', sql.Int, projectId)
+		.query(`
+			INSERT INTO Collaborator (account_id, project_id, role, is_active, is_pending)
+			VALUES(@account_id, @project_id, 'Researcher', 1, 1);
+		`);
 }
 
 const fetchProjectById = async (id) => {
@@ -301,6 +312,8 @@ export default {
 	addCollaborator,
 	acceptCollaborator,
 	searchProjects,
-	fetchProjectById
+	fetchProjectById,
+	fetchPendingCollaborators,
+	insertPendingCollaborator
 };
 
