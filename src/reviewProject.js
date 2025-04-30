@@ -1,43 +1,40 @@
-function addReviewToPage(review) {
-    let reviewList = document.getElementById("reviewList");
-
-    const li = document.createElement("li");
-
-    const rating = document.createElement("p");
-    const stars = "★".repeat(review.rating) + "☆".repeat(5 - review.rating);
-    rating.textContent = `Rating: ${stars}`;
-
-    const comment = document.createElement("p");
-    comment.textContent = review.comment;
-
-    const date = document.createElement("time");
-    const submittedDate = new Date(review.dateSubmitted);
-    date.dateTime = submittedDate.toISOString();
-    date.textContent = `Submitted on: ${submittedDate.toLocaleDateString()}`;
-
-    li.appendChild(reviewer);
-    li.appendChild(rating);
-    li.appendChild(comment);
-    li.appendChild(date);
-
-    li.classList.add("highlight-hover");
-
-    reviewList.appendChild(li);
-}
-
-function addReviewsToPage(reviews) {
-    for (let review of reviews) {
-        addReviewToPage(review);
+document.addEventListener('DOMContentLoaded', function () {
+    function getProjectId() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('id') || '12345';
     }
-}
 
-(async () => {
-    try {
-        const res = await fetch('/api/project/reviews');
-        const reviews = await res.json();
-        addReviewsToPage(reviews);
-        console.log(reviews);
-    } catch (err) {
-        console.error('Error loading reviews:', err);
-    }
-})();
+    document.getElementById('submitReviewBtn').addEventListener('click', function () {
+        const review = {
+            projectId: getProjectId(),
+            rating: document.getElementById('rating').value,
+            comment: document.getElementById('comment').value
+        };
+
+        if (!review.rating || !review.comment) {
+            alert('Please fill all required fields');
+            return;
+        }
+
+        fetch('/api/review', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(review),
+        })
+            .then(res => res.json())
+            .then(data => {
+                console.log('Server response:', data);
+                if (data.message === 'Review submitted!') {
+                    window.location.href = data.redirect || '/successfulReviewPost';
+                } else if (data.error) {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert('Failed to submit review. Please try again.');
+            });
+    });
+});

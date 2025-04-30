@@ -289,6 +289,29 @@ const fetchProjectById = async (id) => {
 	return project;
 }
 
+const createReview = async (reviewData) => {
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('project_id', sql.Int, reviewData.project_id)
+		.input('reviewer_id', sql.Int, reviewData.reviewer_id)
+		.input('reviewerName', sql.NVarChar, reviewData.reviewerName)
+		.input('rating', sql.Int, reviewData.rating)
+		.input('comment', sql.NVarChar, reviewData.comment)
+		.input('dateSubmitted', sql.DateTime, reviewData.dateSubmitted)
+		.query(`
+            INSERT INTO Review (project_id, reviewer_id, reviewerName, rating, comment, dateSubmitted)
+            OUTPUT INSERTED.review_id
+            VALUES (@project_id, @reviewer_id, @reviewerName, @rating, @comment, @dateSubmitted);
+        `);
+
+	const reviewId = result.recordset[0].review_id;
+
+	return {
+		review_id: reviewId,
+		...reviewData
+	};
+};
+
 export default {
 	getUserByGUID,
 	createUser,
@@ -301,6 +324,7 @@ export default {
 	addCollaborator,
 	acceptCollaborator,
 	searchProjects,
-	fetchProjectById
+	fetchProjectById,
+	createReview
 };
 

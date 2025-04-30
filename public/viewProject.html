@@ -48,11 +48,11 @@
 				</ul>
 			</section>
 		</section>
-		<section style="display: flex; gap: 15px;">
-			<button type="button" class="primary-button" onclick="window.location.href='/requestCollaboration'">
-				Request Collaboration</button>
-			<button type="button" class="primary-button" onclick="window.location.href='/reviewProject'">
-				Review Project</button>
+		<section>
+			<button type="button" class="primary-button" onclick="reviewProject()">
+				Review Project
+			</button>
+
 		</section>
 	</main>
 	<footer class="inset">
@@ -60,8 +60,12 @@
 	</footer>
 
 	<script type="module" src="/viewProject.js"></script>
-	<script type="module" src="/reviewProject.js"></script>
-	<script type="module" src="/requestCollaboration.js"></script>
+	<script>
+		function reviewProject() {
+			const projectId = new URLSearchParams(window.location.search).get('id');
+			window.location.href = `/reviewProject?id=${projectId}`;
+		}
+	</script>
 
 </body>
 

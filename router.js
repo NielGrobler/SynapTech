@@ -124,7 +124,7 @@ passport.deserializeUser(async (id, done) => {
 });
 
 /* Routes */
-
+router.use(express.json());
 /* GET Request Routing */
 router.get('/forbidden', (req, res) => {
 	res.status(403).sendFile(path.join(__dirname, "public", "forbidden.html"));
@@ -325,6 +325,13 @@ router.get('/api/user/project', async (req, res) => {
 	res.json(projects);
 });
 
+router.get('/reviewProject', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+	res.sendFile(path.join(__dirname, "public", "reviewProject.html"));
+});
+
 /* POST Request Routing */
 router.post('/create/project', async (req, res) => {
 	if (!authenticateRequest(req)) {
@@ -395,31 +402,36 @@ router.post('suspend/user', async (req, res) => {
 });
 
 //Reviews Page
-router.post('/submit/review', async (req, res) => {
-	if (!req.isAuthenticated()) {
-		return res.status(401).json({ error: 'Not authenticated' });
+router.post('/api/review', async (req, res) => {
+	if (!authenticateRequest(req)) {
+		res.status(401).json({ error: 'Not authenticated' });
+		return;
+	}
+
+	if (!req.body || !req.body.projectId || !req.body.rating || !req.body.comment) {
+		res.status(400).json({ error: "Missing required fields" });
+		return;
 	}
 
 	const { projectId, rating, comment } = req.body;
 
-	if (!projectId || !rating || !comment) {
-		return res.status(400).json({ error: 'Missing required fields' });
-	}
-
 	try {
-		await db.reviews.create({
-			projectId,
-			reviewerId: req.user.id,
+		const newReview = await db.createReview({
+			project_id: projectId,
+			reviewer_id: req.user.id,
 			reviewerName: req.user.name,
 			rating: Number(rating),
 			comment,
 			dateSubmitted: new Date()
 		});
 
-		res.status(201).json({ message: 'Review submitted successfully!' });
+		res.status(201).json({
+			message: 'Review submitted!',
+			redirect: '/successfulReviewPost'
+		});
 	} catch (err) {
-		console.error('Error submitting review:', err);
-		res.status(500).json({ error: 'Failed to submit review' });
+		console.error('Error creating review:', err);
+		res.status(500).json({ error: 'Failed to submit review', details: err.message });
 	}
 });
 
