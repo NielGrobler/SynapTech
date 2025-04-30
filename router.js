@@ -126,7 +126,7 @@ passport.deserializeUser(async (id, done) => {
 });
 
 /* Routes */
-
+router.use(express.json());
 /* GET Request Routing */
 router.get('/forbidden', (req, res) => {
 	res.status(403).sendFile(path.join(__dirname, "public", "forbidden.html"));
@@ -207,7 +207,7 @@ router.get('/signup', (req, res) => {
 
 // Logout
 router.get('/logout', (req, res, next) => {
-	req.logout(function(err) {
+	req.logout(function (err) {
 		if (err) { return next(err); }
 
 		req.session.destroy((err) => {
@@ -437,27 +437,37 @@ router.post('/submit/review', async (req, res) => {
 		return res.status(401).json({ error: 'Not authenticated' });
 	}
 
+	if (!req.body || !req.body.projectId || !req.body.rating || !req.body.comment) {
+		res.status(400).json({ error: "Missing required fields" });
+		return;
+	}
+
 	const { projectId, rating, comment } = req.body;
 
-	if (!projectId || !rating || !comment) {
-		return res.status(400).json({ error: 'Missing required fields' });
-	}
-
 	try {
-		await db.reviews.create({
-			projectId,
-			reviewerId: req.user.id,
-			reviewerName: req.user.name,
-			rating: Number(rating),
-			comment,
-			dateSubmitted: new Date()
+		const newReview = await db.createReview({
+			project_id: parseInt(projectId),
+			reviewer_id: req.user.id,
+			rating: parseInt(rating),
+			comment
+			// No date needed - the database will set it automatically
 		});
 
-		res.status(201).json({ message: 'Review submitted successfully!' });
+		res.status(201).json({
+			message: 'Review submitted!',
+			redirect: '/successfulReviewPost'
+		});
 	} catch (err) {
-		console.error('Error submitting review:', err);
-		res.status(500).json({ error: 'Failed to submit review' });
+		console.error('Error creating review:', err);
+		res.status(500).json({ error: 'Failed to submit review', details: err.message });
 	}
+});
+
+router.get('/successfulReviewPost', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+	res.sendFile(path.join(__dirname, "public", "successfulReviewPost.html"));
 });
 
 /* PUT Request Routing */
