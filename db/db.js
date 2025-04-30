@@ -294,20 +294,20 @@ const createReview = async (reviewData) => {
 	const result = await pool.request()
 		.input('project_id', sql.Int, reviewData.project_id)
 		.input('reviewer_id', sql.Int, reviewData.reviewer_id)
-		.input('reviewerName', sql.NVarChar, reviewData.reviewerName)
 		.input('rating', sql.Int, reviewData.rating)
 		.input('comment', sql.NVarChar, reviewData.comment)
-		.input('dateSubmitted', sql.DateTime, reviewData.dateSubmitted)
 		.query(`
-            INSERT INTO Review (project_id, reviewer_id, reviewerName, rating, comment, dateSubmitted)
-            OUTPUT INSERTED.review_id
-            VALUES (@project_id, @reviewer_id, @reviewerName, @rating, @comment, @dateSubmitted);
+            INSERT INTO Review (project_id, reviewer_id, rating, comment)
+            OUTPUT INSERTED.review_id, INSERTED.created_at
+            VALUES (@project_id, @reviewer_id, @rating, @comment);
         `);
 
 	const reviewId = result.recordset[0].review_id;
+	const createdAt = result.recordset[0].created_at;
 
 	return {
 		review_id: reviewId,
+		created_at: createdAt,
 		...reviewData
 	};
 };

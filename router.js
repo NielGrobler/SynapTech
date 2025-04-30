@@ -417,12 +417,11 @@ router.post('/api/review', async (req, res) => {
 
 	try {
 		const newReview = await db.createReview({
-			project_id: projectId,
+			project_id: parseInt(projectId),
 			reviewer_id: req.user.id,
-			reviewerName: req.user.name,
-			rating: Number(rating),
-			comment,
-			dateSubmitted: new Date()
+			rating: parseInt(rating),
+			comment
+			// No date needed - the database will set it automatically
 		});
 
 		res.status(201).json({
@@ -433,6 +432,13 @@ router.post('/api/review', async (req, res) => {
 		console.error('Error creating review:', err);
 		res.status(500).json({ error: 'Failed to submit review', details: err.message });
 	}
+});
+
+router.get('/successfulReviewPost', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+	res.sendFile(path.join(__dirname, "public", "successfulReviewPost.html"));
 });
 
 /* PUT Request Routing */
