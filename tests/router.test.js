@@ -1,9 +1,9 @@
-import express from 'express';
+/*import express from 'express';
 import request from 'supertest';
 import passport from 'passport';
-import db from './db/db.js';
-import router from './router.js';
-import { describe, it, expect, vi } from 'vitest';
+import db from '../db/db.js';
+import router from '../router.js';
+import { describe, it, expect, vi } from 'vitest';*/
 
 // Mock the default export of db.js correctly
 vi.mock('./db/db.js', () => ({

@@ -1,4 +1,4 @@
-import fetchUsername from './fetchUsername.js';  // Ensure correct import
+import fetchUsername from '../src/fetchUsername.js';  // Ensure correct import
 
 // Mock DOM environment for testing
 beforeAll(() => {
