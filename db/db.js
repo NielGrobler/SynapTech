@@ -323,6 +323,20 @@ const createReview = async (reviewData) => {
 	};
 };
 
+async function searchUsers(user) {
+	const lowerName = userName.toLowerCase();
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('userName', sql.NVarChar, `%${lowerName}%`)
+		.batch(`
+            SELECT TOP 10 *
+			FROM [dbo].[Account]
+			WHERE LOWER([dbo].[Account].name) LIKE @userName 
+			ORDER BY LEN([dbo].[Account].name);
+		`);
+    return result.recordset;
+}
+
 export default {
 	getUserByGUID,
 	createUser,
@@ -337,6 +351,7 @@ export default {
 	searchProjects,
 	fetchProjectById,
 	fetchPendingCollaborators,
-	insertPendingCollaborator
+	insertPendingCollaborator,
+	searchUsers
 };
 

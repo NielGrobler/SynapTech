@@ -470,6 +470,32 @@ router.get('/successfulReviewPost', (req, res) => {
 	res.sendFile(path.join(__dirname, "public", "successfulReviewPost.html"));
 });
 
+//Move to search for users page
+router.get('/view/users', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+
+	res.sendFile(path.join(__dirname, "public", "searchUsers.html"));
+});
+
+//Searching for users 
+router.get('/api/search/user', async (req, res) => {
+	if (!authenticateRequest(req)) {
+		res.status(401).json({ error: 'Not authenticated' });
+		return;
+	}
+
+	const { userName } = req.query;
+	if (!userName || typeof userName !== "string") {
+		res.status(400).json({ error: "Bad Request." });
+		return;
+	}
+
+	res.json(await db.searchUsers(userName));
+});
+
+
 /* PUT Request Routing */
 router.put('user/details', async (req, res) => {
 	const { name, bio } = req.body;

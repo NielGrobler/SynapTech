@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Unilink | Search Users</title>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="icon" href="logo.png" type="image/png">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+		rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+	<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+
+	<link rel="stylesheet" href="/styles.css" />
+</head>
+
+<body>
+	<nav class="inset secondary fill accent-underline">
+		<button class="nav-item flex-row center-content-v gap-small"
+			onclick="window.location.href=history.back()">
+			<i class='bx bx-chevron-left'></i>
+			Back
+		</button>
+	</nav>
+
+
+
+	<main class="inset flex-col gap-medium">
+		<section class="border-solid-thin shadow">
+			<h1 class="accent-underline">Search for users</h1>
+			<form id="searchForm" method="GET">
+				<input id="searchInput" type="text" name="usersName"
+					placeholder="Search for users...">
+				<button type="submit">Submit</button>
+			</form>
+
+			<ul id="users">
+			</ul>
+		</section>
+	</main>
+
+	<script type="module" src="/searchUsers.js"></script>
+
+	<footer class="inset">
+		<p>&copy; 2025 Unilink. All rights reserved.</p>
+	</footer>
+
+
+
+</body>
+
+</html>
