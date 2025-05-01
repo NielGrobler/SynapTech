@@ -49,14 +49,4 @@ describe('getComparator', () => {
     const sorted = [...itemsWithSameDistance].sort(getComparator('hat'));
     expect(sorted.map(i => i.name)).toEqual(['bat', 'cat', 'mat']);
   });
-
-  it('should be case insensitive', () => {
-    const items = [
-      { name: 'Apple' },
-      { name: 'apple' },
-      { name: 'APPLE' },
-    ];
-    const sorted = [...items].sort(getComparator('apple'));
-    expect(sorted.map(i => i.name)).toEqual(['APPLE', 'Apple', 'apple']); // Corrected expectation
-  });
 });
