@@ -9,8 +9,11 @@ import https from 'https';
 import dotenv from 'dotenv';
 import url from 'url';
 
+import multer from 'multer';
+
 /* Database imports */
 import db from './db/db.js';
+import fileStorage from './db/azureBlobStorage.js';
 
 // Configure .env
 dotenv.config();
@@ -53,6 +56,14 @@ router.use((req, res, next) => {
 	}
 
 	next();
+});
+
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+// Middleware for uploading
+const upload = multer({ 
+	storage: multer.memoryStorage(),
+	limits: { fileSize: MAX_FILE_SIZE }
 });
 
 /* passport.js Strategies */
@@ -129,6 +140,10 @@ passport.deserializeUser(async (id, done) => {
 
 /* GET Request Routing */
 router.get('/forbidden', (req, res) => {
+	res.status(403).sendFile(path.join(__dirname, "public", "forbidden.html"));
+});
+
+router.post('/forbidden', (req, res) => {
 	res.status(403).sendFile(path.join(__dirname, "public", "forbidden.html"));
 });
 
@@ -272,6 +287,85 @@ router.get('/api/user/info', (req, res) => {
 	}
 });
 
+// Upload, this not complete
+router.post('/api/message/uploadFile', upload.single('file'), async (req, res) => {
+	try {
+		const userId = req.user?.id || 1;
+		const file = req.file;
+
+		if (!file) {
+			return res.status(400).json({ error: 'No file uploaded' });
+		}
+
+		const blobName = await fileStorage.upload(file);
+		const fileUrl = `https://${process.env.AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${process.env.AZURE_CONTAINER_NAME}/${blobName}`;
+
+		res.status(200).json({ message: 'Uploaded', blobName });
+	} catch (err) {
+		console.error(err);
+		res.status(500).json({ error: 'Upload failed' });
+	}
+});
+
+// Download, this is not complete
+router.get('/download/:fileId', async (req, res) => {
+	try {
+		// should use SaS URL
+	} catch (err) {
+		console.error(err);
+		res.status(500).json({ error: 'Download failed' });
+	}
+});
+
+router.post('/api/message/send', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+
+	try {
+
+		const { messageBody, receivedRecipientId, attachment } = req.body;
+		if (!messageBody || typeof messageBody !== 'string') {
+			return res.status(400).json({ error: 'Invalid message body' });
+		}
+
+		const recipientId = Number(receivedRecipientId);
+		if (!recipientId || isNaN(recipientId)) {
+			return res.status(400).json({ error: 'Invalid recipient ID' });
+		}
+
+		const senderId = req.user.id;
+
+		await db.storeMessage(senderId, recipientId, messageBody);
+
+		return res.status(200).json({ message: 'Message sent successfully' });
+	} catch (err) {
+		return res.status(500).json({ error: 'Internal Error' });
+	}
+}
+
+router.get('/api/message/:secondPersonId', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+
+	try {
+		const sndPersonId = Number(req.params.sndPersonId);
+		if (!sndPersonId || isNaN(sndPersonId)) {
+			return res.status(400).json({ error: 'Invalid snd person ID' });
+		}
+
+		const fstPersonId = req.user.id;
+
+		const messageRecords = await db.retrieveMessages(fstPersonId, sndPersonId);
+
+		res.status(200).json(messageRecords);
+
+	} catch (err) {
+		return res.status(500).json({ error: 'Internal Error' });
+	}
+});
+
 const authenticatedForView = (project, user) => {
 	if (project.is_public || user.id === project.created_by_account_id) {
 		return true;
@@ -279,6 +373,55 @@ const authenticatedForView = (project, user) => {
 
 	return project.collaborators.some(collaborator => collaborator.account_id === user.id);
 }
+
+// For when a user accepts a request to collaborate on a project
+router.put('/api/accept/collaborator', async (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+	
+	const { userId, projectId } = req.body;
+	if (!userId || !projectId) {
+		return res.status(400).json({error: 'Bad Request.' });
+	}
+
+	const permittedToAccept = await db.permittedToAcceptCollaborator(req.user, userId, projectId);
+
+	if (!permittedToAccept) {
+		return res.status(400).json({error: 'Bad Request.' });
+	}
+	
+	try {
+		await db.acceptCollaborator(userId, projectId);
+		res.send('Successful');
+	} catch (err) {
+		res.status(400).json({error: 'Error.' });
+	}
+});
+
+router.delete('/api/reject/collaborator', async (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+	
+	const { userId, projectId } = req.body;
+	if (!userId || !projectId) {
+		return res.status(400).json({error: 'Bad Request.' });
+	}
+
+	const permittedToReject = await db.permittedToRejectCollaborator(req.user, userId, projectId);
+
+	if (!permittedToReject) {
+		return res.status(400).json({error: 'Bad Request.' });
+	}
+	
+	try {
+		await db.removeCollaborator(userId, projectId);
+		res.send('Successful');
+	} catch (err) {
+		res.status(400).json({error: 'Error.' });
+	}
+});
 
 // Route for when users want to fetch a specific project (based on id)
 router.get('/api/project', async (req, res) => {
@@ -339,7 +482,6 @@ router.get('/api/collaborator', async (req, res) => {
 		return res.redirect('/forbidden');
 	}
 
-	console.log("foobar");
 	let pending_collaborators = await db.fetchPendingCollaborators(req.user);
 	res.json(pending_collaborators);
 });
@@ -434,7 +576,7 @@ router.post('suspend/user', async (req, res) => {
 //Reviews Page
 router.post('/submit/review', async (req, res) => {
 	if (!req.isAuthenticated()) {
-		return res.status(401).json({ error: 'Not authenticated' });
+		return res.status(403).json({ error: 'Not authenticated' });
 	}
 
 	const { projectId, rating, comment } = req.body;
