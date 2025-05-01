@@ -4,7 +4,8 @@
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "test": "jest"
+    "test": "vitest"
+    
   },
   "keywords": [],
   "author": "",
@@ -12,7 +13,8 @@
   "description": "",
   "devDependencies": {
     "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0"
+    "jest-environment-jsdom": "^29.7.0",
+    "vitest": "^3.1.2"
   },
   "jest": {
     "testEnvironment": "jsdom",

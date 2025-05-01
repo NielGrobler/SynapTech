@@ -2,10 +2,10 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
 	test: {
+		environment: 'jsdom', // <-- Add this line
 		coverage: {
-			reporter: ['text', 'html'], // show in terminal + generate HTML report
+			reporter: ['text', 'html'],
 			exclude: ['**/node_modules/**', '**/tests/**', '**/public/**']
-		},
+		}
 	},
 });
-
