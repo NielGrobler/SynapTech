@@ -1,3 +1,5 @@
+import pageAdder from "./pageAdder.js";
+
 const fetchUsers = async (name) => {
 	try {
 		const res = await fetch(`/api/search/users?userName=${encodeURIComponent(name)}`);
@@ -8,7 +10,7 @@ const fetchUsers = async (name) => {
 		const users = await res.json();
 		console.log(users);
 		document.getElementById("users").innerHTML = "";
-		pageAdder.addProjectsToPage('users', users);
+		pageAdder.addUsersToPage('users', users);
 	} catch (error) {
 		console.error('Error fetching projects:', error);
 	}

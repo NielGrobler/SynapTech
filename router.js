@@ -495,6 +495,15 @@ router.get('/api/search/user', async (req, res) => {
 	res.json(await db.searchUsers(userName));
 });
 
+//Redirect to profile
+router.get('/view/profile', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+
+	res.sendFile(path.join(__dirname, "public", "viewProfile.html"));
+});
+
 
 /* PUT Request Routing */
 router.put('user/details', async (req, res) => {
