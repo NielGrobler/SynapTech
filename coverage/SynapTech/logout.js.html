@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for SynapTech/vitest.config.js</title>
+    <title>Code coverage report for SynapTech/logout.js</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../prettify.css" />
     <link rel="stylesheet" href="../base.css" />
@@ -19,7 +19,7 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../index.html">All files</a> / <a href="index.html">SynapTech</a> vitest.config.js</h1>
+        <h1><a href="../index.html">All files</a> / <a href="index.html">SynapTech</a> logout.js</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
@@ -73,8 +73,7 @@
 <a name='L8'></a><a href='#L8'>8</a>
 <a name='L9'></a><a href='#L9'>9</a>
 <a name='L10'></a><a href='#L10'>10</a>
-<a name='L11'></a><a href='#L11'>11</a>
-<a name='L12'></a><a href='#L12'>12</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L11'></a><a href='#L11'>11</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -84,19 +83,17 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >import { defineConfig } from 'vitest/config';<span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" ></span></span></span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >export default defineConfig({</span>
-<span class="cstat-no" title="statement not covered" >	test: {</span>
-<span class="cstat-no" title="statement not covered" >		environment: 'jsdom', // &lt;-- Add this line</span>
-<span class="cstat-no" title="statement not covered" >		coverage: {</span>
-<span class="cstat-no" title="statement not covered" >			reporter: ['text', 'html'],</span>
-<span class="cstat-no" title="statement not covered" >			exclude: ['**/node_modules/**', '**/tests/**', '**/public/**']</span>
-<span class="cstat-no" title="statement not covered" >		}</span>
-<span class="cstat-no" title="statement not covered" >	},</span>
-<span class="cstat-no" title="statement not covered" >});</span>
-&nbsp;</pre></td></tr></table></pre>
+<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >logout = async () =&gt; {</span></span></span>
+<span class="cstat-no" title="statement not covered" >    try {</span>
+<span class="cstat-no" title="statement not covered" >      const response = await axios("/users/logout", { method: "POST"});</span>
+<span class="cstat-no" title="statement not covered" >  </span>
+<span class="cstat-no" title="statement not covered" >      // remove token from local storage and redirect to login page </span>
+<span class="cstat-no" title="statement not covered" >      localStorage.setItem('token', null);</span>
+<span class="cstat-no" title="statement not covered" >      this.props.history.push("/login");</span>
+<span class="cstat-no" title="statement not covered" >    } catch (e) {</span>
+<span class="cstat-no" title="statement not covered" >      console.log(error);</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" >  }</span></pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
