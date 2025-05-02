@@ -311,7 +311,7 @@ router.get('/download/:fileId', async (req, res) => {
 	}
 });
 
-router.post('/api/message/send', (req, res) => {
+router.post('/api/message/send', async (req, res) => {
 	if (!authenticateRequest(req)) {
 		return res.redirect('/forbidden');
 	}
@@ -336,9 +336,9 @@ router.post('/api/message/send', (req, res) => {
 	} catch (err) {
 		return res.status(500).json({ error: 'Internal Error' });
 	}
-}
+});
 
-router.get('/api/message/:secondPersonId', (req, res) => {
+router.get('/api/message/:secondPersonId', async (req, res) => {
 	if (!authenticateRequest(req)) {
 		return res.redirect('/forbidden');
 	}
