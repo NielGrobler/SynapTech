@@ -120,7 +120,8 @@ const fetchAssociatedProjects = async (user) => {
 	const result = await pool.request()
 		.input('id', sql.Int, user.id)
 		.query(`
-			SELECT [dbo].[Project].project_id AS id,
+			SELECT DISTINCT 
+				[dbo].[Project].project_id AS id,
 				[dbo].[Project].created_by_account_id AS author_id,
 				[dbo].[Project].created_at AS created_at,
 				[dbo].[Project].name AS name,
@@ -144,7 +145,8 @@ const appendCollaborators = async (projects) => {
 			const queryResult = await request
 				.input('project_id', sql.Int, project.id)
 				.query(`
-					SELECT [dbo].[Account].account_id AS account_id,
+					SELECT DISTINCT
+						[dbo].[Account].account_id AS account_id,
 						[dbo].[Collaborator].is_active AS is_active,
 						[dbo].[Account].name AS name,
 						[dbo].[Collaborator].role AS role
@@ -204,13 +206,50 @@ const addCollaborator = async (projectId, userId, role) => {
 		`);
 };
 
-const acceptCollaborator = async (collaboratorId) => {
+const permittedToAcceptCollaborator = async (user, collabUserId, projectId) => {
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('project_id', sql.Int, projectId)
+		.input('account_id', sql.Int, user.id)
+		.query(`
+			SELECT *
+			FROM [dbo].[Project]
+			WHERE [dbo].[Project].project_id = @project_id AND [dbo].[Project].created_by_account_id = @account_id;
+		`);
+
+	return result.recordset.length > 0;
+}
+
+const permittedToRejectCollaborator = async (user, collabUserId, projectId) => {
+	if (collabUserId === user.id) {
+		return true;
+	}
+
+	const permittedAccept = await permittedToAcceptCollaborator(user, collabUserId, projectId);
+	return permittedAccept;
+}
+
+const removeCollaborator = async (userId, projectId) => {
 	const pool = await poolPromise;
 	await pool.request()
-		.input('id', sql.NVarChar, collaboratorId)
+		.input('account_id', sql.Int, userId)
+		.input('project_id', sql.Int, projectId)
 		.query(`
-			-- You may want to update this to reflect the actual behavior
-			UPDATE Collaborator SET is_pending = 0 WHERE collaborator_id = @id;
+			DELETE
+			FROM [dbo].[Collaborator]
+			WHERE account_id = @account_id AND project_id = @project_id;
+		`);
+}
+
+const acceptCollaborator = async (userId, projectId) => {
+	const pool = await poolPromise;
+	await pool.request()
+		.input('account_id', sql.Int, userId)
+		.input('project_id', sql.Int, projectId)
+		.query(`
+			UPDATE [dbo].[Collaborator]
+			SET is_pending = 0 
+			WHERE account_id = @account_id AND project_id = @project_id;
 		`);
 };
 
@@ -233,7 +272,8 @@ const fetchCollaborators = async (projectId) => {
 	const result = await pool.request()
 		.input('project_id', sql.Int, projectId)
 		.query(`
-			SELECT [dbo].[Account].account_id AS account_id,
+			SELECT DISTINCT
+				[dbo].[Account].account_id AS account_id,
 				[dbo].[Collaborator].is_active AS is_active,
 				[dbo].[Account].name AS name,
 				[dbo].[Collaborator].role AS role
@@ -250,10 +290,18 @@ const fetchPendingCollaborators = async (user) => {
 	const result = await pool.request()
 		.input('id', sql.Int, user.id)
 		.query(`
-			SELECT	*
+			SELECT DISTINCT
+				[dbo].[Collaborator].account_id AS account_id,
+				[dbo].[Collaborator].project_id AS project_id,
+				[dbo].[Account].name AS account_name,
+				[dbo].[Project].name AS project_name,
+				[dbo].[Project].is_public AS project_is_public,
+				[dbo].[Collaborator].role AS role
 			FROM [dbo].[Collaborator]
 			INNER JOIN [dbo].[Project]
 			ON [dbo].[Project].project_id = [dbo].[Collaborator].project_id
+			INNER JOIN [dbo].[Account]
+			ON [dbo].[Collaborator].account_id = [dbo].[Account].account_id
 			WHERE [dbo].[Project].created_by_account_id = @id AND [dbo].[Collaborator].is_pending = 1;
 		`);
 
@@ -276,7 +324,8 @@ const fetchProjectById = async (id) => {
 	const result = await pool.request()
 		.input('id', sql.Int, id)
 		.query(`
-			SELECT	[dbo].[Project].project_id AS id,
+			SELECT	DISTINCT
+				[dbo].[Project].project_id AS id,
 				[dbo].[Project].name AS name,
 				[dbo].[Project].created_by_account_id AS created_by_account_id,
 				[dbo].[Account].name AS author_name,
@@ -300,28 +349,37 @@ const fetchProjectById = async (id) => {
 	return project;
 }
 
-const createReview = async (reviewData) => {
+const storeMessage = async (senderId, recipientId, messageBody) => {
 	const pool = await poolPromise;
 	const result = await pool.request()
-		.input('project_id', sql.Int, reviewData.project_id)
-		.input('reviewer_id', sql.Int, reviewData.reviewer_id)
-		.input('rating', sql.Int, reviewData.rating)
-		.input('comment', sql.NVarChar, reviewData.comment)
+		.input('sender_id', sql.Int, senderId)
+		.input('receiver_id', sql.Int, recipientId)
+		.input('content', sql.NVarChar, messageBody)
 		.query(`
-            INSERT INTO Review (project_id, reviewer_id, rating, comment)
-            OUTPUT INSERTED.review_id, INSERTED.created_at
-            VALUES (@project_id, @reviewer_id, @rating, @comment);
-        `);
+			INSERT INTO [dbo].[Message] (sender_id, receiver_id, content)
+			VALUES(@sender_id, @receiver_id, @content);
+		`);
+}
 
-	const reviewId = result.recordset[0].review_id;
-	const createdAt = result.recordset[0].created_at;
+const retrieveMessages = async (fstPersonId, sndPersonId) => {
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('fst_id', sql.Int, fstPersonId)
+		.input('snd_id', sql.Int, sndPersonId)
+		.query(`
+			SELECT TOP 50 [dbo].[Message].content AS you_sent
+			FROM [dbo].[Message]
+			WHERE sender_id = @fst_id AND receiver_id = @snd_id
+			ORDER BY [dbo].[Message].created_at;
 
-	return {
-		review_id: reviewId,
-		created_at: createdAt,
-		...reviewData
-	};
-};
+			SELECT TOP 50 [dbo].[Message].content AS they_sent
+			FROM [dbo].[Message]
+			WHERE sender_id = @snd_id AND receiver_id = @fst_id
+			ORDER BY [dbo].[Message].created_at;
+		`);
+
+	return result.recordsets;
+}
 
 export default {
 	getUserByGUID,
@@ -337,6 +395,11 @@ export default {
 	searchProjects,
 	fetchProjectById,
 	fetchPendingCollaborators,
-	insertPendingCollaborator
+	insertPendingCollaborator,
+	permittedToAcceptCollaborator,
+	permittedToRejectCollaborator,
+	removeCollaborator,
+	storeMessage,
+	retrieveMessages,
 };
 

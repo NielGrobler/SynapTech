@@ -340,6 +340,10 @@ select {
 	border-radius: var(--round-radius);
 }
 
+.width-25 {
+	width: 15%;
+}
+
 /* Dropdown menu */
 .dropdown {
 	position: relative;
