@@ -1,29 +1,32 @@
-
-import pageAdder from "./pageAdder.js";
-
-const fetchProjects = async (name) => {
+export async function fetchProjects(projectName) {
 	try {
-		const res = await fetch(`/api/search/project?projectName=${encodeURIComponent(name)}`);
-		if (!res.ok) {
-			throw new Error('Failed to fetch projects');
-		}
-
-		const projects = await res.json();
-		console.log(projects);
-		document.getElementById("projects").innerHTML = "";
-		pageAdder.addProjectsToPage('projects', projects);
+	  const response = await fetch(`/api/search/project?projectName=${projectName}`);
+	  if (!response.ok) throw new Error('Network response was not ok');
+  
+	  const projects = await response.json();
+	  const container = document.getElementById("searchResultsContainer");
+	  container.innerHTML = "";
+  
+	  if (projects.length === 0) {
+		container.innerHTML = "<p>No projects found</p>";
+	  } else {
+		projects.forEach(project => {
+		  const projectElement = document.createElement("div");
+		  projectElement.innerHTML = `<h3>${project.name}</h3><p>${project.description}</p>`;
+		  container.appendChild(projectElement);
+		});
+	  }
 	} catch (error) {
-		console.error('Error fetching projects:', error);
+	  console.error("Error fetching projects:", error);
 	}
-}
-
-document.getElementById("searchForm").addEventListener("submit", async function(event) {
-	event.preventDefault();
-
-	const query = document.getElementById("searchInput").value;
-	fetchProjects(query);
-});
-
-export default {
-	fetchProjects
-}
+  }
+  
+  export function setupSearchForm() {
+	const form = document.getElementById("searchForm");
+	form.addEventListener("submit", async (e) => {
+	  e.preventDefault();
+	  const input = document.getElementById("searchInput").value;
+	  await fetchProjects(input);
+	});
+  }
+  

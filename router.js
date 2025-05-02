@@ -151,13 +151,7 @@ router.get('/auth/google/callback',
 	}
 );
 
-const authenticateRequest = (req) => {
-	if (process.env.AUTH_TESTING === true) {
-		return true;
-	}
-
-	return req.isAuthenticated();
-}
+export const authenticateRequest = (req) => req.isAuthenticated();
 
 /* Normal Routes */
 router.get('/home', (req, res) => {
