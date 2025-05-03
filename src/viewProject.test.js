@@ -1,57 +1,86 @@
-// viewProject.test.js
-import { test, expect, beforeEach, afterEach, vi } from 'vitest';
+// projectPage.test.js
+import { describe, it, vi, beforeEach, afterEach, expect } from 'vitest';
+import { initPage } from './viewProject.js';
+import userInfo from './userInfo.js';
 
-// Mock project data
-const mockProject = {
-  name: "Sample Project",
-  collaborators: [],
-};
+global.fetch = vi.fn();
 
-// Mock fetchFromApi (if used inside your modules)
-vi.mock('fetch', () => ({
-  fetchFromApi: vi.fn(() => ({
-    ok: true,
-    json: async () => mockProject,
-  })),
-}));
+describe('initPage', () => {
+	let container;
 
-beforeEach(() => {
-  vi.clearAllMocks();
+	beforeEach(() => {
+		// Setup DOM elements
+		container = document.createElement('div');
+		container.innerHTML = `
+			<div id="projectName"></div>
+			<div id="projectIsPublic"></div>
+			<div id="projectCreatedBy"></div>
+			<div id="projectDescription"></div>
+			<ul id="collaboratorList"></ul>
+			<div id="collaborators"></div>
+		`;
+		document.body.appendChild(container);
+
+		// Mock window.location.search
+		delete window.location;
+		window.location = {
+			search: '?id=123'
+		};
+
+		// Mock userInfo module
+		vi.spyOn(userInfo, 'fetchFromApi').mockResolvedValue({
+			id: 'user1'
+		});
+	});
+
+	afterEach(() => {
+		document.body.removeChild(container);
+		vi.restoreAllMocks();
+	});
+
+	it('renders project details and buttons', async () => {
+		const mockProject = {
+			id: '123',
+			name: 'Test Project',
+			is_public: true,
+			author_name: 'Alice',
+			description: 'A sample project.',
+			created_by_account_id: 'user1',
+			collaborators: [{ name: 'Bob', account_id: 'user2' }]
+		};
+
+		fetch.mockResolvedValueOnce({
+			ok: true,
+			json: async () => mockProject
+		});
+
+		await initPage();
+
+		expect(document.getElementById('projectName').innerHTML).toBe('Test Project');
+		expect(document.getElementById('projectIsPublic').innerHTML).toBe('Public');
+		expect(document.getElementById('projectCreatedBy').innerHTML).toBe('Alice');
+		expect(document.getElementById('projectDescription').innerHTML).toBe('A sample project.');
+	});
+
+	it('shows message if no collaborators', async () => {
+		const mockProject = {
+			id: '123',
+			name: 'No Collab Project',
+			is_public: false,
+			author_name: 'Alice',
+			description: 'No one here.',
+			created_by_account_id: 'user1',
+			collaborators: []
+		};
+
+		fetch.mockResolvedValueOnce({
+			ok: true,
+			json: async () => mockProject
+		});
+
+		await initPage();
+
+		expect(document.getElementById('collaboratorList').innerHTML).toBe('No collaborators.');
+	});
 });
 
-afterEach(() => {
-  document.body.innerHTML = '';
-});
-
-test('shows "No collaborators" if project has none', async () => {
-  document.body.innerHTML = '<ul id="collaboratorList"></ul>';
-
-  // Set up the global project object
-  global.project = mockProject;
-
-  const { initPage } = await import('./viewProject.js');
-  await initPage();
-
-  // Optional delay for DOM update (could be removed if unnecessary)
-  await new Promise(resolve => setTimeout(resolve, 10));
-
-  const collabList = document.getElementById('collaboratorList');
-  expect(collabList.innerHTML.includes('No collaborators.')).toBe(true);
-});
-
-test('populates project info and collaborators properly', async () => {
-  document.body.innerHTML = '<ul id="collaboratorList"></ul>';
-
-  // Update mock project with collaborators
-  mockProject.collaborators = [{ name: 'John Doe' }, { name: 'Jane Smith' }];
-  global.project = mockProject;
-
-  const { initPage } = await import('./viewProject.js');
-  await initPage();
-
-  const collabList = document.getElementById('collaboratorList');
-  expect(collabList.children.length).toBe(2);
-
-  const collaboratorNames = Array.from(collabList.children).map(li => li.innerText);
-  expect(collaboratorNames).toEqual(['John Doe', 'Jane Smith']);
-});

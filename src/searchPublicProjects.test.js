@@ -6,12 +6,12 @@ describe('searchPublicProjects.js', () => {
 
   beforeEach(() => {
     document.body.innerHTML = `
-      <form id="searchForm">
-        <input type="text" id="searchInput" />
-        <button type="submit">Search</button>
-      </form>
-      <div id="searchResultsContainer"></div>
-    `;
+<form id="searchForm">
+  <input type="text" id="searchInput" />
+  <button type="submit">Search</button>
+</form>
+<div id="searchResultsContainer"></div>
+`;
     container = document.getElementById("searchResultsContainer");
 
     // Call the setupSearchForm to ensure the event listener is added
@@ -30,10 +30,12 @@ describe('searchPublicProjects.js', () => {
 
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve(mockProjects)
+      json: () => {
+        return Promise.resolve(mockProjects)
+      }
     });
 
-    container.innerHTML = "<p>Old Content</p>";
+    container.innerHTML = `<p id="projects">Old Content</p>`;
 
     await searchModule.fetchProjects("test");
 

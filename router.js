@@ -13,7 +13,7 @@ import multer from 'multer';
 
 /* Database imports */
 import db from './db/db.js';
-import fileStorage from './db/azureBlobStorage.js';
+//import fileStorage from './db/azureBlobStorage.js';
 
 // Configure .env
 dotenv.config();
@@ -52,6 +52,7 @@ router.use((req, res, next) => {
 	}
 
 	if (req.url.endsWith('.js')) {
+		console.log(req.url);
 		return res.sendFile(path.join(__dirname, "src", req.url));
 	}
 
@@ -61,7 +62,7 @@ router.use((req, res, next) => {
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 // Middleware for uploading
-const upload = multer({ 
+const upload = multer({
 	storage: multer.memoryStorage(),
 	limits: { fileSize: MAX_FILE_SIZE }
 });
@@ -216,7 +217,7 @@ router.get('/signup', (req, res) => {
 
 // Logout
 router.get('/logout', (req, res, next) => {
-	req.logout(function (err) {
+	req.logout(function(err) {
 		if (err) { return next(err); }
 
 		req.session.destroy((err) => {
@@ -270,6 +271,14 @@ router.get('/invite', (req, res) => {
 	} else {
 		res.status(401).json({ error: 'Not authenticated' });
 	}
+});
+
+router.get('/message', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.status(401).json({ error: 'Not authenticated' });
+	}
+
+	res.sendFile(path.join(__dirname, "public", "messages.html"));
 });
 
 /* API Routing */
@@ -373,23 +382,23 @@ router.put('/api/accept/collaborator', async (req, res) => {
 	if (!authenticateRequest(req)) {
 		return res.redirect('/forbidden');
 	}
-	
+
 	const { userId, projectId } = req.body;
 	if (!userId || !projectId) {
-		return res.status(400).json({error: 'Bad Request.' });
+		return res.status(400).json({ error: 'Bad Request.' });
 	}
 
 	const permittedToAccept = await db.permittedToAcceptCollaborator(req.user, userId, projectId);
 
 	if (!permittedToAccept) {
-		return res.status(400).json({error: 'Bad Request.' });
+		return res.status(400).json({ error: 'Bad Request.' });
 	}
-	
+
 	try {
 		await db.acceptCollaborator(userId, projectId);
 		res.send('Successful');
 	} catch (err) {
-		res.status(400).json({error: 'Error.' });
+		res.status(400).json({ error: 'Error.' });
 	}
 });
 
@@ -397,23 +406,23 @@ router.delete('/api/reject/collaborator', async (req, res) => {
 	if (!authenticateRequest(req)) {
 		return res.redirect('/forbidden');
 	}
-	
+
 	const { userId, projectId } = req.body;
 	if (!userId || !projectId) {
-		return res.status(400).json({error: 'Bad Request.' });
+		return res.status(400).json({ error: 'Bad Request.' });
 	}
 
 	const permittedToReject = await db.permittedToRejectCollaborator(req.user, userId, projectId);
 
 	if (!permittedToReject) {
-		return res.status(400).json({error: 'Bad Request.' });
+		return res.status(400).json({ error: 'Bad Request.' });
 	}
-	
+
 	try {
 		await db.removeCollaborator(userId, projectId);
 		res.send('Successful');
 	} catch (err) {
-		res.status(400).json({error: 'Error.' });
+		res.status(400).json({ error: 'Error.' });
 	}
 });
 

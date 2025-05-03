@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="stylesheet" href="/styles.css">
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="icon" href="logo.png" type="image/png">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+			rel="stylesheet">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+		<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+
+
+		<title>Unilink | Messages</title>
+		<script src="https://accounts.google.com/gsi/client" async defer></script>
+
+	</head>
+
+<body>
+	<main class="direct-messages">
+		<!-- Conversations Sidebar -->
+		<aside class="conversations" aria-label="Conversation list">
+			<h2>Messages</h2>
+			<nav>
+				<ul>
+					<li><button class="conversation active">Jane Doe</button></li>
+					<li><button class="conversation">John Smith</button></li>
+					<li><button class="conversation">Alex Johnson</button></li>
+					<!-- Add more contacts here -->
+				</ul>
+			</nav>
+		</aside>
+
+		<!-- Chat Area -->
+		<section class="chat" aria-label="Active conversation">
+			<header class="chat-header">
+				<h2 class="chat-partner-name">Jane Doe</h2>
+				<span class="chat-status online">Online</span>
+			</header>
+
+			<div class="chat-history" role="log">
+				<article class="message received">
+					<p>Hello! How are you?</p>
+					<time datetime="2025-05-03T14:30">2:30 PM</time>
+				</article>
+
+				<article class="message sent">
+					<p>Hey! I’m doing great, thanks. You?</p>
+					<time datetime="2025-05-03T14:32">2:32 PM</time>
+				</article>
+
+				<!-- More messages dynamically rendered here -->
+			</div>
+
+			<form class="chat-input-area" action="#" method="POST">
+				<label for="message" class="visually-hidden">Type your message</label>
+				<textarea id="message" name="message" rows="1" placeholder="Type a message..."
+					required></textarea>
+				<button type="submit" aria-label="Send message">Send</button>
+			</form>
+		</section>
+	</main>
+</body>
+
+</html>
