@@ -10,7 +10,6 @@ const populateElements = async () => {
 
 	const res = await fetch(`/api/user?id=${encodeURIComponent(userId)}`);
 	const user = await res.json();
-	console.log(user);
 	if (!user) {
 		document.getElementById('userName').innerText = "Could not display user.";
 		return;
@@ -26,21 +25,21 @@ document.addEventListener("DOMContentLoaded", () => {
 	populateElements();
 });
 
-/*(async () => {
+(async () => {
 	const params = new URLSearchParams(window.location.search);
 	const userId = params.get('id');
 	if (!userId) {
 		return null;
 	}
 	try {
-		const res = await fetch(`/api/other/project?id=${userId}`);
+		const res = await fetch(`/api/other/project?id=${encodeURIComponent(userId)}`);
 		if (!res.ok) {
 			throw new Error(`Failed to fetch projects: ${res.statusText}`);
 		}
 		projects = await res.json();
-		pageAdder.addProjectsToPage('projectCardList', projects)
 		console.log(projects);
+		pageAdder.addProjectsToPage('projectCardList', projects);
 	} catch (err) {
 		console.error('Error loading Projects:', err);
 	}
-})();*/
+})();

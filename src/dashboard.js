@@ -20,7 +20,7 @@ document.getElementById('searchForm').addEventListener('submit', (event) => {
 	try {
 		const res = await fetch('/api/user/project');
 		projects = await res.json();
-		pageAdder.addProjectsToPage('projectCardList', projects)
+		pageAdder.addProjectsToPage('projectCardList', projects);
 		console.log(projects);
 	} catch (err) {
 		console.error('Error loading user:', err);

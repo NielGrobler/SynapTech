@@ -369,7 +369,7 @@ router.get('/api/other/project', async (req, res) => {
 	if (!id) {
 		return res.status(400).json({ error: 'Missing user id' });
 	}
-	const projects = await db.fetchPublicAssociatedProjects(id);
+	let projects = await db.fetchPublicAssociatedProjects(id);
 
 	res.json(projects);
 });

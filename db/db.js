@@ -152,7 +152,7 @@ const fetchPublicAssociatedProjects = async (id) => {
 			LEFT JOIN [dbo].[Account] ON [dbo].[Account].account_id = [dbo].[Collaborator].account_id
 			WHERE [dbo].[Project].created_by_account_id = @id AND is_public = 1;
 		`);
-	return result;
+	return result.recordset;
 }
 
 const appendCollaborators = async (projects) => {
