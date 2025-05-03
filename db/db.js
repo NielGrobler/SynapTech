@@ -209,7 +209,20 @@ const suspendUser = async (userId) => {
 	await pool.request()
 		.input('id', sql.NVarChar, userId)
 		.query(`
-			INSERT INTO SuspendedAccount(account_id) VALUES(@id);
+			UPDATE [dbo].[Account]
+			SET is_suspended = 1
+			WHERE [dbo].[Account].account_id = @id
+		`);
+};
+
+const unsuspendUser = async (userId) => {
+	const pool = await poolPromise;
+	await pool.request()
+		.input('id', sql.NVarChar, userId)
+		.query(`
+			UPDATE [dbo].[Account]
+			SET is_suspended = 0
+			WHERE [dbo].[Account].account_id = @id
 		`);
 };
 
@@ -370,6 +383,23 @@ const fetchUserById = async (uuid) => {
     return result.recordset;
 }
 
+const updateProfile = async (params) => {
+	const { id, username, bio, university, department } = params;
+
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('username', sql.NVarChar, username)
+		.input('id', sql.Int, id)
+		.input('bio', sql.NVarChar, bio)
+		.input('university', sql.NVarChar, university)
+		.input('department', sql.NVarChar, department)
+		.query(`
+            UPDATE [dbo].[Account]
+			SET name = @username, bio = @bio, university = @university, department=@department
+			WHERE [dbo].[Account].account_id = @id
+		`);
+}
+
 export default {
 	getUserByGUID,
 	createUser,
@@ -379,6 +409,7 @@ export default {
 	deleteUser,
 	isSuspendend,
 	suspendUser,
+	unsuspendUser,
 	addCollaborator,
 	acceptCollaborator,
 	searchProjects,
@@ -387,7 +418,6 @@ export default {
 	insertPendingCollaborator,
 	searchUsers,
 	fetchPublicAssociatedProjects,
-	fetchUserById
+	fetchUserById,
+	updateProfile
 };
-
-

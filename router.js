@@ -602,6 +602,18 @@ router.get('/view/curr/profile', (req, res) => {
 	res.sendFile(path.join(__dirname, "public", "viewCurrProfile.html"));
 });
 
+//Put request to update profile
+router.put('/update/profile', async (req, res) =>{
+	if (!authenticateRequest(req)) {
+		res.status(401).json({ error: 'Not authenticated' });
+		return;
+	}
+
+	const params = req.body;
+	
+	res.json(await db.updateProfile(params));
+});
+
 /* PUT Request Routing */
 router.put('user/details', async (req, res) => {
 	const { name, bio } = req.body;

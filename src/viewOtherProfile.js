@@ -18,6 +18,7 @@ const populateElements = async () => {
 	document.getElementById('userName').innerText = user[0].name;
 	document.getElementById('userUni').innerHTML = user[0].university;
 	document.getElementById('userDepartment').innerHTML = user[0].department;
+	document.getElementById('userBio').innerHTML = user[0].bio;
 }
 
 
