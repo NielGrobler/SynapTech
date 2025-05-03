@@ -1,4 +1,3 @@
-
 const projectToElement = (project) => {
 	const li = document.createElement("li");
 	const title = document.createElement("strong");
@@ -25,14 +24,14 @@ const userToElement = (user) => {
 	title.textContent = user.name;
 	const description = document.createElement("p");
 	description.textContent = user.bio;
-	const id = !user.id ? user.user_id : user.id;
+	const id = user.account_id;
 
 
 	li.appendChild(title);
 	li.appendChild(description);
 	li.classList.add("highlight-hover");
 	li.addEventListener('click', () => {
-		window.location.href = `/view/user?id=${id}`;
+		window.location.href = `/view/other/profile?id=${encodeURIComponent(id)}`;
 	});
 
 	return li;
@@ -42,7 +41,7 @@ const addProjectsToPage = (elementId, projects) => {
 	assignListToElement(
 		elementId,
 		projects,
-		userToElement
+		projectToElement
 	);
 }
 
@@ -54,7 +53,7 @@ const addUsersToPage = (elementId, users) => {
 	assignListToElement(
 		elementId,
 		users,
-		projectToElement
+		userToElement
 	);
 }
 
@@ -78,6 +77,7 @@ const assignListToElement = (elementId, rawElements, elementHTMLFormatter, noDis
 export default {
 	addProjectsToPage,
 	clearProjects,
-	assignListToElement
+	assignListToElement,
+	addUsersToPage,
 };
 

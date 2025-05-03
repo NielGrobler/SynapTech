@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Unilink | View Project</title>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="icon" href="/logo.png" type="image/png">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+		rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+	<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+
+	<link rel="stylesheet" href="/styles.css" />
+</head>
+
+<main class="inset flex-col gap-medium">
+	<section class="border-solid-thin shadow">
+		<section id="userCard" class="inset">
+			<section class="split gap" id="infoAndName">
+				<h1 id="userName" class="large-text">Placeholder</h1>
+				<section
+					class="flex-row very-round secondary space-between padding-vert-xsmall small-text gap-medium">
+					<p>University: <span id="userUni">Unknown</span></p>
+					<p>Department: <span id="userDepartment">Unknown</span></p>
+				</section>
+			</section>
+			<h1 class="accent-underline">Description</h1>
+			<p id="userBio">Lorem ipsum dolar sit amet.</p>
+		</section>
+
+		<section id="projects" class="inset">
+			<h1 class="accent-underline">User's Projects:</h1>
+			<ul id="projectCard">
+			</ul>
+		</section>
+	</section>
+</main>
+<footer class="inset">
+	<p>&copy; 2025 Unilink. All rights reserved.</p>
+</footer>
+
+<script type="module" src="/viewOtherProfile.js"></script>
+
+</html>

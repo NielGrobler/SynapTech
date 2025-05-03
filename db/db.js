@@ -1,4 +1,6 @@
+//import sql, { UniqueIdentifier } from 'mssql';
 import sql from 'mssql';
+const {UniqueIdentifier} = sql;
 import Joi from 'joi';
 import dotenv from 'dotenv';
 
@@ -133,6 +135,25 @@ const fetchAssociatedProjects = async (user) => {
 		`);
 	return result.recordset;
 };
+
+const fetchPublicAssociatedProjects = async (id) => {
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('id', sql.Int, id)
+		.query(`
+			SELECT [dbo].[Project].project_id AS id,
+				[dbo].[Project].created_by_account_id AS author_id,
+				[dbo].[Project].created_at AS created_at,
+				[dbo].[Project].name AS name,
+				[dbo].[Project].description AS description,
+				[dbo].[Project].is_public AS is_public
+			FROM [dbo].[Project]
+			LEFT JOIN [dbo].[Collaborator] ON [dbo].[Collaborator].project_id = [dbo].[Project].project_id
+			LEFT JOIN [dbo].[Account] ON [dbo].[Account].account_id = [dbo].[Collaborator].account_id
+			WHERE [dbo].[Project].created_by_account_id = @id AND is_public = 1;
+		`);
+	return result;
+}
 
 const appendCollaborators = async (projects) => {
 	const pool = await poolPromise;
@@ -323,16 +344,28 @@ const createReview = async (reviewData) => {
 	};
 };
 
-async function searchUsers(user) {
+const searchUsers = async (userName) => {
 	const lowerName = userName.toLowerCase();
 	const pool = await poolPromise;
 	const result = await pool.request()
 		.input('userName', sql.NVarChar, `%${lowerName}%`)
-		.batch(`
+		.query(`
             SELECT TOP 10 *
 			FROM [dbo].[Account]
 			WHERE LOWER([dbo].[Account].name) LIKE @userName 
 			ORDER BY LEN([dbo].[Account].name);
+		`);
+    return result.recordset;
+}
+
+//Function to get user by id
+const fetchUserById = async (uuid) => {
+	const id = parseInt(uuid);
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('Uid', sql.Int, id)
+		.batch(`
+            SELECT * FROM [dbo].[Account] WHERE [dbo].[Account].account_id = @Uid;
 		`);
     return result.recordset;
 }
@@ -352,6 +385,9 @@ export default {
 	fetchProjectById,
 	fetchPendingCollaborators,
 	insertPendingCollaborator,
-	searchUsers
+	searchUsers,
+	fetchPublicAssociatedProjects,
+	fetchUserById
 };
+
 
