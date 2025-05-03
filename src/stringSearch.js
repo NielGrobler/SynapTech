@@ -34,10 +34,11 @@ const levDist = (fst, snd) => {
 };
 
 const getComparator = (query) => {
+	const queryLower = query.toLowerCase();
 	return function (x, y) {
 		// Compare distances using lowercased strings
-		const d1 = levDist(x.name.toLowerCase(), query.toLowerCase());
-		const d2 = levDist(y.name.toLowerCase(), query.toLowerCase());
+		const d1 = levDist(x.name.toLowerCase(), queryLower);
+		const d2 = levDist(y.name.toLowerCase(), queryLower);
 
 		if (d1 === d2) {
 			// Tiebreak alphabetically using original casing

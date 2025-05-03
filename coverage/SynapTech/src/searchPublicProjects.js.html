@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">87.09% </span>
+                <span class="strong">86.36% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>27/31</span>
+                <span class='fraction'>19/22</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">87.5% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>7/8</span>
+                <span class='fraction'>5/5</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">87.09% </span>
+                <span class="strong">86.36% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>27/31</span>
+                <span class='fraction'>19/22</span>
             </div>
         
             
@@ -89,34 +89,23 @@
 <a name='L24'></a><a href='#L24'>24</a>
 <a name='L25'></a><a href='#L25'>25</a>
 <a name='L26'></a><a href='#L26'>26</a>
-<a name='L27'></a><a href='#L27'>27</a>
-<a name='L28'></a><a href='#L28'>28</a>
-<a name='L29'></a><a href='#L29'>29</a>
-<a name='L30'></a><a href='#L30'>30</a>
-<a name='L31'></a><a href='#L31'>31</a>
-<a name='L32'></a><a href='#L32'>32</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L27'></a><a href='#L27'>27</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
@@ -125,45 +114,41 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">export async function fetchProjects(projectName) {
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import pageAdder from './pageAdder.js'
+&nbsp;
+export async function fetchProjects(projectName) {
 	try {
-	  const response = await fetch(`/api/search/project?projectName=${projectName}`);
-	  if (!response.ok) throw new Error('Network response was not ok');
-  
-	  const projects = await response.json();
-	  const container = document.getElementById("searchResultsContainer");
-	  container.innerHTML = "";
-  
-	  if (projects.length === 0) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
-<span class="cstat-no" title="statement not covered" >		container.innerHTML = "&lt;p&gt;No projects found&lt;/p&gt;";</span>
-	  } else {
-		projects.forEach(project =&gt; {
-		  const projectElement = document.createElement("div");
-		  projectElement.innerHTML = `&lt;h3&gt;${project.name}&lt;/h3&gt;&lt;p&gt;${project.description}&lt;/p&gt;`;
-		  container.appendChild(projectElement);
-		});
-	  }
+		const response = await fetch(`/api/search/project?projectName=${projectName}`);
+		if (!response.ok) {
+			throw new Error('Encountered network error.');
+		}
+&nbsp;
+		const projects = await response.json();
+		pageAdder.clearProjects('projects');
+		pageAdder.addProjectsToPage('projects', projects);
 	} catch (error) {
-	  console.error("Error fetching projects:", error);
+		console.error("Error fetching projects:", error);
 	}
-  }
-  
-  export function setupSearchForm() {
+}
+&nbsp;
+export function setupSearchForm() {
 	const form = document.getElementById("searchForm");
 	form.addEventListener("submit", async (e) =&gt; {
-<span class="cstat-no" title="statement not covered" >	  e.preventDefault();</span>
-<span class="cstat-no" title="statement not covered" >	  const input = document.getElementById("searchInput").value;</span>
-<span class="cstat-no" title="statement not covered" >	  await fetchProjects(input);</span>
+<span class="cstat-no" title="statement not covered" >		e.preventDefault();</span>
+<span class="cstat-no" title="statement not covered" >		const input = document.getElementById("searchInput").value;</span>
+<span class="cstat-no" title="statement not covered" >		await fetchProjects(input);</span>
 	});
-  }
-  </pre></td></tr></table></pre>
+}
+&nbsp;
+&nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-01T22:38:00.854Z
+                at 2025-05-03T12:20:14.427Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
