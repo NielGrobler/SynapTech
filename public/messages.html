@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
 
 	<head>
 		<meta charset="UTF-8">
@@ -21,50 +20,95 @@
 
 	</head>
 
-<body>
-	<main class="direct-messages">
-		<!-- Conversations Sidebar -->
-		<aside class="conversations" aria-label="Conversation list">
-			<h2>Messages</h2>
-			<nav>
-				<ul>
-					<li><button class="conversation active">Jane Doe</button></li>
-					<li><button class="conversation">John Smith</button></li>
-					<li><button class="conversation">Alex Johnson</button></li>
-					<!-- Add more contacts here -->
-				</ul>
-			</nav>
-		</aside>
+	<body class="full-vh">
+		<nav class="inset secondary fill accent-underline flex-prop-1-5">
+			<button class="nav-item flex-row center-content-v gap-small"
+				onclick="window.location.href=history.back()">
+				<i class='bx bx-chevron-left'></i>
+				Back
+			</button>
+		</nav>
+		<main class="direct-messages flex-row">
+			<aside class="conversations flex-prop-1-4" aria-label="Conversation list">
+				<h3>Messages</h3>
+				<nav>
+					<ul id="messagedUsers">
+					</ul>
+				</nav>
+			</aside>
 
-		<!-- Chat Area -->
-		<section class="chat" aria-label="Active conversation">
-			<header class="chat-header">
-				<h2 class="chat-partner-name">Jane Doe</h2>
-				<span class="chat-status online">Online</span>
-			</header>
+			<section class="gap flex-col full-vh flex-prop-3-to-4"  aria-label="Active conversation">
+				<section id="conversation" class="chat-history scrollable gap border-solid-thin flex-col" role="log">
+					<article class="bubble bubble-left-end bubble-left">
+						<p>Hello! How are you?</p>
+						<time datetime="2025-05-03T14:30">2:30 PM</time>
+					</article>
 
-			<div class="chat-history" role="log">
-				<article class="message received">
-					<p>Hello! How are you?</p>
-					<time datetime="2025-05-03T14:30">2:30 PM</time>
-				</article>
+					<article class="bubble-fragment bubble-right">
+						<p>Hey! I’m doing great, thanks. You?</p>
+						<time datetime="2025-05-03T14:32">2:32 PM</time>
+					</article>
+					<article class="bubble bubble-right-end bubble-right">
+						<p>Epic, that moment when epic.</p>
+						<time datetime="2025-05-03T14:34">2:34 PM</time>
+					</article>
 
-				<article class="message sent">
-					<p>Hey! I’m doing great, thanks. You?</p>
-					<time datetime="2025-05-03T14:32">2:32 PM</time>
-				</article>
+					<article class="bubble bubble-left-end bubble-left">
+						<p class="text-wrap bubble-text">Hey! I’m doing great, thanks. Ywqdiuwqhdwuefhewufewfugewqyfwrcewqfnewqyufewqnufygewfiugnewiyfgewqyufgewqfugynwqyufgewqiufgewqfyewqgfiuewqngfewqyufgewfiuyewqgfxqiuewyfgqyegwiufqygweiufygewqfiuggewqiuygfou?</p>
+						<time datetime="2025-05-03T14:32">2:32 PM</time>
+					</article>
+					<article class="pad-small-h border-solid-thin message received">
+						<p>Hello! How are you?</p>
+						<time datetime="2025-05-03T14:30">2:30 PM</time>
+					</article>
 
-				<!-- More messages dynamically rendered here -->
-			</div>
+					<article class="pad-small-h border-solid-thin message received">
+						<p>Hey! I’m doing great, thanks. You?</p>
+						<time datetime="2025-05-03T14:32">2:32 PM</time>
+					</article>
+					<article class="pad-small-h border-solid-thin message received">
+						<p>Hello! How are you?</p>
+						<time datetime="2025-05-03T14:30">2:30 PM</time>
+					</article>
 
-			<form class="chat-input-area" action="#" method="POST">
-				<label for="message" class="visually-hidden">Type your message</label>
-				<textarea id="message" name="message" rows="1" placeholder="Type a message..."
-					required></textarea>
-				<button type="submit" aria-label="Send message">Send</button>
-			</form>
-		</section>
-	</main>
-</body>
+					<article class="pad-small-h border-solid-thin message received">
+						<p>Hey! I’m doing great, thanks. You?</p>
+						<time datetime="2025-05-03T14:32">2:32 PM</time>
+					</article>
+					<article class="pad-small-h border-solid-thin message received">
+						<p>Hello! How are you?</p>
+						<time datetime="2025-05-03T14:30">2:30 PM</time>
+					</article>
+
+					<article class="pad-small-h border-solid-thin message received">
+						<p>Hey! I’m doing great, thanks. You?</p>
+						<time datetime="2025-05-03T14:32">2:32 PM</time>
+					</article>
+
+				</section>
+
+				<form id="sendForm" class="border-solid-thin flex-col push-up inset-small secondary prevent-shrink margin-small">
+					<label for="messageBody" class="visually-hidden">Type your message</label>
+					<section class="center-content-v flex-row secondary">
+					<textarea id="message" name="messageBody" rows="1" placeholder="Type a message..."
+						required></textarea>
+					<button id="sendButton" type="submit"
+						class="nav-item to-end flex-row gap-small center-content-v">
+						Submit
+						<i class="bx bx-send"></i>
+					</button>
+					</section>
+
+				</form>
+			</section>
+		</main>
+	</body>
+
+	<script type="module" src="/message.js"></script>
+	<script type="module">
+		import message from '/message.js';
+			
+		message.initMessages();
+	</script>
 
 </html>

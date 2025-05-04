@@ -347,6 +347,19 @@ router.post('/api/message/send', async (req, res) => {
 	}
 });
 
+router.get('/api/message/allMessagedUsers', async (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+
+	try {
+		const records = await db.retrieveMessagedUsers(res.user.id);
+		res.status(200).json(records);
+	} catch (err) {
+		return res.status(500).json({ error: 'Internal Error' });
+	}
+});
+
 router.get('/api/message/:secondPersonId', async (req, res) => {
 	if (!authenticateRequest(req)) {
 		return res.redirect('/forbidden');

@@ -381,6 +381,34 @@ const retrieveMessages = async (fstPersonId, sndPersonId) => {
 	return result.recordsets;
 }
 
+const retrieveMessagedUsers = async (userId) => {
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('user_id', sql.Int, userId)
+		.query(`
+			SELECT DISTINCT [dbo].[Account].account_id, [dbo].[Account].name, idAndLatest.latest_message_at
+			FROM [dbo].[Account]
+			JOIN (
+				SELECT 
+				CASE 
+					WHEN [dbo].[Message].sender_id = @user_id THEN [dbo].[Message].receiver_id
+					ELSE [dbo].[Message].sender_id
+				END AS snd_account_id,
+				MAX([dbo].[Message].created_at) AS latest_message_at
+				FROM [dbo].[Message] 
+				WHERE [dbo].[Message].sender_id = @user_id OR [dbo].[Message].receiver_id = @user_id
+				GROUP BY 
+				CASE 
+					WHEN [dbo].[Message].sender_id = @user_id THEN [dbo].[Message].receiver_id
+					ELSE [dbo].[Message].sender_id
+				END
+			) idAndLatest ON [dbo].[Account].account_id = idAndLatest.snd_account_id
+			ORDER BY idAndLatest.latest_message_at;
+		`);
+
+	return result.recordset;
+}
+
 export default {
 	getUserByGUID,
 	createUser,
