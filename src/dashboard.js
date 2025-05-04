@@ -24,7 +24,7 @@ export function initThemeToggle() {
 		toggle.innerText = (saved === 'dark') ? `🌕` : `☀️`;
 		root.setAttribute('data-theme', saved);
 	} else {
-		const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+		const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ?? false;
 		root.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
 		toggle.innerText = prefersDark ? `🌕` : `☀️`;
 	}
