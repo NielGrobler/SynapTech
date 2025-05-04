@@ -6,10 +6,11 @@
 
 	--color-bg: #fdfdfd;
 	--color-text: #222;
+	--area-color: #ccc;
 	--color-secondary: #f4f4f4;
 	--color-accent: #3d348b;
 	--color-accent-highlight: #3d348b;
-	--color-mute: #7c8391;
+	--color-muted: #7c8391;
 	--color-muted-text: #888;
 	--color-muted-light: #eee;
 	--color-dark: #333;
@@ -29,30 +30,25 @@
 	--tail-size: 1.5em;
 }
 
-/* Add this to your CSS, after the :root definitions */
 [data-theme="dark"] {
-  /* Base typography & backgrounds */
-  --color-bg:   #1a1a1a;
-  --color-text: #e0e0e0;
+	--color-bg: #1a1a1a;
+	--color-text: #e0e0e0;
+	--area-color: #333;
 
-  /* Surfaces & secondary */
-  --color-secondary:     #2a2a2a;
-  --color-muted-light:   #2f2f2f;
-  --color-mute:         #999;   /* subtle borders or icons */
-  --color-muted-text:   #bbb;
+	--color-secondary: #2a2a2a;
+	--color-muted-light: #2f2f2f;
+	--color-muted: #999;
+	--color-muted-text: #bbb;
 
-  /* Accents */
-  --color-accent:           #8e7cc3;
-  --color-accent-highlight: #b0a4e3;
+	--color-accent: #8e7cc3;
+	--color-accent-highlight: #b0a4e3;
 
-  /* Chat bubble */
-  --color-drop: #222;        /* bubble background */
+	/* Chat bubble */
+	--color-drop: #222;
 
-  /* Deep/dark elements */
-  --color-dark: #000;
+	--color-dark: #000;
 
-  /* Shadows on dark need to be lighter or tighter */
-  --shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+	--shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
 }
 
 /* Default style for components */
@@ -120,8 +116,11 @@ textarea,
 select {
 	font: inherit;
 	margin: 0.3rem;
+	background-color: var(--color-bg);
+	color: var(--color-text);
+
 	padding: 0.3em 1em;
-	border: 1px solid #ccc;
+	border: 1px solid var(--area-color);
 	border-radius: var(--radius);
 	width: 100%;
 	box-sizing: border-box;
