@@ -1,3 +1,4 @@
+/*
 import {
 	BlobServiceClient,
 	StorageSharedKeyCredential,
@@ -53,4 +54,4 @@ export default {
 	getSasUrl
 }
 
-
+*/

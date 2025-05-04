@@ -1,4 +1,6 @@
+//import sql, { UniqueIdentifier } from 'mssql';
 import sql from 'mssql';
+const {UniqueIdentifier} = sql;
 import Joi from 'joi';
 import dotenv from 'dotenv';
 
@@ -135,6 +137,25 @@ const fetchAssociatedProjects = async (user) => {
 	return result.recordset;
 };
 
+const fetchPublicAssociatedProjects = async (id) => {
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('id', sql.Int, id)
+		.query(`
+			SELECT [dbo].[Project].project_id AS id,
+				[dbo].[Project].created_by_account_id AS author_id,
+				[dbo].[Project].created_at AS created_at,
+				[dbo].[Project].name AS name,
+				[dbo].[Project].description AS description,
+				[dbo].[Project].is_public AS is_public
+			FROM [dbo].[Project]
+			LEFT JOIN [dbo].[Collaborator] ON [dbo].[Collaborator].project_id = [dbo].[Project].project_id
+			LEFT JOIN [dbo].[Account] ON [dbo].[Account].account_id = [dbo].[Collaborator].account_id
+			WHERE [dbo].[Project].created_by_account_id = @id AND is_public = 1;
+		`);
+	return result.recordset;
+}
+
 const appendCollaborators = async (projects) => {
 	const pool = await poolPromise;
 	const transaction = new sql.Transaction(pool);
@@ -190,7 +211,20 @@ const suspendUser = async (userId) => {
 	await pool.request()
 		.input('id', sql.NVarChar, userId)
 		.query(`
-			INSERT INTO SuspendedAccount(account_id) VALUES(@id);
+			UPDATE [dbo].[Account]
+			SET is_suspended = 1
+			WHERE [dbo].[Account].account_id = @id
+		`);
+};
+
+const unsuspendUser = async (userId) => {
+	const pool = await poolPromise;
+	await pool.request()
+		.input('id', sql.NVarChar, userId)
+		.query(`
+			UPDATE [dbo].[Account]
+			SET is_suspended = 0
+			WHERE [dbo].[Account].account_id = @id
 		`);
 };
 
@@ -381,6 +415,49 @@ const retrieveMessages = async (fstPersonId, sndPersonId) => {
 	return result.recordsets;
 }
 
+const searchUsers = async (userName) => {
+	const lowerName = userName.toLowerCase();
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('userName', sql.NVarChar, `%${lowerName}%`)
+		.query(`
+            SELECT TOP 10 *
+			FROM [dbo].[Account]
+			WHERE LOWER([dbo].[Account].name) LIKE @userName 
+			ORDER BY LEN([dbo].[Account].name);
+		`);
+    return result.recordset;
+}
+
+//Function to get user by id
+const fetchUserById = async (uuid) => {
+	const id = parseInt(uuid);
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('Uid', sql.Int, id)
+		.batch(`
+            SELECT * FROM [dbo].[Account] WHERE [dbo].[Account].account_id = @Uid;
+		`);
+    return result.recordset;
+}
+
+const updateProfile = async (params) => {
+	const { id, username, bio, university, department } = params;
+
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('username', sql.NVarChar, username)
+		.input('id', sql.Int, id)
+		.input('bio', sql.NVarChar, bio)
+		.input('university', sql.NVarChar, university)
+		.input('department', sql.NVarChar, department)
+		.query(`
+            UPDATE [dbo].[Account]
+			SET name = @username, bio = @bio, university = @university, department=@department
+			WHERE [dbo].[Account].account_id = @id
+		`);
+}
+
 export default {
 	getUserByGUID,
 	createUser,
@@ -390,12 +467,17 @@ export default {
 	deleteUser,
 	isSuspendend,
 	suspendUser,
+	unsuspendUser,
 	addCollaborator,
 	acceptCollaborator,
 	searchProjects,
 	fetchProjectById,
 	fetchPendingCollaborators,
 	insertPendingCollaborator,
+	searchUsers,
+	fetchPublicAssociatedProjects,
+	fetchUserById,
+	updateProfile,
 	permittedToAcceptCollaborator,
 	permittedToRejectCollaborator,
 	removeCollaborator,

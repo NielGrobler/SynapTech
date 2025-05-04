@@ -45,6 +45,13 @@
 				</li>
 				<li>
 					<button class="nav-item flex-row gap-small center-content-v"
+						onclick="window.location.href='/view/users'">
+						<i class='bx bx-user'></i>
+						Find Other Users
+					</button>
+				</li>
+				<li>
+					<button class="nav-item flex-row gap-small center-content-v"
 						onclick="window.location.href='/create/project'">
 						<i class='bx bx-book-content'></i>
 						Create Project
@@ -66,14 +73,15 @@
 				</li>
 			</ul>
 		</nav>
-
+	
 		<span class="dropdown pad-right hover-rotate">
 			<button id="userButton" class="flex-row gap-small padding-vert-small center-content-v">
 				<i class='bx bx-chevron-right'></i>
-				<span id="username">Ellie</span>
+				<span id="username">Placeholder</span>
 			</button>
-
+	
 			<ul class="dropdown-menu">
+				<li><a href="/view/curr/profile"><i class='bx bx-user-circle'></i>Profile</a></li>
 				<li><a href="/settings"><i class='bx bx-cog'></i>Settings</a></li>
 				<li><a href="/logout"><i class='bx bx-run'></i>Logout</a></li>
 			</ul>
@@ -93,8 +101,9 @@
 						<i class='bx bx-plus'></i>
 					</button>
 				</section>
-				<form id="searchForm" type="">
-					<input id="searchBox" type="text" placeholder="Search your projects...">
+				<form id="project-search-form" type="">
+					<input id="project-search-input" type="text"
+						placeholder="Search your projects...">
 					<button id="searchButton" type="submit"
 						class="nav-item flex-row gap-small center-content-v"> <i
 							class="bx bx-search"></i>
@@ -102,7 +111,7 @@
 					</button>
 				</form>
 			</section>
-			<ul id="projectCardList" class="minh">
+			<ul id="project-list" class="minh">
 			</ul>
 		</section>
 
@@ -113,6 +122,11 @@
 	</footer>
 </body>
 <script type="module" src="/dashboard.js"></script>
+<script type="module">
+	import {initDashboard} from './dashboard.js';
+	initDashboard();
+</script>
+
 <script type="module" src="/fetchUsername.js"></script>
 
 </html>
