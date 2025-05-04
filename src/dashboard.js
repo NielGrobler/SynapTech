@@ -1,28 +1,42 @@
-
 import pageAdder from './pageAdder.js';
-import stringSearch from './stringSearch.js'
+import stringSearch from './stringSearch.js';
 
-let projects = [];
+let cachedProjects = [];
 
-let searchBox = document.getElementById('searchBox');
+export async function executeApiCall() {
+  try {
+    const response = await fetch('/api/user/project');
+    const data = await response.json();
+    console.log(data);
+    return data;
+  } catch (error) {
+    console.error('Error loading user:', error);
+    return [];
+  }
+}
 
-document.getElementById('searchForm').addEventListener('submit', (event) => {
-	event.preventDefault();
+export function initDashboard() {
+  const form = document.getElementById('project-search-form');
+  const input = document.getElementById('project-search-input');
 
-	const query = searchBox.value.toLowerCase();
-	const matchingProjects = projects.sort(stringSearch.getComparator(query));
-	console.log(matchingProjects);
-	pageAdder.clearProjects('projectCardList');
-	pageAdder.addProjectsToPage('projectCardList', matchingProjects);
-});
+  if (!form || !input) {
+    console.error('Required DOM elements not found');
+    return;
+  }
 
-(async () => {
-	try {
-		const res = await fetch('/api/user/project');
-		projects = await res.json();
-		pageAdder.addProjectsToPage('projectCardList', projects);
-		console.log(projects);
-	} catch (err) {
-		console.error('Error loading user:', err);
-	}
-})();
+  executeApiCall().then(projects => {
+    cachedProjects = projects;
+    pageAdder.addProjectsToPage("project-list", projects);
+  });
+
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    const query = input.value;
+    const comparator = stringSearch.getComparator(query);
+    const queryLower = query.toLowerCase();
+    const filteredProjects = cachedProjects.sort(comparator).filter(x => x.name.toLowerCase().includes(queryLower));
+    console.log(filteredProjects);
+    pageAdder.clearProjects("project-list");
+    pageAdder.addProjectsToPage("project-list", filteredProjects);
+  });
+}

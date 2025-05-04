@@ -1,4 +1,21 @@
+
 import userInfo from './userInfo.js'
+
+function populateCollaborators(project) {
+	let list = document.getElementById('collaboratorList');
+	list.innerHTML = '';
+
+	if (!project.collaborators || project.collaborators.length === 0) {
+		list.innerHTML = 'No collaborators.';
+		return;
+	}
+
+	project.collaborators.forEach(collaborator => {
+		const li = document.createElement('li');
+		li.innerText = collaborator.name;
+		list.appendChild(li);
+	});
+}
 
 const fetchProject = async () => {
 	const params = new URLSearchParams(window.location.search);
@@ -10,24 +27,6 @@ const fetchProject = async () => {
 	const res = await fetch(`/api/project?id=${projectId}`);
 	const project = res.json();
 	return project;
-}
-
-const populateCollaborators = (project) => {
-	let list = document.getElementById('collaboratorList');
-
-	if (!project.collaborators || project.collaborators.length === 0) {
-		let paragraphMessage = document.createElement("p");
-		paragraphMessage.innerText = "No collaborators.";
-		list.appendChild(paragraphMessage);
-		return;
-
-	}
-
-	for (let collaborator of project.collaborators) {
-		const li = document.createElement("li");
-		li.innerText = collaborator.name;
-		list.appendChild(li);
-	}
 }
 
 const isCollaborator = (userDetails, project) => {
@@ -91,6 +90,7 @@ const addCollaboratorButton = async (userDetails, project) => {
 
 const populateElements = async () => {
 	const project = await fetchProject();
+	console.log(project);
 	if (!project) {
 		document.getElementById('projectName').innerText = "Could not display project.";
 		return;
@@ -107,11 +107,13 @@ const populateElements = async () => {
 	addRequestCollaboration(info, project)
 }
 
+export async function initPage() {
+	const collabList = document.getElementById('collaboratorList');
 
-(async () => {
-	populateElements();
-})();
+	if (!collabList) {
+		console.error('collaboratorList element not found');
+		return;
+	}
 
-
-
-
+	await populateElements();
+}

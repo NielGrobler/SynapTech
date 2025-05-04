@@ -60,6 +60,11 @@
 	</footer>
 
 	<script type="module" src="/viewProject.js"></script>
+	<script type="module">
+		import { initPage } from '/viewProject.js';
+		await initPage();
+	</script>
+
 	<script>
 		function reviewProject() {
 			const projectId = new URLSearchParams(window.location.search).get('id');

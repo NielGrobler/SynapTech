@@ -1,21 +1,21 @@
-
 import userInfo from './userInfo.js';
 
 const setUsername = async () => {
-	let userElement = document.getElementById("username");
-	let info = await userInfo.fetchFromApi();
-
+	const userElement = document.getElementById("username");
+	const info = await userInfo.fetchFromApi();
 	userElement.innerHTML = info["name"].trim().split(/\s+/)[0];
-}
+};
 
-(async () => {
-	try {
-		await setUsername();
-	} catch (err) {
-		console.error('Error loading user:', err);
-	}
-})();
+if (typeof window !== 'undefined' && import.meta.env?.MODE !== 'test') {
+	(async () => {
+		try {
+			await setUsername();
+		} catch (err) {
+			console.error('Error loading user:', err);
+		}
+	})();
+}
 
 export default {
 	setUsername
-}
+};

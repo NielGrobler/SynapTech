@@ -62,6 +62,11 @@ const addUsersToPage = (elementId, users) => {
  * A function to add a list of elements specified by rawElements formatted by elementHTMLFormatter to the element elementId.
  */
 const assignListToElement = (elementId, rawElements, elementHTMLFormatter, noDisplayText = "Nothing to display.") => {
+	if (!rawElements) {
+		console.error('rawElements is undefined');
+		return;
+	}
+
 	if (rawElements.length === 0) {
 		document.getElementById(elementId).innerHTML = `<p>${noDisplayText}</p>`;
 		return;

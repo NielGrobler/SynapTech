@@ -1,29 +1,26 @@
+import pageAdder from './pageAdder.js'
 
-import pageAdder from "./pageAdder.js";
-
-const fetchProjects = async (name) => {
+export async function fetchProjects(projectName) {
 	try {
-		const res = await fetch(`/api/search/project?projectName=${encodeURIComponent(name)}`);
-		if (!res.ok) {
-			throw new Error('Failed to fetch projects');
+		const response = await fetch(`/api/search/project?projectName=${projectName}`);
+		if (!response.ok) {
+			throw new Error('Encountered network error.');
 		}
 
-		const projects = await res.json();
-		console.log(projects);
-		document.getElementById("projects").innerHTML = "";
+		const projects = await response.json();
+		pageAdder.clearProjects('projects');
 		pageAdder.addProjectsToPage('projects', projects);
 	} catch (error) {
-		console.error('Error fetching projects:', error);
+		console.error("Error fetching projects:", error);
 	}
 }
 
-document.getElementById("searchForm").addEventListener("submit", async function(event) {
-	event.preventDefault();
-
-	const query = document.getElementById("searchInput").value;
-	fetchProjects(query);
-});
-
-export default {
-	fetchProjects
+export function setupSearchForm() {
+	const form = document.getElementById("searchForm");
+	form.addEventListener("submit", async (e) => {
+		e.preventDefault();
+		const input = document.getElementById("searchInput").value;
+		await fetchProjects(input);
+	});
 }
+

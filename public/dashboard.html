@@ -64,13 +64,20 @@
 						Collaboration Requests
 					</button>
 				</li>
+				<li>
+					<button class="nav-item flex-row gap-small center-content-v"
+						onclick="window.location.href='/collaboration'">
+						<i class='bx bxs-party'></i>
+						Collaboration Invites
+					</button>
+				</li>
 			</ul>
 		</nav>
 	
 		<span class="dropdown pad-right hover-rotate">
 			<button id="userButton" class="flex-row gap-small padding-vert-small center-content-v">
 				<i class='bx bx-chevron-right'></i>
-				<span id="username">Ellie</span>
+				<span id="username">Placeholder</span>
 			</button>
 	
 			<ul class="dropdown-menu">
@@ -94,8 +101,9 @@
 						<i class='bx bx-plus'></i>
 					</button>
 				</section>
-				<form id="searchForm" type="">
-					<input id="searchBox" type="text" placeholder="Search your projects...">
+				<form id="project-search-form" type="">
+					<input id="project-search-input" type="text"
+						placeholder="Search your projects...">
 					<button id="searchButton" type="submit"
 						class="nav-item flex-row gap-small center-content-v"> <i
 							class="bx bx-search"></i>
@@ -103,7 +111,7 @@
 					</button>
 				</form>
 			</section>
-			<ul id="projectCardList" class="minh">
+			<ul id="project-list" class="minh">
 			</ul>
 		</section>
 
@@ -114,6 +122,11 @@
 	</footer>
 </body>
 <script type="module" src="/dashboard.js"></script>
+<script type="module">
+	import {initDashboard} from './dashboard.js';
+	initDashboard();
+</script>
+
 <script type="module" src="/fetchUsername.js"></script>
 
 </html>
