@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="/styles.css">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="icon" href="logo.png" type="image/png">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+		rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+	<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+	<title>Unilink | Create Project</title>
+	<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+
+<body>
+
+	<nav class="inset secondary fill accent-underline">
+		<a href="javascript:history.back()">&larr; Back</a>
+	</nav>
+
+	<main class="inset">
+		<h1>Request Collaboration</h1>
+
+		<form class="inset" action="/submit-request" method="POST">
+			<section>
+				<label for="role"><strong>Role</strong></label><br>
+				<select name="Role" id="role">
+					<option value="Researcher">Researcher</option>
+					<option value="Reviewer">Reviewer</option>
+				</select><br><br>
+			</section>
+
+			<label for="otherText" id="otherLabel" style="display: none;">Please specify:</label>
+			<input type="text" id="otherText" name="otherText" style="display: none;">
+
+			<section>
+				<label for="details"><strong>Contribution Details</strong></label><br>
+				<textarea id="comment" class="no-padding-v" name="comment" rows="5" required
+					placeholder="How will you contibute to the project?"></textarea>
+			</section><br> <br>
+
+			<section>
+				<button type="submit" class="primary-button">Submit Review</button>
+			</section>
+		</form>
+	</main>
+	<button type="submit" class="primary-button">Submit Review</button>
+	<script type="module" src="/requestCollaboration.js"></script>
+
+</body>
+				<script type="module" src="/savedTheme.js"></script>
+
+
+</html>

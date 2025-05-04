@@ -21,6 +21,7 @@
 
 <body>
 	<section id="navigation" class="flex-row fill-width secondary center-content accent-underline">
+		<button id="theme-toggle" class="very-very-round">☀️</button>
 		<nav class="fill-width">
 			<ul class="no-list-style flex-row gap-large center-content">
 				<li>
@@ -31,9 +32,10 @@
 					</button>
 				</li>
 				<li>
-					<button class="nav-item flex-row gap-small center-content-v">
-						<i class='bx bxs-analyse'></i>
-						Analytics
+					<button class="nav-item flex-row gap-small center-content-v"
+						onclick="window.location.href='/message'">
+						<i class='bx bx-message-dots'></i>
+						Direct Messages
 					</button>
 				</li>
 				<li>
@@ -41,6 +43,13 @@
 						onclick="window.location.href='/view/public'">
 						<i class='bx bx-globe'></i>
 						View Public Projects
+					</button>
+				</li>
+				<li>
+					<button class="nav-item flex-row gap-small center-content-v"
+						onclick="window.location.href='/view/users'">
+						<i class='bx bx-user'></i>
+						Find Other Users
 					</button>
 				</li>
 				<li>
@@ -57,16 +66,24 @@
 						Collaboration Requests
 					</button>
 				</li>
+				<li>
+					<button class="nav-item flex-row gap-small center-content-v"
+						onclick="window.location.href='/collaboration'">
+						<i class='bx bxs-party'></i>
+						Collaboration Invites
+					</button>
+				</li>
 			</ul>
 		</nav>
-
+	
 		<span class="dropdown pad-right hover-rotate">
 			<button id="userButton" class="flex-row gap-small padding-vert-small center-content-v">
 				<i class='bx bx-chevron-right'></i>
-				<span id="username">Ellie</span>
+				<span id="username">Placeholder</span>
 			</button>
-
+	
 			<ul class="dropdown-menu">
+				<li><a href="/view/curr/profile"><i class='bx bx-user-circle'></i>Profile</a></li>
 				<li><a href="/settings"><i class='bx bx-cog'></i>Settings</a></li>
 				<li><a href="/logout"><i class='bx bx-run'></i>Logout</a></li>
 			</ul>
@@ -86,8 +103,9 @@
 						<i class='bx bx-plus'></i>
 					</button>
 				</section>
-				<form id="searchForm" type="">
-					<input id="searchBox" type="text" placeholder="Search your projects...">
+				<form id="project-search-form" type="">
+					<input id="project-search-input" type="text"
+						placeholder="Search your projects...">
 					<button id="searchButton" type="submit"
 						class="nav-item flex-row gap-small center-content-v"> <i
 							class="bx bx-search"></i>
@@ -95,7 +113,7 @@
 					</button>
 				</form>
 			</section>
-			<ul id="projectCardList" class="minh">
+			<ul id="project-list" class="minh">
 			</ul>
 		</section>
 
@@ -106,6 +124,13 @@
 	</footer>
 </body>
 <script type="module" src="/dashboard.js"></script>
+<script type="module">
+	import {initDashboard} from './dashboard.js';
+	initDashboard();
+</script>
+
 <script type="module" src="/fetchUsername.js"></script>
+			<script type="module" src="/savedTheme.js"></script>
+
 
 </html>

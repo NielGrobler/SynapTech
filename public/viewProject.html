@@ -33,9 +33,10 @@
 					<h1 id="projectName" class="large-text">Placeholder</h1>
 					<section
 						class="flex-row very-round secondary space-between padding-vert-xsmall small-text gap-medium">
-						<p>Status: <span id="projectIsPublic">Private</span></p>
+						<p>Visibility: <span id="projectIsPublic">Private</span></p>
 						<p>Created by: <span id="projectCreatedBy">Ellie</span></p>
 						<p>Created on: <span id="projectCreatedAt">2024/04/23</span></p>
+						<p>Status: <span id="projectStatus">In progress</span></p>
 					</section>
 				</section>
 				<h1 class="accent-underline">Description</h1>
@@ -48,14 +49,32 @@
 				</ul>
 			</section>
 		</section>
-	</main>
+		<section>
+			<button type="button" class="primary-button" onclick="reviewProject()">
+				Review Project
+			</button>
 
+		</section>
+	</main>
 	<footer class="inset">
 		<p>&copy; 2025 Unilink. All rights reserved.</p>
 	</footer>
 
 	<script type="module" src="/viewProject.js"></script>
+	<script type="module">
+		import {initPage} from '/viewProject.js';
+		await initPage();
+	</script>
+
+	<script>
+		function reviewProject() {
+			const projectId = new URLSearchParams(window.location.search).get('id');
+			window.location.href = `/reviewProject?id=${projectId}`;
+		}
+	</script>
 
 </body>
+<script type="module" src="/savedTheme.js"></script>
+
 
 </html>
