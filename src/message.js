@@ -322,7 +322,10 @@ const initMessages = async () => {
 	let topId = await initMessagedUsers();
 	setConversation(topId);
 	document.getElementById("sendForm").addEventListener('submit', sendHandler);
-	setInterval(() => setConversation(activeUserId, 10000));
+	setInterval(() => {
+		console.log("Hello world");
+		setConversation(activeUserId)
+	}, 2000);
 }
 
 
