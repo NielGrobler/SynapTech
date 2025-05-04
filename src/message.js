@@ -75,7 +75,7 @@ const addClasses = (messageElement, index, containerLength, fromFst) => {
 		messageElement.classList.add(`bubble-${direction}-end`);
 		messageElement.classList.add(`bubble`);
 	} else {
-		messageElement.classList.add(`bubble-fragment`);
+		messageElement.classList.add(`bubble-fragment-${direction}`);
 	}
 }
 
@@ -92,13 +92,13 @@ const toHTML = (message, index, containerLength) => {
 	const now = new Date();
 
 	const isToday =
-	  date.getFullYear() === now.getFullYear() &&
-	  date.getMonth() === now.getMonth() &&
-	  date.getDate() === now.getDate();
+		date.getFullYear() === now.getFullYear() &&
+		date.getMonth() === now.getMonth() &&
+		date.getDate() === now.getDate();
 
 	const formatter = new Intl.DateTimeFormat('en-US', {
-	  timeStyle: 'short',
-	  ...(isToday ? {} : { dateStyle: 'medium' }),
+		timeStyle: 'short',
+		...(isToday ? {} : { dateStyle: 'medium' }),
 	});
 
 	time.textContent = formatter.format(date);
@@ -214,7 +214,7 @@ const fetchMessagedUsers = async () => {
 			if (!response.ok) {
 				throw new Error(`Request failed. Received status ${response.status}`);
 			}
-			
+
 			return response.json();
 		})
 		.catch((error) => {
@@ -322,7 +322,7 @@ const initMessages = async () => {
 	let topId = await initMessagedUsers();
 	setConversation(topId);
 	document.getElementById("sendForm").addEventListener('submit', sendHandler);
-	setInterval(() => setConversation(activeUserId, 5000));
+	setInterval(() => setConversation(activeUserId, 10000));
 }
 
 
