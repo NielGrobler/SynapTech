@@ -167,6 +167,13 @@ router.get('/auth/google/callback',
 	}
 );
 
+/*const authenticateRequest = (req) => {
+	if (process.env.AUTH_TESTING === 'true') {
+		return true;
+	}
+
+	return req.isAuthenticated();
+}*/
 export const authenticateRequest = (req) => req.isAuthenticated();
 export const isSuspended = async(req) => {const result = await db.isSuspended(req.user.id); 
 	return result[0].is_suspended;
