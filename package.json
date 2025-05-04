@@ -41,6 +41,7 @@
     "mssql": "^11.0.1",
     "multer": "^1.4.5-lts.2",
     "node-fetch": "^3.3.2",
+    "oauth": "^0.10.2",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "passport-orcid": "^0.0.4"

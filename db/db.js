@@ -196,37 +196,48 @@ const deleteUser = async (userId) => {
 		`);
 };
 
-const isSuspendend = async (userId) => {
+const is_Admin = async (userId) => {
 	const pool = await poolPromise;
 	const result = await pool.request()
-		.input('id', sql.NVarChar, userId)
+		.input('id', sql.Int, userId)
 		.query(`
-			SELECT account_id FROM SuspendedAccount WHERE account_id = @id;
+			SELECT is_admin FROM [dbo].[Account] WHERE account_id = @id;
 		`);
-	return result.recordset.length > 0;
+	return result.recordset[0].is_admin;
+}
+
+const isSuspended = async (userId) => {
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('id', sql.Int, userId)
+		.query(`
+			SELECT is_suspended FROM [dbo].[Account] WHERE account_id = @id;
+		`);
+	return result.recordset;
 };
 
 const suspendUser = async (userId) => {
 	const pool = await poolPromise;
-	await pool.request()
-		.input('id', sql.NVarChar, userId)
-		.query(`
-			UPDATE [dbo].[Account]
-			SET is_suspended = 1
-			WHERE [dbo].[Account].account_id = @id
-		`);
+	const result = await isSuspended(userId);
+	if (result[0].is_suspended) {
+		await pool.request()
+			.input('id', sql.Int, userId)
+			.query(`
+				UPDATE [dbo].[Account]
+				SET is_suspended = 0
+				WHERE account_id = @id
+			`);
+	} else {
+		await pool.request()
+			.input('id', sql.Int, userId)
+			.query(`
+				UPDATE [dbo].[Account]
+				SET is_suspended = 1
+				WHERE account_id = @id
+			`);
+	}
 };
 
-const unsuspendUser = async (userId) => {
-	const pool = await poolPromise;
-	await pool.request()
-		.input('id', sql.NVarChar, userId)
-		.query(`
-			UPDATE [dbo].[Account]
-			SET is_suspended = 0
-			WHERE [dbo].[Account].account_id = @id
-		`);
-};
 
 const addCollaborator = async (projectId, userId, role) => {
 	const pool = await poolPromise;
@@ -465,9 +476,8 @@ export default {
 	fetchAssociatedProjects,
 	appendCollaborators,
 	deleteUser,
-	isSuspendend,
+	isSuspended,
 	suspendUser,
-	unsuspendUser,
 	addCollaborator,
 	acceptCollaborator,
 	searchProjects,
@@ -483,5 +493,6 @@ export default {
 	removeCollaborator,
 	storeMessage,
 	retrieveMessages,
+	is_Admin
 };
 

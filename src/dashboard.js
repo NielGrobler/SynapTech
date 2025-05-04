@@ -16,6 +16,7 @@ export async function executeApiCall() {
 }
 
 export function initDashboard() {
+
   const form = document.getElementById('project-search-form');
   const input = document.getElementById('project-search-input');
 

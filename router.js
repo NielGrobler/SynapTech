@@ -168,13 +168,19 @@ router.get('/auth/google/callback',
 );
 
 export const authenticateRequest = (req) => req.isAuthenticated();
+export const isSuspended = async(req) => {const result = await db.isSuspended(req.user.id); 
+	return result[0].is_suspended;
+};
 
 /* Normal Routes */
-router.get('/home', (req, res) => {
+router.get('/home', async(req, res) => {
 	if (!authenticateRequest(req)) {
 		return res.redirect('/forbidden');
 	}
-
+	const result = await isSuspended(req);
+	if(result){
+		return res.redirect('/suspended');
+	}
 	res.redirect('/dashboard');
 });
 
@@ -234,7 +240,6 @@ router.get('/create/project', (req, res) => {
 	if (!authenticateRequest(req)) {
 		return res.redirect('/forbidden');
 	}
-
 	res.sendFile(path.join(__dirname, "public", "addProject.html"));
 });
 
@@ -243,7 +248,6 @@ router.get('/view/public', (req, res) => {
 	if (!authenticateRequest(req)) {
 		return res.redirect('/forbidden');
 	}
-
 	res.sendFile(path.join(__dirname, "public", "searchPublicProjects.html"));
 });
 
@@ -251,6 +255,7 @@ router.get('/view/project', (req, res) => {
 	if (!authenticateRequest(req)) {
 		return res.redirect('/forbidden');
 	}
+
 
 	res.sendFile(path.join(__dirname, "public", "viewProject.html"));
 });
@@ -677,56 +682,31 @@ router.get('/api/search/user', async (req, res) => {
 });
 
 //Suspends an account
-router.put('/suspend/user', async(req, res) =>{
+router.put('/suspend/user', async (req, res) => {
 	if (!authenticateRequest(req)) {
 		return res.redirect('/forbidden');
 	}
+
+	const userId = req.body.id;
+
 	try {
-		const suspend = await db.suspendUser(req.user);
+		const suspend = await db.suspendUser(userId);
 
 		res.status(201).json({
-			message: 'User Suspended!',
+			message: "User's Status changed!",
 		});
 	} catch (err) {
-		console.error('Error creating review:', err);
+		console.error('Error suspending user:', err);
 		res.status(500).json({ error: 'Failed to suspend user', details: err.message });
 	}
 });
 
-//Unuspends an account
-router.put('/unsuspend/user', async(req, res) =>{
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-	try {
-		
-		const unsuspend = await db.unsuspendUser(req.user);
-
-		res.status(201).json({
-			message: 'User Unuspended!',
-		});
-	} catch (err) {
-		console.error('Error creating review:', err);
-		res.status(500).json({ error: 'Failed to unsuspend user', details: err.message });
-	}
-});
 
 //Checks if user is an administrator
 router.get('/admin', async(req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-	let is_admin = await db.isAdmin(req.user);
-	res.json(is_admin);
-});
-
-//Checks if user is suspended
-router.get('/suspended', async(req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-	let is_suspended = await db.isSuspendend(req.user);
-	res.json(is_suspended);
+	let user = req.user.id;
+	let admin = await db.is_Admin(user);
+	return res.json(admin);
 });
 
 //Redirect to other profile
@@ -738,13 +718,31 @@ router.get('/view/other/profile', (req, res) => {
 	res.sendFile(path.join(__dirname, "public", "viewOtherProfile.html"));
 });
 
-//Redirect to other profile
+//Redirect to my profile
 router.get('/view/curr/profile', (req, res) => {
 	if (!authenticateRequest(req)) {
 		return res.redirect('/forbidden');
 	}
 
 	res.sendFile(path.join(__dirname, "public", "viewCurrProfile.html"));
+});
+
+router.get('/suspended', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+
+	res.sendFile(path.join(__dirname, "public", "suspended.html"));
+});
+
+router.get('/isSuspended', async(req, res) => {
+	try {
+		const { id } = req.query
+		const result = await db.isSuspended(id);
+		return res.json(result[0].is_suspended);
+	} catch (err) {
+		console.error('Error checking if user suspended:', err);
+	}
 });
 
 //Put request to update profile
