@@ -248,6 +248,7 @@ const setConversation = (userId) => {
 				conversation.innerHTML = '<p class="error">Unable to load messages.</p>';
 			}
 		});
+
 }
 
 const initMessagedUsers = () => {
@@ -319,15 +320,33 @@ const sendHandler = async (e) => {
 }
 
 const initMessages = async () => {
+	let conversation = document.getElementById('conversation');
 	let topId = await initMessagedUsers();
 	setConversation(topId);
 	document.getElementById("sendForm").addEventListener('submit', sendHandler);
+	conversation.scrollTop = conversation.scrollHeight;
 	setInterval(() => {
-		console.log("Hello world");
 		setConversation(activeUserId)
 	}, 2000);
 }
 
+export {
+	constructMessage,
+	pushRemaining,
+	mergeConstruct,
+	groupByCategory,
+	addClasses,
+	toHTML,
+	unactivateActiveUser,
+	userToHTML,
+	insertUsersIntoDocument,
+	insertMessagesIntoDocument,
+	fetchMessages,
+	fetchMessagedUsers,
+	setConversation,
+	sendHandler,
+	initMessagedUsers,
+};
 
 export default {
 	initMessages

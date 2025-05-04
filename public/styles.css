@@ -22,6 +22,10 @@
 	--shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 
 	--transition: all 0.2s ease-in-out;
+
+	/* For bubbles in chat */
+	--bubble-radius: 2.3em;
+	--tail-size: 1.5em;
 }
 
 /* Default style for components */
@@ -358,10 +362,7 @@ select {
 
 /* Chat bubbles, isolated for quarantine */
 .bubble {
-	--bubble-radius: 1em;
-	--tail-size: 1.5em;
-
-	min-width: 0;
+	min-width: 10rem;
 	max-width: 40rem;
 
 	display: flex;
@@ -402,31 +403,8 @@ select {
 }
 
 .bubble-fragment-left {
-	--bubble-radius: 1em;
-	--tail-size: 1.5em;
-
-	min-width: 0;
-	width: 400px;
-
-	display: flex;
-	flex-direction: column;
-	flex-wrap: wrap;
-	text-wrap: wrap;
-
-	padding: 0.5em;
-	padding-left: 1rem;
-	padding-right: 1rem;
-	border-radius: var(--bubble-radius);
-	margin-right: var(--tail-size);
-	color: #fff;
-}
-
-.bubble-fragment-right {
-	--bubble-radius: 1em;
-	--tail-size: 1.5em;
-
-	min-width: 0;
-	width: 400px;
+	min-width: 10rem;
+	max-width: 40rem;
 
 	display: flex;
 	flex-direction: column;
@@ -438,6 +416,22 @@ select {
 	padding-right: 1rem;
 	border-radius: var(--bubble-radius);
 	margin-left: var(--tail-size);
+}
+
+.bubble-fragment-right {
+	min-width: 10rem;
+	max-width: 40rem;
+
+	display: flex;
+	flex-direction: column;
+	flex-wrap: wrap;
+	text-wrap: wrap;
+
+	padding: 0.5em;
+	padding-left: 1rem;
+	padding-right: 1rem;
+	border-radius: var(--bubble-radius);
+	margin-right: var(--tail-size);
 	color: #fff;
 }
 
