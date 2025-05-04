@@ -1,4 +1,3 @@
-
 const projectToElement = (project) => {
 	const li = document.createElement("li");
 	const title = document.createElement("strong");
@@ -18,6 +17,26 @@ const projectToElement = (project) => {
 	return li;
 }
 
+
+const userToElement = (user) => {
+	const li = document.createElement("li");
+	const title = document.createElement("strong");
+	title.textContent = user.name;
+	const description = document.createElement("p");
+	description.textContent = user.bio;
+	const id = user.account_id;
+
+
+	li.appendChild(title);
+	li.appendChild(description);
+	li.classList.add("highlight-hover");
+	li.addEventListener('click', () => {
+		window.location.href = `/view/other/profile?id=${encodeURIComponent(id)}`;
+	});
+
+	return li;
+}
+
 const addProjectsToPage = (elementId, projects) => {
 	assignListToElement(
 		elementId,
@@ -29,6 +48,15 @@ const addProjectsToPage = (elementId, projects) => {
 const clearProjects = (elementId) => {
 	document.getElementById(elementId).innerHTML = "";
 }
+
+const addUsersToPage = (elementId, users) => {
+	assignListToElement(
+		elementId,
+		users,
+		userToElement
+	);
+}
+
 
 /*
  * A function to add a list of elements specified by rawElements formatted by elementHTMLFormatter to the element elementId.
@@ -54,6 +82,7 @@ const assignListToElement = (elementId, rawElements, elementHTMLFormatter, noDis
 export default {
 	addProjectsToPage,
 	clearProjects,
-	assignListToElement
+	assignListToElement,
+	addUsersToPage,
 };
 
