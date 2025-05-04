@@ -13,7 +13,8 @@ const config = {
 	database: process.env.AZURE_DB_NAME,
 	options: {
 		encrypt: true,
-		trustServerCertificate: false
+		trustServerCertificate: false,
+		multipleStatements: true,
 	},
 	pool: {
 		max: 10,
@@ -412,18 +413,49 @@ const retrieveMessages = async (fstPersonId, sndPersonId) => {
 		.input('fst_id', sql.Int, fstPersonId)
 		.input('snd_id', sql.Int, sndPersonId)
 		.query(`
-			SELECT TOP 50 [dbo].[Message].content AS you_sent
+			SELECT TOP 50 	[dbo].[Message].created_at AS created_at,
+					[dbo].[Message].content AS you_sent
 			FROM [dbo].[Message]
 			WHERE sender_id = @fst_id AND receiver_id = @snd_id
 			ORDER BY [dbo].[Message].created_at;
 
-			SELECT TOP 50 [dbo].[Message].content AS they_sent
+			SELECT TOP 50 	[dbo].[Message].created_at AS created_at,
+					[dbo].[Message].content AS they_sent
 			FROM [dbo].[Message]
 			WHERE sender_id = @snd_id AND receiver_id = @fst_id
 			ORDER BY [dbo].[Message].created_at;
 		`);
 
+
 	return result.recordsets;
+}
+
+const retrieveMessagedUsers = async (userId) => {
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('user_id', sql.Int, userId)
+		.query(`
+			SELECT DISTINCT [dbo].[Account].account_id, [dbo].[Account].name, idAndLatest.latest_message_at
+			FROM [dbo].[Account]
+			JOIN (
+				SELECT 
+				CASE 
+					WHEN [dbo].[Message].sender_id = @user_id THEN [dbo].[Message].receiver_id
+					ELSE [dbo].[Message].sender_id
+				END AS snd_account_id,
+				MAX([dbo].[Message].created_at) AS latest_message_at
+				FROM [dbo].[Message] 
+				WHERE [dbo].[Message].sender_id = @user_id OR [dbo].[Message].receiver_id = @user_id
+				GROUP BY 
+				CASE 
+					WHEN [dbo].[Message].sender_id = @user_id THEN [dbo].[Message].receiver_id
+					ELSE [dbo].[Message].sender_id
+				END
+			) idAndLatest ON [dbo].[Account].account_id = idAndLatest.snd_account_id
+			ORDER BY idAndLatest.latest_message_at;
+		`);
+
+	return result.recordset;
 }
 
 const searchUsers = async (userName) => {
@@ -493,6 +525,7 @@ export default {
 	removeCollaborator,
 	storeMessage,
 	retrieveMessages,
+	retrieveMessagedUsers,
 	is_Admin
 };
 
