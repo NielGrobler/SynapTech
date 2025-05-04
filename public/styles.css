@@ -19,6 +19,7 @@
 
 	--radius: 8px;
 	--round-radius: 64px;
+	--very-round-radius: 128px;
 	--shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 
 	--transition: all 0.2s ease-in-out;
@@ -26,6 +27,32 @@
 	/* For bubbles in chat */
 	--bubble-radius: 2.3em;
 	--tail-size: 1.5em;
+}
+
+/* Add this to your CSS, after the :root definitions */
+[data-theme="dark"] {
+  /* Base typography & backgrounds */
+  --color-bg:   #1a1a1a;
+  --color-text: #e0e0e0;
+
+  /* Surfaces & secondary */
+  --color-secondary:     #2a2a2a;
+  --color-muted-light:   #2f2f2f;
+  --color-mute:         #999;   /* subtle borders or icons */
+  --color-muted-text:   #bbb;
+
+  /* Accents */
+  --color-accent:           #8e7cc3;
+  --color-accent-highlight: #b0a4e3;
+
+  /* Chat bubble */
+  --color-drop: #222;        /* bubble background */
+
+  /* Deep/dark elements */
+  --color-dark: #000;
+
+  /* Shadows on dark need to be lighter or tighter */
+  --shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
 }
 
 /* Default style for components */
@@ -557,6 +584,10 @@ select {
 
 .very-round {
 	border-radius: var(--round-radius);
+}
+
+.very-very-round {
+	border-radius: var(--very-round-radius);
 }
 
 .width-25 {
