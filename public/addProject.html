@@ -23,44 +23,51 @@
 
 <body>
 	<nav class="inset secondary fill accent-underline">
-		<a href="javascript:history.back()">&larr; Back</a>
+		<button class="nav-item flex-row center-content-v gap-small"
+			onclick="window.location.href=history.back()">
+			<i class='bx bx-chevron-left'></i>
+			Back
+		</button>
 	</nav>
 
+
 	<main class="inset">
-		<h1>Create a New Project</h1>
-		<form class="inset" action="/create/project" method="POST">
-			<section>
-				<label for="project-name"><strong>Project Name</strong></label><br>
-				<input type="text" id="project-name" class="no-padding-v" name="projectName" required
-					placeholder="Project name...">
-			</section>
-
-			<section>
-				<label for="project-description"><strong>Description</strong></label><br>
-				<textarea id="project-description" class="no-padding-v" name="description" required
-					placeholder="Project description..."></textarea>
-			</section>
-
-			<section>
-				<label for="project-field"><strong>Field Of Study</strong></label><br>
-				<input type="text" id="project-field" class="no-padding-v" name="field" required
-					placeholder="Field of Study">
-			</section>
-
-			<section class="flex-column">
-				<section class="flex-start center-content-v">
-					<label class="nowrap" for="visibility" class="flag"><strong>Make project
-							public?</strong></label>
-					<input type="checkbox" name="visibility" value="public"
-						class="flex-row fill-width flex-left">
+		<section class="border-solid-thin shadow">
+			<h1 class="accent-underline">Create a New Project</h1>
+			<form class="inset" action="/create/project" method="POST">
+				<section>
+					<label for="project-name"><strong>Project Name</strong></label><br>
+					<input type="text" id="project-name" class="no-padding-v" name="projectName"
+						required placeholder="Project name...">
 				</section>
 
-			</section>
+				<section>
+					<label for="project-description"><strong>Description</strong></label><br>
+					<textarea id="project-description" class="no-padding-v" name="description"
+						required placeholder="Project description..."></textarea>
+				</section>
 
-			<section>
-				<button type="submit">Create Project</button>
-			</section>
-		</form>
+				<section>
+					<label for="project-field"><strong>Field Of Study</strong></label><br>
+					<input type="text" id="project-field" class="no-padding-v" name="field" required
+						placeholder="Field of Study">
+				</section>
+
+				<section class="flex-column">
+					<section class="flex-start center-content-v">
+						<label class="nowrap" for="visibility" class="flag"><strong>Make project
+								public?</strong></label>
+						<input type="checkbox" name="visibility" value="public"
+							class="flex-row fill-width flex-left">
+					</section>
+
+				</section>
+
+				<section>
+					<button type="submit">Create Project</button>
+				</section>
+			</form>
+		</section>
 	</main>
 </body>
 

@@ -30,25 +30,19 @@
 
 	<main class="inset flex-col gap-medium">
 		<section class="border-solid-thin shadow">
-			<h1 class="accent-underline">Search for public projects</h1>
+			<h1 class="accent-underline">View Collaboration Requests</h1>
 			<form id="searchForm" method="GET">
 				<input id="searchInput" type="text" name="projectName"
-					placeholder="Search for projects...">
+					placeholder="Search for requests...">
 				<button type="submit">Submit</button>
 			</form>
 
-			<ul id="projects">
+			<ul id="collaboratorRequests">
 			</ul>
 		</section>
 	</main>
 
-	<script type="module" src="/searchPublicProjects.js"></script>
-
-	<script type="module">
-		import { setupSearchForm } from '/searchPublicProjects.js';
-		
-		setupSearchForm();
-	</script>
+	<script type="module" src="/viewCollaborators.js"></script>
 
 	<footer class="inset">
 		<p>&copy; 2025 Unilink. All rights reserved.</p>

@@ -6,18 +6,20 @@
 
 	--color-bg: #fdfdfd;
 	--color-text: #222;
-	--color-secondary: #f0f0f0;
-	--color-accent: #31ceb6;
-	--color-accent-highlight: #44bba3;
-	--color-muted: #7c8391;
+	--color-secondary: #f4f4f4;
+	--color-accent: #3d348b;
+	--color-accent-highlight: #3d348b;
+	--color-mute: #7c8391;
 	--color-muted-text: #888;
 	--color-muted-light: #eee;
 	--color-dark: #333;
 
+	--color-drop: #fafafa;
+
 
 	--radius: 8px;
 	--round-radius: 64px;
-	--shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+	--shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 
 	--transition: all 0.2s ease-in-out;
 }
@@ -27,9 +29,14 @@ body {
 	margin: 0;
 	padding: 0;
 	font-family: var(--font-base);
-	background-color: var(--color-bg);
+	background-color: var(--color-drop);
 	color: var(--color-text);
 	line-height: 1.6;
+}
+
+section {
+	background-color: var(--color-bg);
+	padding: 0.5rem;
 }
 
 h1,
@@ -81,6 +88,7 @@ input,
 textarea,
 select {
 	font: inherit;
+	margin: 0.3rem;
 	padding: 0.3em 1em;
 	border: 1px solid #ccc;
 	border-radius: var(--radius);
@@ -93,6 +101,10 @@ select {
 
 .flag {
 	background-color: red;
+}
+
+.large-text {
+	font-size: 1.5rem;
 }
 
 .inset-small {
@@ -114,6 +126,10 @@ select {
 .pad-small-h {
 	padding-left: 0.3rem;
 	padding-right: 0.3rem;
+}
+
+.minh {
+	min-height: 30rem;
 }
 
 .flex-start {
@@ -195,6 +211,15 @@ select {
 	padding-bottom: 0.2rem;
 }
 
+.small-text {
+	font-size: 0.8rem;
+}
+
+.padding-vert-xsmall {
+	padding-top: 0.0rem;
+	padding-bottom: 0.0rem;
+}
+
 .inset {
 	padding: 1rem;
 }
@@ -233,8 +258,17 @@ select {
 	border-radius: var(--radius);
 }
 
+.border-accent-thin {
+	border: solid 1px var(--color-accent);
+	border-radius: var(--radius);
+}
+
+.shadow {
+	box-shadow: var(--shadow);
+}
+
 .accent-underline {
-	border-bottom: solid 1px var(--color-accent);
+	border-bottom: solid 1px var(--color-accent-highlight);
 }
 
 .show-overflow {
@@ -304,6 +338,10 @@ select {
 
 .very-round {
 	border-radius: var(--round-radius);
+}
+
+.width-25 {
+	width: 15%;
 }
 
 /* Dropdown menu */

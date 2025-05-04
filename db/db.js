@@ -1,4 +1,6 @@
+//import sql, { UniqueIdentifier } from 'mssql';
 import sql from 'mssql';
+const {UniqueIdentifier} = sql;
 import Joi from 'joi';
 import dotenv from 'dotenv';
 
@@ -38,6 +40,7 @@ const getUserByGUID = async (guid) => {
 			SELECT
 				A.account_id AS id,
 				A.name,
+				A.bio,
 				L.uuid,
 				L.source
 			FROM [dbo].[Account] A
@@ -70,21 +73,38 @@ const createUser = async (user) => {
 };
 
 const projectSchema = Joi.object({
-	name: Joi.string().trim().min(3).max(255).required(),
-	description: Joi.string().min(3).max(255).required(),
-	field: Joi.string().min(3).max(32).required(),
+	name: Joi.string().trim().min(3).max(255).regex(/^[A-Za-z\s]+$/).required(),
+	description: Joi.string().min(3).max(255).regex(/^[A-Za-z0-9\s,.'"!;?-]+$/).required(),
+	field: Joi.string().min(3).max(32).regex(/^[A-Za-z0-9_-]+$/).required(),
 	isPublic: Joi.boolean().required()
 });
 
-const validateProject = (project) => {
-	const { error } = projectSchema.validate(project);
-	if (error) {
-		throw new Error(`Project validation failed: ${error.details[0].message}`);
-	}
-};
+// Project names are unique up to user id
+const checkProjectNameUniqueness = async (project, user) => {
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('name', sql.NVarChar, project.name)
+		.input('created_by_account_id', sql.Int, user.id)
+		.query(`
+			SELECT *
+			FROM [dbo].[Project]
+			WHERE [dbo].[Project].name = @name AND [dbo].[Project].created_by_account_id = @created_by_account_id;
+		`);
+
+	return result.recordset.length === 0;
+}
 
 const createProject = async (project, user) => {
-	validateProject(project);
+	const { _, error } = projectSchema.validate(project);
+	if (error) {
+		throw new Error(`Malformed project.`);
+	}
+
+	const isUnique = await checkProjectNameUniqueness(project, user);
+	if (!isUnique) {
+		throw new Error(`Project with name ${project.name} already exists.`);
+	}
+
 	const pool = await poolPromise;
 	await pool.request()
 		.input('name', sql.NVarChar, project.name)
@@ -102,7 +122,8 @@ const fetchAssociatedProjects = async (user) => {
 	const result = await pool.request()
 		.input('id', sql.Int, user.id)
 		.query(`
-			SELECT [dbo].[Project].project_id AS id,
+			SELECT DISTINCT 
+				[dbo].[Project].project_id AS id,
 				[dbo].[Project].created_by_account_id AS author_id,
 				[dbo].[Project].created_at AS created_at,
 				[dbo].[Project].name AS name,
@@ -116,6 +137,25 @@ const fetchAssociatedProjects = async (user) => {
 	return result.recordset;
 };
 
+const fetchPublicAssociatedProjects = async (id) => {
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('id', sql.Int, id)
+		.query(`
+			SELECT [dbo].[Project].project_id AS id,
+				[dbo].[Project].created_by_account_id AS author_id,
+				[dbo].[Project].created_at AS created_at,
+				[dbo].[Project].name AS name,
+				[dbo].[Project].description AS description,
+				[dbo].[Project].is_public AS is_public
+			FROM [dbo].[Project]
+			LEFT JOIN [dbo].[Collaborator] ON [dbo].[Collaborator].project_id = [dbo].[Project].project_id
+			LEFT JOIN [dbo].[Account] ON [dbo].[Account].account_id = [dbo].[Collaborator].account_id
+			WHERE [dbo].[Project].created_by_account_id = @id AND is_public = 1;
+		`);
+	return result.recordset;
+}
+
 const appendCollaborators = async (projects) => {
 	const pool = await poolPromise;
 	const transaction = new sql.Transaction(pool);
@@ -126,7 +166,8 @@ const appendCollaborators = async (projects) => {
 			const queryResult = await request
 				.input('project_id', sql.Int, project.id)
 				.query(`
-					SELECT [dbo].[Account].account_id AS account_id,
+					SELECT DISTINCT
+						[dbo].[Account].account_id AS account_id,
 						[dbo].[Collaborator].is_active AS is_active,
 						[dbo].[Account].name AS name,
 						[dbo].[Collaborator].role AS role
@@ -148,9 +189,10 @@ const deleteUser = async (userId) => {
 	await pool.request()
 		.input('id', sql.Int, userId)
 		.query(`
-			DELETE FROM [dbo].[AccountLink] WHERE account_id = @id;
-			DELETE FROM [dbo].[Collaborator] WHERE account_id = @id;
-			DELETE FROM [dbo].[Account] WHERE account_id = @id;
+			DELETE FROM [dbo].[AccountLink] WHERE [dbo].[AccountLink].account_id = @id;
+			DELETE FROM [dbo].[Project] WHERE [dbo].[Project].created_by_account_id = @id;
+			DELETE FROM [dbo].[Collaborator] WHERE [dbo].[Collaborator].account_id = @id;
+			DELETE FROM [dbo].[Account] WHERE [dbo].[Account].account_id = @id;
 		`);
 };
 
@@ -169,7 +211,20 @@ const suspendUser = async (userId) => {
 	await pool.request()
 		.input('id', sql.NVarChar, userId)
 		.query(`
-			INSERT INTO SuspendedAccount(account_id) VALUES(@id);
+			UPDATE [dbo].[Account]
+			SET is_suspended = 1
+			WHERE [dbo].[Account].account_id = @id
+		`);
+};
+
+const unsuspendUser = async (userId) => {
+	const pool = await poolPromise;
+	await pool.request()
+		.input('id', sql.NVarChar, userId)
+		.query(`
+			UPDATE [dbo].[Account]
+			SET is_suspended = 0
+			WHERE [dbo].[Account].account_id = @id
 		`);
 };
 
@@ -185,13 +240,50 @@ const addCollaborator = async (projectId, userId, role) => {
 		`);
 };
 
-const acceptCollaborator = async (collaboratorId) => {
+const permittedToAcceptCollaborator = async (user, collabUserId, projectId) => {
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('project_id', sql.Int, projectId)
+		.input('account_id', sql.Int, user.id)
+		.query(`
+			SELECT *
+			FROM [dbo].[Project]
+			WHERE [dbo].[Project].project_id = @project_id AND [dbo].[Project].created_by_account_id = @account_id;
+		`);
+
+	return result.recordset.length > 0;
+}
+
+const permittedToRejectCollaborator = async (user, collabUserId, projectId) => {
+	if (collabUserId === user.id) {
+		return true;
+	}
+
+	const permittedAccept = await permittedToAcceptCollaborator(user, collabUserId, projectId);
+	return permittedAccept;
+}
+
+const removeCollaborator = async (userId, projectId) => {
 	const pool = await poolPromise;
 	await pool.request()
-		.input('id', sql.NVarChar, collaboratorId)
+		.input('account_id', sql.Int, userId)
+		.input('project_id', sql.Int, projectId)
 		.query(`
-			-- You may want to update this to reflect the actual behavior
-			UPDATE Collaborator SET is_pending = 0 WHERE collaborator_id = @id;
+			DELETE
+			FROM [dbo].[Collaborator]
+			WHERE account_id = @account_id AND project_id = @project_id;
+		`);
+}
+
+const acceptCollaborator = async (userId, projectId) => {
+	const pool = await poolPromise;
+	await pool.request()
+		.input('account_id', sql.Int, userId)
+		.input('project_id', sql.Int, projectId)
+		.query(`
+			UPDATE [dbo].[Collaborator]
+			SET is_pending = 0 
+			WHERE account_id = @account_id AND project_id = @project_id;
 		`);
 };
 
@@ -209,12 +301,13 @@ const searchProjects = async (projectName) => {
 	return result.recordset;
 };
 
-const fetchCollaborators = async (id) => {
+const fetchCollaborators = async (projectId) => {
 	const pool = await poolPromise;
 	const result = await pool.request()
-		.input('project_id', sql.Int, id)
+		.input('project_id', sql.Int, projectId)
 		.query(`
-			SELECT [dbo].[Account].account_id AS account_id,
+			SELECT DISTINCT
+				[dbo].[Account].account_id AS account_id,
 				[dbo].[Collaborator].is_active AS is_active,
 				[dbo].[Account].name AS name,
 				[dbo].[Collaborator].role AS role
@@ -226,12 +319,47 @@ const fetchCollaborators = async (id) => {
 	return result.recordset;
 }
 
+const fetchPendingCollaborators = async (user) => {
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('id', sql.Int, user.id)
+		.query(`
+			SELECT DISTINCT
+				[dbo].[Collaborator].account_id AS account_id,
+				[dbo].[Collaborator].project_id AS project_id,
+				[dbo].[Account].name AS account_name,
+				[dbo].[Project].name AS project_name,
+				[dbo].[Project].is_public AS project_is_public,
+				[dbo].[Collaborator].role AS role
+			FROM [dbo].[Collaborator]
+			INNER JOIN [dbo].[Project]
+			ON [dbo].[Project].project_id = [dbo].[Collaborator].project_id
+			INNER JOIN [dbo].[Account]
+			ON [dbo].[Collaborator].account_id = [dbo].[Account].account_id
+			WHERE [dbo].[Project].created_by_account_id = @id AND [dbo].[Collaborator].is_pending = 1;
+		`);
+
+	return result.recordset;
+}
+
+const insertPendingCollaborator = async (userId, projectId) => {
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('account_id', sql.Int, userId)
+		.input('project_id', sql.Int, projectId)
+		.query(`
+			INSERT INTO Collaborator (account_id, project_id, role, is_active, is_pending)
+			VALUES(@account_id, @project_id, 'Researcher', 1, 1);
+		`);
+}
+
 const fetchProjectById = async (id) => {
 	const pool = await poolPromise;
 	const result = await pool.request()
 		.input('id', sql.Int, id)
 		.query(`
-			SELECT	[dbo].[Project].project_id AS id,
+			SELECT	DISTINCT
+				[dbo].[Project].project_id AS id,
 				[dbo].[Project].name AS name,
 				[dbo].[Project].created_by_account_id AS created_by_account_id,
 				[dbo].[Account].name AS author_name,
@@ -255,6 +383,81 @@ const fetchProjectById = async (id) => {
 	return project;
 }
 
+const storeMessage = async (senderId, recipientId, messageBody) => {
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('sender_id', sql.Int, senderId)
+		.input('receiver_id', sql.Int, recipientId)
+		.input('content', sql.NVarChar, messageBody)
+		.query(`
+			INSERT INTO [dbo].[Message] (sender_id, receiver_id, content)
+			VALUES(@sender_id, @receiver_id, @content);
+		`);
+}
+
+const retrieveMessages = async (fstPersonId, sndPersonId) => {
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('fst_id', sql.Int, fstPersonId)
+		.input('snd_id', sql.Int, sndPersonId)
+		.query(`
+			SELECT TOP 50 [dbo].[Message].content AS you_sent
+			FROM [dbo].[Message]
+			WHERE sender_id = @fst_id AND receiver_id = @snd_id
+			ORDER BY [dbo].[Message].created_at;
+
+			SELECT TOP 50 [dbo].[Message].content AS they_sent
+			FROM [dbo].[Message]
+			WHERE sender_id = @snd_id AND receiver_id = @fst_id
+			ORDER BY [dbo].[Message].created_at;
+		`);
+
+	return result.recordsets;
+}
+
+const searchUsers = async (userName) => {
+	const lowerName = userName.toLowerCase();
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('userName', sql.NVarChar, `%${lowerName}%`)
+		.query(`
+            SELECT TOP 10 *
+			FROM [dbo].[Account]
+			WHERE LOWER([dbo].[Account].name) LIKE @userName 
+			ORDER BY LEN([dbo].[Account].name);
+		`);
+    return result.recordset;
+}
+
+//Function to get user by id
+const fetchUserById = async (uuid) => {
+	const id = parseInt(uuid);
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('Uid', sql.Int, id)
+		.batch(`
+            SELECT * FROM [dbo].[Account] WHERE [dbo].[Account].account_id = @Uid;
+		`);
+    return result.recordset;
+}
+
+const updateProfile = async (params) => {
+	const { id, username, bio, university, department } = params;
+
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('username', sql.NVarChar, username)
+		.input('id', sql.Int, id)
+		.input('bio', sql.NVarChar, bio)
+		.input('university', sql.NVarChar, university)
+		.input('department', sql.NVarChar, department)
+		.query(`
+            UPDATE [dbo].[Account]
+			SET name = @username, bio = @bio, university = @university, department=@department
+			WHERE [dbo].[Account].account_id = @id
+		`);
+}
+
 export default {
 	getUserByGUID,
 	createUser,
@@ -264,9 +467,21 @@ export default {
 	deleteUser,
 	isSuspendend,
 	suspendUser,
+	unsuspendUser,
 	addCollaborator,
 	acceptCollaborator,
 	searchProjects,
-	fetchProjectById
+	fetchProjectById,
+	fetchPendingCollaborators,
+	insertPendingCollaborator,
+	searchUsers,
+	fetchPublicAssociatedProjects,
+	fetchUserById,
+	updateProfile,
+	permittedToAcceptCollaborator,
+	permittedToRejectCollaborator,
+	removeCollaborator,
+	storeMessage,
+	retrieveMessages,
 };
 

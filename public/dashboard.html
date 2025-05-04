@@ -45,6 +45,13 @@
 				</li>
 				<li>
 					<button class="nav-item flex-row gap-small center-content-v"
+						onclick="window.location.href='/view/users'">
+						<i class='bx bx-user'></i>
+						Find Other Users
+					</button>
+				</li>
+				<li>
+					<button class="nav-item flex-row gap-small center-content-v"
 						onclick="window.location.href='/create/project'">
 						<i class='bx bx-book-content'></i>
 						Create Project
@@ -52,21 +59,29 @@
 				</li>
 				<li>
 					<button class="nav-item flex-row gap-small center-content-v"
-						onclick="window.location.href='/create/project'">
+						onclick="window.location.href='/collaboration'">
 						<i class='bx bx-user-voice'></i>
 						Collaboration Requests
 					</button>
 				</li>
+				<li>
+					<button class="nav-item flex-row gap-small center-content-v"
+						onclick="window.location.href='/collaboration'">
+						<i class='bx bxs-party'></i>
+						Collaboration Invites
+					</button>
+				</li>
 			</ul>
 		</nav>
-
+	
 		<span class="dropdown pad-right hover-rotate">
 			<button id="userButton" class="flex-row gap-small padding-vert-small center-content-v">
 				<i class='bx bx-chevron-right'></i>
-				<span id="username">Ellie</span>
+				<span id="username">Placeholder</span>
 			</button>
-
+	
 			<ul class="dropdown-menu">
+				<li><a href="/view/curr/profile"><i class='bx bx-user-circle'></i>Profile</a></li>
 				<li><a href="/settings"><i class='bx bx-cog'></i>Settings</a></li>
 				<li><a href="/logout"><i class='bx bx-run'></i>Logout</a></li>
 			</ul>
@@ -80,28 +95,38 @@
 		<section class="accent-underline">
 			<section class="inset">
 				<section class="split">
-					<h1>Active Projects</h1>
+					<h1 class="large-text accent-underline">Active Projects</h1>
 					<button class="very-round pad-small-h no-pad-v"
 						onclick="window.location.href='/create/project'">
 						<i class='bx bx-plus'></i>
 					</button>
 				</section>
-				<form type="">
-					<input type="text" placeholder="Search your projects...">
-					<button type="submit">Submit</button>
+				<form id="project-search-form" type="">
+					<input id="project-search-input" type="text"
+						placeholder="Search your projects...">
+					<button id="searchButton" type="submit"
+						class="nav-item flex-row gap-small center-content-v"> <i
+							class="bx bx-search"></i>
+						Submit
+					</button>
 				</form>
 			</section>
-			<ul id="projectCardList">
+			<ul id="project-list" class="minh">
 			</ul>
 		</section>
 
 	</main>
 
-	<footer>
+	<footer class="inset">
 		<p>&copy; 2025 Unilink. All rights reserved.</p>
 	</footer>
 </body>
-<script type="module" src="/dashboardProjectAdd.js"></script>
+<script type="module" src="/dashboard.js"></script>
+<script type="module">
+	import {initDashboard} from './dashboard.js';
+	initDashboard();
+</script>
+
 <script type="module" src="/fetchUsername.js"></script>
 
 </html>
