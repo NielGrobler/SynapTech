@@ -180,17 +180,48 @@ const insertMessagesIntoDocument = (rawMessages) => {
 
 /* Fetch stuff */
 const fetchMessages = async (userId) => {
-	const rawMessages = [];
-	return rawMessages;
+	fetch(`/api/message/${userId}`)
+		.then((response) => {
+			if (!response.ok) {
+				throw new Error(`Request failed. Received status ${response.status}`);
+			}
+
+			return response.json();
+		})
+		.then((data) => {
+			return data.json();
+		}).then(rawMessages => {
+			return rawMessages;
+		})
+		.catch((error) => {
+			console.error('Error fetching messages:', error);
+		});
+
+	return [];
 }
 
 const fetchMessagedUsers = async () => {
-	const messagedUsers = [];
-	return messagedUsers;
+	fetch(`/api/message/${userId}`)
+		.then((response) => {
+			if (!response.ok) {
+				throw new Error(`Request failed. Received status ${response.status}`);
+			}
+
+			return response.json();
+		})
+		.then((data) => {
+			return data.json();
+		}).then(rawUsers => {
+			return rawUsers;
+		})
+		.catch((error) => {
+			console.error('Error fetching messages:', error);
+		});
+
+	return [];
 }
 
 /* Stuff */
-
 const setConversation = (userId) => {
 	const conversation = document.getElementById('conversation');
 	if (!conversation) {
