@@ -2,113 +2,117 @@
 <html lang="en">
 
 
-	<head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<link rel="stylesheet" href="/styles.css">
-		<link rel="preconnect" href="https://fonts.googleapis.com">
-		<link rel="icon" href="logo.png" type="image/png">
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-		<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
-			rel="stylesheet">
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-		<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="/styles.css">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="icon" href="logo.png" type="image/png">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+		rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+	<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 
 
-		<title>Unilink | Messages</title>
-		<script src="https://accounts.google.com/gsi/client" async defer></script>
+	<title>Unilink | Messages</title>
+	<script src="https://accounts.google.com/gsi/client" async defer></script>
 
-	</head>
+</head>
 
-	<body class="full-vh">
-		<nav class="inset secondary fill accent-underline flex-prop-1-5">
-			<button class="nav-item flex-row center-content-v gap-small"
-				onclick="window.location.href=history.back()">
-				<i class='bx bx-chevron-left'></i>
-				Back
-			</button>
-		</nav>
-		<main class="direct-messages flex-row">
-			<aside class="conversations flex-prop-1-4" aria-label="Conversation list">
-				<h3>Messages</h3>
-				<nav>
-					<ul id="messagedUsers">
-					</ul>
-				</nav>
-			</aside>
+<body class="full-vh">
+	<nav class="inset secondary fill accent-underline flex-prop-1-5">
+		<button class="nav-item flex-row center-content-v gap-small"
+			onclick="window.location.href=history.back()">
+			<i class='bx bx-chevron-left'></i>
+			Back
+		</button>
+	</nav>
+	<main class="direct-messages flex-row">
+		<aside class="conversations flex-prop-1-4" aria-label="Conversation list">
+			<h3>Messages</h3>
+			<nav>
+				<ul id="messagedUsers">
+				</ul>
+			</nav>
+		</aside>
 
-			<section class="gap flex-col full-vh flex-prop-3-to-4"  aria-label="Active conversation">
-				<section id="conversation" class="chat-history scrollable gap border-solid-thin flex-col" role="log">
-					<article class="bubble bubble-left-end bubble-left">
-						<p>Hello! How are you?</p>
-						<time datetime="2025-05-03T14:30">2:30 PM</time>
-					</article>
+		<section class="gap flex-col full-vh flex-prop-3-to-4" aria-label="Active conversation">
+			<section id="conversation" class="chat-history scrollable gap border-solid-thin flex-col"
+				role="log">
+				<article class="bubble bubble-left-end bubble-left">
+					<p>Hello! How are you?</p>
+					<time datetime="2025-05-03T14:30">2:30 PM</time>
+				</article>
 
-					<article class="bubble-fragment bubble-right">
-						<p>Hey! I’m doing great, thanks. You?</p>
-						<time datetime="2025-05-03T14:32">2:32 PM</time>
-					</article>
-					<article class="bubble bubble-right-end bubble-right">
-						<p>Epic, that moment when epic.</p>
-						<time datetime="2025-05-03T14:34">2:34 PM</time>
-					</article>
+				<article class="bubble-fragment bubble-right">
+					<p>Hey! I’m doing great, thanks. You?</p>
+					<time datetime="2025-05-03T14:32">2:32 PM</time>
+				</article>
+				<article class="bubble bubble-right-end bubble-right">
+					<p>Epic, that moment when epic.</p>
+					<time datetime="2025-05-03T14:34">2:34 PM</time>
+				</article>
 
-					<article class="bubble bubble-left-end bubble-left">
-						<p class="text-wrap bubble-text">Hey! I’m doing great, thanks. Ywqdiuwqhdwuefhewufewfugewqyfwrcewqfnewqyufewqnufygewfiugnewiyfgewqyufgewqfugynwqyufgewqiufgewqfyewqgfiuewqngfewqyufgewfiuyewqgfxqiuewyfgqyegwiufqygweiufygewqfiuggewqiuygfou?</p>
-						<time datetime="2025-05-03T14:32">2:32 PM</time>
-					</article>
-					<article class="pad-small-h border-solid-thin message received">
-						<p>Hello! How are you?</p>
-						<time datetime="2025-05-03T14:30">2:30 PM</time>
-					</article>
+				<article class="bubble bubble-left-end bubble-left">
+					<p class="text-wrap bubble-text">Hey! I’m doing great, thanks.
+						Ywqdiuwqhdwuefhewufewfugewqyfwrcewqfnewqyufewqnufygewfiugnewiyfgewqyufgewqfugynwqyufgewqiufgewqfyewqgfiuewqngfewqyufgewfiuyewqgfxqiuewyfgqyegwiufqygweiufygewqfiuggewqiuygfou?
+					</p>
+					<time datetime="2025-05-03T14:32">2:32 PM</time>
+				</article>
+				<article class="pad-small-h border-solid-thin message received">
+					<p>Hello! How are you?</p>
+					<time datetime="2025-05-03T14:30">2:30 PM</time>
+				</article>
 
-					<article class="pad-small-h border-solid-thin message received">
-						<p>Hey! I’m doing great, thanks. You?</p>
-						<time datetime="2025-05-03T14:32">2:32 PM</time>
-					</article>
-					<article class="pad-small-h border-solid-thin message received">
-						<p>Hello! How are you?</p>
-						<time datetime="2025-05-03T14:30">2:30 PM</time>
-					</article>
+				<article class="pad-small-h border-solid-thin message received">
+					<p>Hey! I’m doing great, thanks. You?</p>
+					<time datetime="2025-05-03T14:32">2:32 PM</time>
+				</article>
+				<article class="pad-small-h border-solid-thin message received">
+					<p>Hello! How are you?</p>
+					<time datetime="2025-05-03T14:30">2:30 PM</time>
+				</article>
 
-					<article class="pad-small-h border-solid-thin message received">
-						<p>Hey! I’m doing great, thanks. You?</p>
-						<time datetime="2025-05-03T14:32">2:32 PM</time>
-					</article>
-					<article class="pad-small-h border-solid-thin message received">
-						<p>Hello! How are you?</p>
-						<time datetime="2025-05-03T14:30">2:30 PM</time>
-					</article>
+				<article class="pad-small-h border-solid-thin message received">
+					<p>Hey! I’m doing great, thanks. You?</p>
+					<time datetime="2025-05-03T14:32">2:32 PM</time>
+				</article>
+				<article class="pad-small-h border-solid-thin message received">
+					<p>Hello! How are you?</p>
+					<time datetime="2025-05-03T14:30">2:30 PM</time>
+				</article>
 
-					<article class="pad-small-h border-solid-thin message received">
-						<p>Hey! I’m doing great, thanks. You?</p>
-						<time datetime="2025-05-03T14:32">2:32 PM</time>
-					</article>
+				<article class="pad-small-h border-solid-thin message received">
+					<p>Hey! I’m doing great, thanks. You?</p>
+					<time datetime="2025-05-03T14:32">2:32 PM</time>
+				</article>
 
-				</section>
+			</section>
 
-				<form id="sendForm" class="border-solid-thin flex-col push-up inset-small secondary prevent-shrink margin-small">
-					<label for="messageBody" class="visually-hidden">Type your message</label>
-					<section class="center-content-v flex-row secondary">
-					<textarea id="message" name="messageBody" rows="1" placeholder="Type a message..."
-						required></textarea>
+			<form id="sendForm"
+				class="border-solid-thin flex-col push-up inset-small secondary prevent-shrink margin-small">
+				<label for="messageBody" class="visually-hidden">Type your message</label>
+				<section class="center-content-v flex-row secondary">
+					<textarea id="message" name="messageBody" rows="1"
+						placeholder="Type a message..." required></textarea>
 					<button id="sendButton" type="submit"
 						class="nav-item to-end flex-row gap-small center-content-v">
 						Submit
 						<i class="bx bx-send"></i>
 					</button>
-					</section>
+				</section>
 
-				</form>
-			</section>
-		</main>
-	</body>
+			</form>
+		</section>
+	</main>
+</body>
 
-	<script type="module" src="/message.js"></script>
-	<script type="module">
-		import message from '/message.js';
-			
-		message.initMessages();
-	</script>
+<script type="module" src="/message.js"></script>
+<script type="module">
+	import message from '/message.js';
+
+	message.initMessages();
+</script>
 
 </html>

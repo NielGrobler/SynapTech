@@ -11,7 +11,8 @@ const config = {
 	database: process.env.AZURE_DB_NAME,
 	options: {
 		encrypt: true,
-		trustServerCertificate: false
+		trustServerCertificate: false,
+		multipleStatements: true,
 	},
 	pool: {
 		max: 10,
@@ -367,16 +368,19 @@ const retrieveMessages = async (fstPersonId, sndPersonId) => {
 		.input('fst_id', sql.Int, fstPersonId)
 		.input('snd_id', sql.Int, sndPersonId)
 		.query(`
-			SELECT TOP 50 [dbo].[Message].content AS you_sent
+			SELECT TOP 50 	[dbo].[Message].created_at AS created_at,
+					[dbo].[Message].content AS you_sent
 			FROM [dbo].[Message]
 			WHERE sender_id = @fst_id AND receiver_id = @snd_id
 			ORDER BY [dbo].[Message].created_at;
 
-			SELECT TOP 50 [dbo].[Message].content AS they_sent
+			SELECT TOP 50 	[dbo].[Message].created_at AS created_at,
+					[dbo].[Message].content AS they_sent
 			FROM [dbo].[Message]
 			WHERE sender_id = @snd_id AND receiver_id = @fst_id
 			ORDER BY [dbo].[Message].created_at;
 		`);
+
 
 	return result.recordsets;
 }
@@ -429,5 +433,6 @@ export default {
 	removeCollaborator,
 	storeMessage,
 	retrieveMessages,
+	retrieveMessagedUsers
 };
 

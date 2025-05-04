@@ -222,7 +222,7 @@ router.get('/logout', (req, res, next) => {
 
 		req.session.destroy((err) => {
 			if (err) {
-				console.log('Error destroying session during logout:', err);
+				console.err('Error destroying session during logout:', err);
 			}
 			res.redirect('/');
 		});
@@ -275,7 +275,7 @@ router.get('/invite', (req, res) => {
 
 router.get('/message', (req, res) => {
 	if (!authenticateRequest(req)) {
-		return res.status(401).json({ error: 'Not authenticated' });
+		return res.redirect('/forbidden');
 	}
 
 	res.sendFile(path.join(__dirname, "public", "messages.html"));
@@ -326,8 +326,8 @@ router.post('/api/message/send', async (req, res) => {
 	}
 
 	try {
-
-		const { messageBody, receivedRecipientId, attachment } = req.body;
+		console.log(req.body);
+		const { messageBody, receivedRecipientId, _attachment } = req.body;
 		if (!messageBody || typeof messageBody !== 'string') {
 			return res.status(400).json({ error: 'Invalid message body' });
 		}
@@ -353,9 +353,10 @@ router.get('/api/message/allMessagedUsers', async (req, res) => {
 	}
 
 	try {
-		const records = await db.retrieveMessagedUsers(res.user.id);
+		const records = await db.retrieveMessagedUsers(req.user.id);
 		res.status(200).json(records);
 	} catch (err) {
+		console.error(err);
 		return res.status(500).json({ error: 'Internal Error' });
 	}
 });
@@ -366,7 +367,7 @@ router.get('/api/message/:secondPersonId', async (req, res) => {
 	}
 
 	try {
-		const sndPersonId = Number(req.params.sndPersonId);
+		const sndPersonId = Number(req.params.secondPersonId);
 		if (!sndPersonId || isNaN(sndPersonId)) {
 			return res.status(400).json({ error: 'Invalid snd person ID' });
 		}
@@ -527,12 +528,10 @@ router.post('/create/project', async (req, res) => {
 });
 
 router.post('/api/collaboration/request', async (req, res) => {
-	console.log("collaboration request");
 	if (!authenticateRequest(req)) {
 		return res.status(403).json({ error: 'Not authenticated' });
 	}
 
-	console.log(req.body);
 	const { projectId } = req.body;
 	if (!projectId || typeof projectId !== 'number') {
 		return res.status(400).send("Bad Request");
@@ -554,7 +553,6 @@ router.post('/remove/user', async (req, res) => {
 
 	if (!req.body) {
 		let reqToDeleteId = req.user.id;
-		console.log(req.user.id);
 		if (!req.user.is_admin && req.user.id !== reqToDeleteId) {
 			res.status(400).send("Error deleting account.");
 			return;
@@ -564,7 +562,7 @@ router.post('/remove/user', async (req, res) => {
 			await db.deleteUser(reqToDeleteId);
 			res.send("Account deletion succesful");
 		} catch (err) {
-			console.log(err);
+			console.error(err);
 			res.status(400).json({ error: err });
 		}
 		return;

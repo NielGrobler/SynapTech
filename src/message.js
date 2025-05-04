@@ -1,15 +1,18 @@
 
 const constructMessage = (rawData, fromFst) => {
-	return {
+	let content = fromFst ? rawData.you_sent : rawData.they_sent;
+	const result = {
 		"fromFst": fromFst,
-		"content": rawData.content,
+		"content": content,
 		"createdAt": rawData.created_at,
 	};
+
+	return result;
 }
 
-const pushRemaining = (accumulated, arr, i) => {
+const pushRemaining = (accumulated, arr, constructor, i) => {
 	for (; i < arr.length; i++) {
-		accumulated.push(arr[i]);
+		accumulated.push(constructor(arr[i]));
 	}
 }
 
@@ -31,9 +34,8 @@ const mergeConstruct = (fstArr, sndArr, constructor, predicate) => {
 		result.push(constructor(sndArr[j++], false));
 	}
 
-	pushRemaining(result, fstArr, i);
-	pushRemaining(result, sndArr, j);
-
+	pushRemaining(result, fstArr, (obj) => constructor(obj, true), i);
+	pushRemaining(result, sndArr, (obj) => constructor(obj, false), j);
 	return result;
 }
 
@@ -86,15 +88,30 @@ const toHTML = (message, index, containerLength) => {
 
 	const time = document.createElement('time');
 	time.dateTime = createdAt;
-	time.textContent = new Date(createdAt).toLocaleString();
+
+	const date = new Date(createdAt);
+	const now = new Date();
+
+	const isToday =
+	  date.getFullYear() === now.getFullYear() &&
+	  date.getMonth() === now.getMonth() &&
+	  date.getDate() === now.getDate();
+
+	const formatter = new Intl.DateTimeFormat('en-US', {
+	  timeStyle: 'short',
+	  ...(isToday ? {} : { dateStyle: 'medium' }),
+	});
+
+	time.textContent = formatter.format(date);
+
 
 	footer.appendChild(time);
 
 	const paragraph = document.createElement('p');
 	paragraph.textContent = content;
 
-	article.appendChild(footer);
 	article.appendChild(paragraph);
+	article.appendChild(footer);
 	addClasses(article, index, containerLength, fromFst);
 
 	return article;
@@ -126,7 +143,7 @@ const unactivateActiveUser = () => {
 
 const userToHTML = (user) => {
 	const li = document.createElement('li');
-	li.dataset.userId = user.id;
+	li.dataset.userId = user.account_id;
 
 	const button = document.createElement('button');
 	button.classList.add('conversation');
@@ -161,17 +178,15 @@ const insertUsersIntoDocument = (users) => {
 		messagedUsersElement.appendChild(element);
 	});
 
-	userElements[0].classList.add('activated');
-	activeUserId = userElements[0].id;
+	userElements[0].children[0].classList.add('active');
+	activeUserId = userElements[0].dataset.userId;
 }
 
 /* Processes rawMessages and inserts them all into the document */
 const insertMessagesIntoDocument = (rawMessages) => {
-	console.log(rawMessages);
 	const mergedMessages = mergeConstruct(rawMessages[0], rawMessages[1], constructMessage, (x, y) => x.created_at < y.created_at);
 	const categorizedMessages = groupByCategory(mergedMessages, x => (x.fromFst ? 1 : 0));
-	const messageElements = map(
-		categorizedMessages,
+	const messageElements = categorizedMessages.map(
 		segment => (segment.map((message, index, container) => toHTML(message, index, container.length)))
 	).flat();
 
@@ -180,7 +195,7 @@ const insertMessagesIntoDocument = (rawMessages) => {
 
 /* Fetch stuff */
 const fetchMessages = async (userId) => {
-	fetch(`/api/message/${userId}`)
+	return fetch(`/api/message/${userId}`)
 		.then((response) => {
 			if (!response.ok) {
 				throw new Error(`Request failed. Received status ${response.status}`);
@@ -188,37 +203,25 @@ const fetchMessages = async (userId) => {
 
 			return response.json();
 		})
-		.then((data) => {
-			return data.json();
-		}).then(rawMessages => {
-			return rawMessages;
-		})
 		.catch((error) => {
 			console.error('Error fetching messages:', error);
+			return [];
 		});
-
-	return [];
 }
 
 const fetchMessagedUsers = async () => {
-	fetch(`/api/message/${userId}`)
+	return fetch(`/api/message/allMessagedUsers`)
 		.then((response) => {
 			if (!response.ok) {
 				throw new Error(`Request failed. Received status ${response.status}`);
 			}
-
+			
 			return response.json();
-		})
-		.then((data) => {
-			return data.json();
-		}).then(rawUsers => {
-			return rawUsers;
 		})
 		.catch((error) => {
 			console.error('Error fetching messages:', error);
+			return [];
 		});
-
-	return [];
 }
 
 /* Stuff */
@@ -249,12 +252,10 @@ const setConversation = (userId) => {
 }
 
 const initMessagedUsers = () => {
-	let result = null;
-
-	fetchMessagedUsers()
-		.then(users => {
+	return fetchMessagedUsers()
+		.then((users) => {
 			insertUsersIntoDocument(users);
-			result = userElements.length > 0 ? userElements[0] : null;
+			return userElements.length > 0 ? userElements[0].dataset.userId : null;
 		})
 		.catch(error => {
 			console.error('Failed to load messaged users:', error);
@@ -262,18 +263,18 @@ const initMessagedUsers = () => {
 			if (messagedUsers) {
 				messagedUsers.innerHTML = '<p>Unable to load users.</p>';
 			}
-		});
 
-	return result;
+			return null;
+		});
 }
 
-const sendHandler = (e) => {
+const sendHandler = async (e) => {
 	e.preventDefault();
-	console.log("Hello???");
 
 	const form = document.getElementById('sendForm');
 
 	const formData = new FormData(form);
+	let button = document.getElementById('sendButton');
 
 	if (!activeUserId) {
 		console.error(`Missing activated conversation's user.`);
@@ -285,17 +286,21 @@ const sendHandler = (e) => {
 
 	// might be good to extend functionality for this eventually.
 	formData.append('attachment', null);
+	const plainFormData = Object.fromEntries(formData.entries());
 
 	button.disabled = true;
 	button.textContent = 'Sending...';
 
-	fetch('/api/message/send', {
+	await fetch('/api/message/send', {
 		method: 'POST',
-		body: formData,
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify(plainFormData),
 	})
 		.then((res) => {
 			if (!res.ok) {
-				throw new Error('Request failed');
+				throw new Error(`Request failed. Received status ${res.status}`);
 			}
 
 			return res.json();
@@ -308,15 +313,19 @@ const sendHandler = (e) => {
 		})
 		.finally(() => {
 			button.disabled = false;
-			button.textContent = 'Submit';
+			button.innerHTML = `Submit <i class="bx bx-send"></i>`
 		});
+
+	setConversation(activeUserId);
 }
 
 const initMessages = async () => {
-	let topId = initMessagedUsers();
+	let topId = await initMessagedUsers();
 	setConversation(topId);
 	document.getElementById("sendForm").addEventListener('submit', sendHandler);
+	setInterval(() => setConversation(activeUserId, 1000));
 }
+
 
 export default {
 	initMessages
