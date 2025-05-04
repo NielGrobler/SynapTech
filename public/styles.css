@@ -401,7 +401,7 @@ select {
 	background-color: var(--color-secondary);
 }
 
-.bubble-fragment {
+.bubble-fragment-left {
 	--bubble-radius: 1em;
 	--tail-size: 1.5em;
 
@@ -418,7 +418,26 @@ select {
 	padding-right: 1rem;
 	border-radius: var(--bubble-radius);
 	margin-right: var(--tail-size);
-	background: red border-box;
+	color: #fff;
+}
+
+.bubble-fragment-right {
+	--bubble-radius: 1em;
+	--tail-size: 1.5em;
+
+	min-width: 0;
+	width: 400px;
+
+	display: flex;
+	flex-direction: column;
+	flex-wrap: wrap;
+	text-wrap: wrap;
+
+	padding: 0.5em;
+	padding-left: 1rem;
+	padding-right: 1rem;
+	border-radius: var(--bubble-radius);
+	margin-left: var(--tail-size);
 	color: #fff;
 }
 
