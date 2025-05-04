@@ -1,4 +1,6 @@
+//import sql, { UniqueIdentifier } from 'mssql';
 import sql from 'mssql';
+const {UniqueIdentifier} = sql;
 import Joi from 'joi';
 import dotenv from 'dotenv';
 
@@ -38,6 +40,7 @@ const getUserByGUID = async (guid) => {
 			SELECT
 				A.account_id AS id,
 				A.name,
+				A.bio,
 				L.uuid,
 				L.source
 			FROM [dbo].[Account] A
@@ -70,21 +73,38 @@ const createUser = async (user) => {
 };
 
 const projectSchema = Joi.object({
-	name: Joi.string().trim().min(3).max(255).required(),
-	description: Joi.string().min(3).max(255).required(),
-	field: Joi.string().min(3).max(32).required(),
+	name: Joi.string().trim().min(3).max(255).regex(/^[A-Za-z\s]+$/).required(),
+	description: Joi.string().min(3).max(255).regex(/^[A-Za-z0-9\s,.'"!;?-]+$/).required(),
+	field: Joi.string().min(3).max(32).regex(/^[A-Za-z0-9_-]+$/).required(),
 	isPublic: Joi.boolean().required()
 });
 
-const validateProject = (project) => {
-	const { error } = projectSchema.validate(project);
-	if (error) {
-		throw new Error(`Project validation failed: ${error.details[0].message}`);
-	}
-};
+// Project names are unique up to user id
+const checkProjectNameUniqueness = async (project, user) => {
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('name', sql.NVarChar, project.name)
+		.input('created_by_account_id', sql.Int, user.id)
+		.query(`
+			SELECT *
+			FROM [dbo].[Project]
+			WHERE [dbo].[Project].name = @name AND [dbo].[Project].created_by_account_id = @created_by_account_id;
+		`);
+
+	return result.recordset.length === 0;
+}
 
 const createProject = async (project, user) => {
-	validateProject(project);
+	const { _, error } = projectSchema.validate(project);
+	if (error) {
+		throw new Error(`Malformed project.`);
+	}
+
+	const isUnique = await checkProjectNameUniqueness(project, user);
+	if (!isUnique) {
+		throw new Error(`Project with name ${project.name} already exists.`);
+	}
+
 	const pool = await poolPromise;
 	await pool.request()
 		.input('name', sql.NVarChar, project.name)
@@ -115,6 +135,25 @@ const fetchAssociatedProjects = async (user) => {
 		`);
 	return result.recordset;
 };
+
+const fetchPublicAssociatedProjects = async (id) => {
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('id', sql.Int, id)
+		.query(`
+			SELECT [dbo].[Project].project_id AS id,
+				[dbo].[Project].created_by_account_id AS author_id,
+				[dbo].[Project].created_at AS created_at,
+				[dbo].[Project].name AS name,
+				[dbo].[Project].description AS description,
+				[dbo].[Project].is_public AS is_public
+			FROM [dbo].[Project]
+			LEFT JOIN [dbo].[Collaborator] ON [dbo].[Collaborator].project_id = [dbo].[Project].project_id
+			LEFT JOIN [dbo].[Account] ON [dbo].[Account].account_id = [dbo].[Collaborator].account_id
+			WHERE [dbo].[Project].created_by_account_id = @id AND is_public = 1;
+		`);
+	return result.recordset;
+}
 
 const appendCollaborators = async (projects) => {
 	const pool = await poolPromise;
@@ -148,9 +187,10 @@ const deleteUser = async (userId) => {
 	await pool.request()
 		.input('id', sql.Int, userId)
 		.query(`
-			DELETE FROM [dbo].[AccountLink] WHERE account_id = @id;
-			DELETE FROM [dbo].[Collaborator] WHERE account_id = @id;
-			DELETE FROM [dbo].[Account] WHERE account_id = @id;
+			DELETE FROM [dbo].[AccountLink] WHERE [dbo].[AccountLink].account_id = @id;
+			DELETE FROM [dbo].[Project] WHERE [dbo].[Project].created_by_account_id = @id;
+			DELETE FROM [dbo].[Collaborator] WHERE [dbo].[Collaborator].account_id = @id;
+			DELETE FROM [dbo].[Account] WHERE [dbo].[Account].account_id = @id;
 		`);
 };
 
@@ -169,7 +209,20 @@ const suspendUser = async (userId) => {
 	await pool.request()
 		.input('id', sql.NVarChar, userId)
 		.query(`
-			INSERT INTO SuspendedAccount(account_id) VALUES(@id);
+			UPDATE [dbo].[Account]
+			SET is_suspended = 1
+			WHERE [dbo].[Account].account_id = @id
+		`);
+};
+
+const unsuspendUser = async (userId) => {
+	const pool = await poolPromise;
+	await pool.request()
+		.input('id', sql.NVarChar, userId)
+		.query(`
+			UPDATE [dbo].[Account]
+			SET is_suspended = 0
+			WHERE [dbo].[Account].account_id = @id
 		`);
 };
 
@@ -209,10 +262,10 @@ const searchProjects = async (projectName) => {
 	return result.recordset;
 };
 
-const fetchCollaborators = async (id) => {
+const fetchCollaborators = async (projectId) => {
 	const pool = await poolPromise;
 	const result = await pool.request()
-		.input('project_id', sql.Int, id)
+		.input('project_id', sql.Int, projectId)
 		.query(`
 			SELECT [dbo].[Account].account_id AS account_id,
 				[dbo].[Collaborator].is_active AS is_active,
@@ -224,6 +277,32 @@ const fetchCollaborators = async (id) => {
 		`);
 
 	return result.recordset;
+}
+
+const fetchPendingCollaborators = async (user) => {
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('id', sql.Int, user.id)
+		.query(`
+			SELECT	*
+			FROM [dbo].[Collaborator]
+			INNER JOIN [dbo].[Project]
+			ON [dbo].[Project].project_id = [dbo].[Collaborator].project_id
+			WHERE [dbo].[Project].created_by_account_id = @id AND [dbo].[Collaborator].is_pending = 1;
+		`);
+
+	return result.recordset;
+}
+
+const insertPendingCollaborator = async (userId, projectId) => {
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('account_id', sql.Int, userId)
+		.input('project_id', sql.Int, projectId)
+		.query(`
+			INSERT INTO Collaborator (account_id, project_id, role, is_active, is_pending)
+			VALUES(@account_id, @project_id, 'Researcher', 1, 1);
+		`);
 }
 
 const fetchProjectById = async (id) => {
@@ -255,6 +334,72 @@ const fetchProjectById = async (id) => {
 	return project;
 }
 
+const createReview = async (reviewData) => {
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('project_id', sql.Int, reviewData.project_id)
+		.input('reviewer_id', sql.Int, reviewData.reviewer_id)
+		.input('rating', sql.Int, reviewData.rating)
+		.input('comment', sql.NVarChar, reviewData.comment)
+		.query(`
+            INSERT INTO Review (project_id, reviewer_id, rating, comment)
+            OUTPUT INSERTED.review_id, INSERTED.created_at
+            VALUES (@project_id, @reviewer_id, @rating, @comment);
+        `);
+
+	const reviewId = result.recordset[0].review_id;
+	const createdAt = result.recordset[0].created_at;
+
+	return {
+		review_id: reviewId,
+		created_at: createdAt,
+		...reviewData
+	};
+};
+
+const searchUsers = async (userName) => {
+	const lowerName = userName.toLowerCase();
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('userName', sql.NVarChar, `%${lowerName}%`)
+		.query(`
+            SELECT TOP 10 *
+			FROM [dbo].[Account]
+			WHERE LOWER([dbo].[Account].name) LIKE @userName 
+			ORDER BY LEN([dbo].[Account].name);
+		`);
+    return result.recordset;
+}
+
+//Function to get user by id
+const fetchUserById = async (uuid) => {
+	const id = parseInt(uuid);
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('Uid', sql.Int, id)
+		.batch(`
+            SELECT * FROM [dbo].[Account] WHERE [dbo].[Account].account_id = @Uid;
+		`);
+    return result.recordset;
+}
+
+const updateProfile = async (params) => {
+	const { id, username, bio, university, department } = params;
+
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('username', sql.NVarChar, username)
+		.input('id', sql.Int, id)
+		.input('bio', sql.NVarChar, bio)
+		.input('university', sql.NVarChar, university)
+		.input('department', sql.NVarChar, department)
+		.query(`
+            UPDATE [dbo].[Account]
+			SET name = @username, bio = @bio, university = @university, department=@department
+			WHERE [dbo].[Account].account_id = @id
+		`);
+}
+
 export default {
 	getUserByGUID,
 	createUser,
@@ -264,9 +409,15 @@ export default {
 	deleteUser,
 	isSuspendend,
 	suspendUser,
+	unsuspendUser,
 	addCollaborator,
 	acceptCollaborator,
 	searchProjects,
-	fetchProjectById
+	fetchProjectById,
+	fetchPendingCollaborators,
+	insertPendingCollaborator,
+	searchUsers,
+	fetchPublicAssociatedProjects,
+	fetchUserById,
+	updateProfile
 };
-
