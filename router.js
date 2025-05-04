@@ -152,7 +152,7 @@ router.get('/auth/google/callback',
 );
 
 const authenticateRequest = (req) => {
-	if (process.env.AUTH_TESTING === true) {
+	if (process.env.AUTH_TESTING === 'true') {
 		return true;
 	}
 
