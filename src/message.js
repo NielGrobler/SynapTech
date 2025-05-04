@@ -71,7 +71,6 @@ const groupByCategory = (arr, categoryAssigner) => {
 const addClasses = (messageElement, index, containerLength, fromFst) => {
 	let direction = (fromFst) ? "right" : "left";
 	messageElement.classList.add(`bubble-${direction}`);
-	messageElement.classList.add((index === containerLength - 1) ? `bubble-${direction}-end` : "bubble-fragment");
 	if (index === containerLength - 1) {
 		messageElement.classList.add(`bubble-${direction}-end`);
 		messageElement.classList.add(`bubble`);
