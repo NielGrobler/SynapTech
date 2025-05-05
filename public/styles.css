@@ -6,10 +6,11 @@
 
 	--color-bg: #fdfdfd;
 	--color-text: #222;
+	--area-color: #ccc;
 	--color-secondary: #f4f4f4;
 	--color-accent: #3d348b;
 	--color-accent-highlight: #3d348b;
-	--color-mute: #7c8391;
+	--color-muted: #7c8391;
 	--color-muted-text: #888;
 	--color-muted-light: #eee;
 	--color-dark: #333;
@@ -19,9 +20,35 @@
 
 	--radius: 8px;
 	--round-radius: 64px;
+	--very-round-radius: 128px;
 	--shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 
 	--transition: all 0.2s ease-in-out;
+
+	/* For bubbles in chat */
+	--bubble-radius: 2.3em;
+	--tail-size: 1.5em;
+}
+
+[data-theme="dark"] {
+	--color-bg: #1a1a1a;
+	--color-text: #e0e0e0;
+	--area-color: #333;
+
+	--color-secondary: #2a2a2a;
+	--color-muted-light: #2f2f2f;
+	--color-muted: #999;
+	--color-muted-text: #bbb;
+
+	--color-accent: #8e7cc3;
+	--color-accent-highlight: #b0a4e3;
+
+	/* Chat bubble */
+	--color-drop: #222;
+
+	--color-dark: #000;
+
+	--shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
 }
 
 /* Default style for components */
@@ -89,8 +116,11 @@ textarea,
 select {
 	font: inherit;
 	margin: 0.3rem;
+	background-color: var(--color-bg);
+	color: var(--color-text);
+
 	padding: 0.3em 1em;
-	border: 1px solid #ccc;
+	border: 1px solid var(--area-color);
 	border-radius: var(--radius);
 	width: 100%;
 	box-sizing: border-box;
@@ -102,6 +132,7 @@ select {
 .flag {
 	background-color: red;
 }
+
 
 .large-text {
 	font-size: 1.5rem;
@@ -133,8 +164,25 @@ select {
 }
 
 .flex-start {
-	justify-content: flex-start;
 	display: flex;
+	justify-content: flex-start;
+}
+
+.remove-padding-left {
+	padding-left: 0;
+}
+
+.remove-margin-left {
+	margin-left: 0;
+}
+
+
+.to-end {
+	align-self: flex-end;
+}
+
+.to-start {
+	align-self: flex-start;
 }
 
 .no-pad-v {
@@ -300,6 +348,203 @@ select {
 	padding-right: 1rem;
 }
 
+.flex-prop-1-to-4 {
+	flex-grow: 1;
+}
+
+.flex-prop-3-to-4 {
+	flex-grow: 3;
+}
+
+.flex-prop-4-5 {
+	flex-grow: 4;
+}
+
+.flex-prop-1-5 {
+	flex-grow: 1;
+}
+
+.scrollable {
+	flex: 1;
+	overflow-y: auto;
+	min-height: 0;
+}
+
+.height-75 {
+	height: 75%;
+}
+
+.push-up {
+	margin-bottom: 7rem;
+}
+
+.prevent-shrink {
+	flex-shrink: 0;
+}
+
+.wrap-text {
+	text-wrap: wrap;
+}
+
+/* Chat bubbles, isolated for quarantine */
+.bubble {
+	min-width: 10rem;
+	max-width: 40rem;
+
+	display: flex;
+	flex-direction: column;
+	flex-wrap: wrap;
+	text-wrap: wrap;
+
+	padding: 0.5em;
+	padding-left: 1rem;
+	padding-right: 1rem;
+	border-inline: var(--tail-size) solid #0000;
+	border-radius: calc(var(--bubble-radius) + var(--tail-size))/var(--bubble-radius);
+	mask:
+		radial-gradient(100% 100% at var(--_p) 0, #0000 99%, #000 102%) var(--_p) 100%/var(--tail-size) var(--tail-size) no-repeat,
+		linear-gradient(#000 0 0) padding-box;
+	background: red border-box;
+	color: #fff;
+}
+
+.bubble-text {
+	width: 100%;
+	/* Take full width of container */
+	box-sizing: border-box;
+	/* Include padding/border in width */
+	white-space: normal;
+	/* Allow text to wrap */
+	word-wrap: break-word;
+	/* Break long words */
+	overflow-wrap: break-word;
+	margin: 0;
+}
+
+.bubble-left {
+	--_p: 0;
+	place-self: start;
+	color: var(--color-text);
+	background-color: var(--color-secondary);
+}
+
+.bubble-fragment-left {
+	min-width: 10rem;
+	max-width: 40rem;
+
+	display: flex;
+	flex-direction: column;
+	flex-wrap: wrap;
+	text-wrap: wrap;
+
+	padding: 0.5em;
+	padding-left: 1rem;
+	padding-right: 1rem;
+	border-radius: var(--bubble-radius);
+	margin-left: var(--tail-size);
+}
+
+.bubble-fragment-right {
+	min-width: 10rem;
+	max-width: 40rem;
+
+	display: flex;
+	flex-direction: column;
+	flex-wrap: wrap;
+	text-wrap: wrap;
+
+	padding: 0.5em;
+	padding-left: 1rem;
+	padding-right: 1rem;
+	border-radius: var(--bubble-radius);
+	margin-right: var(--tail-size);
+	color: #fff;
+}
+
+.bubble-right {
+	--_p: 100%;
+	place-self: end;
+	color: #fff;
+	background-color: var(--color-accent);
+}
+
+.bubble-right-end {
+	border-bottom-right-radius: 0 0;
+}
+
+.bubble-left-end {
+	border-bottom-left-radius: 0 0;
+}
+
+/* ============================ */
+/* Conversations, also quarantined for safety */
+
+.conversations {
+	background-color: var(--color-secondary);
+	padding: 1rem;
+	min-width: 7rem;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	font-family: var(--font-base);
+	color: var(--color-text);
+	box-shadow: var(--shadow);
+	border-radius: var(--radius);
+}
+
+.conversations ul {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.conversations li {
+	height: 3.5rem;
+	display: flex;
+	align-items: center;
+	border-bottom: 1px solid var(--color-muted-light);
+}
+
+.conversation {
+	all: unset;
+	cursor: pointer;
+	width: 100%;
+	height: 100%;
+	padding: 0 1rem;
+	display: flex;
+	align-items: center;
+	border-radius: var(--radius);
+	transition: var(--transition);
+	background-color: transparent;
+	color: var(--color-text);
+}
+
+.conversation:hover {
+	background-color: var(--color-muted-light);
+	color: black;
+}
+
+.conversation.active {
+	background-color: var(--color-accent-highlight);
+	color: #fff;
+	font-weight: bold;
+}
+
+/* ========================== */
+
+.flag1 {
+	background-color: red;
+}
+
+.flag2 {
+	background-color: blue;
+}
+
+.flag3 {
+	background-color: green;
+}
+
+
 .pad-top {
 	padding-top: 1rem;
 }
@@ -338,6 +583,10 @@ select {
 
 .very-round {
 	border-radius: var(--round-radius);
+}
+
+.very-very-round {
+	border-radius: var(--very-round-radius);
 }
 
 .width-25 {

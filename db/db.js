@@ -13,7 +13,8 @@ const config = {
 	database: process.env.AZURE_DB_NAME,
 	options: {
 		encrypt: true,
-		trustServerCertificate: false
+		trustServerCertificate: false,
+		multipleStatements: true,
 	},
 	pool: {
 		max: 10,
@@ -196,37 +197,48 @@ const deleteUser = async (userId) => {
 		`);
 };
 
-const isSuspendend = async (userId) => {
+const is_Admin = async (userId) => {
 	const pool = await poolPromise;
 	const result = await pool.request()
-		.input('id', sql.NVarChar, userId)
+		.input('id', sql.Int, userId)
 		.query(`
-			SELECT account_id FROM SuspendedAccount WHERE account_id = @id;
+			SELECT is_admin FROM [dbo].[Account] WHERE account_id = @id;
 		`);
-	return result.recordset.length > 0;
+	return result.recordset[0].is_admin;
+}
+
+const isSuspended = async (userId) => {
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('id', sql.Int, userId)
+		.query(`
+			SELECT is_suspended FROM [dbo].[Account] WHERE account_id = @id;
+		`);
+	return result.recordset;
 };
 
 const suspendUser = async (userId) => {
 	const pool = await poolPromise;
-	await pool.request()
-		.input('id', sql.NVarChar, userId)
-		.query(`
-			UPDATE [dbo].[Account]
-			SET is_suspended = 1
-			WHERE [dbo].[Account].account_id = @id
-		`);
+	const result = await isSuspended(userId);
+	if (result[0].is_suspended) {
+		await pool.request()
+			.input('id', sql.Int, userId)
+			.query(`
+				UPDATE [dbo].[Account]
+				SET is_suspended = 0
+				WHERE account_id = @id
+			`);
+	} else {
+		await pool.request()
+			.input('id', sql.Int, userId)
+			.query(`
+				UPDATE [dbo].[Account]
+				SET is_suspended = 1
+				WHERE account_id = @id
+			`);
+	}
 };
 
-const unsuspendUser = async (userId) => {
-	const pool = await poolPromise;
-	await pool.request()
-		.input('id', sql.NVarChar, userId)
-		.query(`
-			UPDATE [dbo].[Account]
-			SET is_suspended = 0
-			WHERE [dbo].[Account].account_id = @id
-		`);
-};
 
 const addCollaborator = async (projectId, userId, role) => {
 	const pool = await poolPromise;
@@ -401,18 +413,49 @@ const retrieveMessages = async (fstPersonId, sndPersonId) => {
 		.input('fst_id', sql.Int, fstPersonId)
 		.input('snd_id', sql.Int, sndPersonId)
 		.query(`
-			SELECT TOP 50 [dbo].[Message].content AS you_sent
+			SELECT TOP 50 	[dbo].[Message].created_at AS created_at,
+					[dbo].[Message].content AS you_sent
 			FROM [dbo].[Message]
 			WHERE sender_id = @fst_id AND receiver_id = @snd_id
 			ORDER BY [dbo].[Message].created_at;
 
-			SELECT TOP 50 [dbo].[Message].content AS they_sent
+			SELECT TOP 50 	[dbo].[Message].created_at AS created_at,
+					[dbo].[Message].content AS they_sent
 			FROM [dbo].[Message]
 			WHERE sender_id = @snd_id AND receiver_id = @fst_id
 			ORDER BY [dbo].[Message].created_at;
 		`);
 
+
 	return result.recordsets;
+}
+
+const retrieveMessagedUsers = async (userId) => {
+	const pool = await poolPromise;
+	const result = await pool.request()
+		.input('user_id', sql.Int, userId)
+		.query(`
+			SELECT DISTINCT [dbo].[Account].account_id, [dbo].[Account].name, idAndLatest.latest_message_at
+			FROM [dbo].[Account]
+			JOIN (
+				SELECT 
+				CASE 
+					WHEN [dbo].[Message].sender_id = @user_id THEN [dbo].[Message].receiver_id
+					ELSE [dbo].[Message].sender_id
+				END AS snd_account_id,
+				MAX([dbo].[Message].created_at) AS latest_message_at
+				FROM [dbo].[Message] 
+				WHERE [dbo].[Message].sender_id = @user_id OR [dbo].[Message].receiver_id = @user_id
+				GROUP BY 
+				CASE 
+					WHEN [dbo].[Message].sender_id = @user_id THEN [dbo].[Message].receiver_id
+					ELSE [dbo].[Message].sender_id
+				END
+			) idAndLatest ON [dbo].[Account].account_id = idAndLatest.snd_account_id
+			ORDER BY idAndLatest.latest_message_at;
+		`);
+
+	return result.recordset;
 }
 
 const searchUsers = async (userName) => {
@@ -465,9 +508,8 @@ export default {
 	fetchAssociatedProjects,
 	appendCollaborators,
 	deleteUser,
-	isSuspendend,
+	isSuspended,
 	suspendUser,
-	unsuspendUser,
 	addCollaborator,
 	acceptCollaborator,
 	searchProjects,
@@ -483,5 +525,7 @@ export default {
 	removeCollaborator,
 	storeMessage,
 	retrieveMessages,
+	retrieveMessagedUsers,
+	is_Admin
 };
 
