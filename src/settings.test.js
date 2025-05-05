@@ -10,166 +10,168 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { JSDOM } from 'jsdom';
 import userInfo from './userInfo.js';
+import { fetchinfo } from './settings.js';
 
-// Mock userInfo module
 vi.mock('./userInfo.js', () => ({
   default: {
     fetchFromApi: vi.fn()
   }
 }));
 
-describe('settings.js', () => {
-  // Setup DOM environment
+global.fetch = vi.fn();
+
+describe('Settings Page', () => {
   let dom;
   let window;
   let document;
-  let consoleSpy;
-  
-  // Helper function to safely mock properties that might be non-configurable
-  const mockWindowProperty = (property, value) => {
-    const originalProperty = Object.getOwnPropertyDescriptor(window, property);
-    delete window[property];
-    window[property] = value;
-    
-    // Return cleanup function
-    return () => {
-      delete window[property];
-      Object.defineProperty(window, property, originalProperty);
-    };
-  };
-  
-  beforeEach(() => {
-    // Create a fresh DOM for each test
-    dom = new JSDOM(`
-      <!DOCTYPE html>
-      <html>
-        <body>
-          <input id="username" />
-          <textarea id="bio"></textarea>
-          <button id="deleteButton">Delete Account</button>
-        </body>
-      </html>
-    `, { url: 'http://localhost' });
-    
+
+  beforeEach(async () => {
+    // Set up JSDOM with the HTML file
+    dom = await JSDOM.fromFile('./public/settings.html', {
+      runScripts: 'dangerously',
+      resources: 'usable'
+    });
     window = dom.window;
     document = window.document;
-    
-    // Mock global objects
-    global.document = document;
-    global.window = window;
-    global.alert = vi.fn();
-    global.confirm = vi.fn();
-    global.fetch = vi.fn();
-    
-    // Spy on console.error
-    consoleSpy = vi.spyOn(console, 'error');
+
+    // Mock the confirm and alert functions
+    window.confirm = vi.fn();
+    window.alert = vi.fn();
+
+    window.initialize = vi.fn();
+
+    // Add the script to the DOM (this will execute the imported settings.js)
+    const script = document.createElement('script');
+    script.type = 'module';
+    script.textContent = `
+        import { fetchinfo, initialize } from './settings.js';
+        window.fetchinfo = fetchinfo;
+        window.initialize = initialize;
+        document.addEventListener("DOMContentLoaded", initialize);
+    `;
+    document.body.appendChild(script);
+
+    // Wait for DOMContentLoaded
+    await new Promise(resolve => {
+      document.addEventListener('DOMContentLoaded', resolve);
+    });
   });
-  
+
   afterEach(() => {
-    // Clean up mocks after each test
     vi.clearAllMocks();
-    vi.resetModules();
   });
-  
+
   it('should populate form fields with user info', async () => {
-    // Mock the user data
-    const mockUser = {
+    // Mock user info
+    const mockUserInfo = {
       id: '123',
-      name: 'Test User',
-      bio: 'This is my bio'
+      name: 'test_user',
+      bio: 'Test bio',
     };
+    userInfo.fetchFromApi.mockResolvedValue(mockUserInfo);
     
-    userInfo.fetchFromApi.mockResolvedValue(mockUser);
-    
-    await import('./settings.js');
-    
-    await vi.waitFor(() => {
-      expect(document.getElementById('username').value).toBe('Test User');
-      expect(document.getElementById('bio').value).toBe('Test User'); // Note: bug in your settings.js
+    // Mock API response for university/department
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve([{ 
+        university: 'Test Uni', 
+        department: 'Test Dept' }])
     });
-    
-    expect(userInfo.fetchFromApi).toHaveBeenCalledTimes(1);
+
+    await window.initialize();
+
+    // Check if fields are populated correctly
+    expect(document.getElementById('username').value).toBe('test_user'); 
+    expect(document.getElementById('bio').value).toBe('Test bio');
+    expect(document.getElementById('university').value).toBe('Test Uni');
+    expect(document.getElementById('department').value).toBe('Test Dept');
   });
-  
+
   it('should set default bio when bio is not provided', async () => {
-    const mockUser = {
+    // Mock user info with no bio
+    const mockUserInfo = {
       id: '123',
-      name: 'Test User',
-      bio: null
+      name: 'test_user',
+      bio: null,
     };
+    userInfo.fetchFromApi.mockResolvedValue(mockUserInfo);
     
-    userInfo.fetchFromApi.mockResolvedValue(mockUser);
-    
-    await import('./settings.js');
-    
-    await vi.waitFor(() => {
-      expect(document.getElementById('username').value).toBe('Test User');
-      expect(document.getElementById('bio').value).toBe('No bio.');
+    // Mock API response for university/department
+    fetch.mockResolvedValueOnce({
+      json: () => Promise.resolve([{ 
+        university: 'Test Uni', 
+        department: 'Test Dept' }])
     });
+
+    // Trigger the fetchinfo function
+    await fetchinfo();
+
+    // Check if default bio is set
+    expect(document.getElementById('bio').value).toBe('No bio.');
   });
-  
+
   it('should cancel deletion when not confirmed', async () => {
-    const mockUser = { id: '123', name: 'Test User' };
-    userInfo.fetchFromApi.mockResolvedValue(mockUser);
+    // Set up mocks
+    window.confirm.mockReturnValue(false);
     
-    global.confirm.mockReturnValue(false);
-    
-    await import('./settings.js');
-    
+    // Trigger delete button click
     document.getElementById('deleteButton').click();
-    
-    expect(global.confirm).toHaveBeenCalledWith("Are you sure you want to delete your account?");
-    expect(global.alert).toHaveBeenCalledWith("Account deletion canceled.");
-    expect(global.fetch).not.toHaveBeenCalled();
+
+    // Verify behavior
+    expect(window.confirm).toHaveBeenCalled();
+    expect(window.alert).toHaveBeenCalledWith('Account deletion canceled.');
+    expect(fetch).not.toHaveBeenCalled();
   });
-  
+
   it('should handle API errors during deletion', async () => {
-    const mockResponse = {
+    // Set up mocks
+    window.confirm.mockReturnValue(true);
+    const mockUserInfo = { id: '123' };
+    userInfo.fetchFromApi.mockResolvedValue(mockUserInfo);
+    
+    // Mock failed API response
+    fetch.mockResolvedValueOnce({
       ok: false
-    };
-    
-    const mockUser = { id: '123', name: 'Test User' };
-    userInfo.fetchFromApi.mockResolvedValue(mockUser);
-    
-    global.confirm.mockReturnValue(true);
-    global.fetch.mockResolvedValue(mockResponse);
-    
-    await import('./settings.js');
-    
+    });
+
+    // Trigger delete button click
     document.getElementById('deleteButton').click();
     
-    await vi.waitFor(() => {
-      expect(global.alert).toHaveBeenCalledWith('Error deleting account. Please try again.');
-    });
+    // Wait for promises to resolve
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    // Verify behavior
+    expect(window.alert).toHaveBeenCalledWith('An error occurred: API error');
   });
-  
+
   it('should handle network errors during deletion', async () => {
-    const mockUser = { id: '123', name: 'Test User' };
-    userInfo.fetchFromApi.mockResolvedValue(mockUser);
+    // Set up mocks
+    window.confirm.mockReturnValue(true);
+    const mockUserInfo = { id: '123' };
+    userInfo.fetchFromApi.mockResolvedValue(mockUserInfo);
     
-    global.confirm.mockReturnValue(true);
-    global.fetch.mockRejectedValue(new Error('Network error'));
-    
-    await import('./settings.js');
-    
+    // Mock network error
+    fetch.mockRejectedValueOnce(new Error('Network error'));
+
+    // Trigger delete button click
     document.getElementById('deleteButton').click();
     
-    await vi.waitFor(() => {
-      expect(global.alert).toHaveBeenCalledWith('An error occurred: Network error');
-    });
+    // Wait for promises to resolve
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    // Verify behavior
+    expect(window.alert).toHaveBeenCalledWith('An error occurred: Network error');
   });
-  
+
   it('should handle errors when fetching user info', async () => {
-    const apiError = new Error('API error');
-    userInfo.fetchFromApi.mockRejectedValue(apiError);
-    
-    const originalConsoleError = console.error;
+    // Mock failed user info fetch
+    userInfo.fetchFromApi.mockRejectedValue(new Error('Fetch error'));
     console.error = vi.fn();
-    
-    await import('./settings.js');
-    
-    expect(console.error).toHaveBeenCalledWith('Error loading user:', apiError);
-    
-    console.error = originalConsoleError;
+
+    // Trigger the fetchinfo function
+    await fetchinfo();
+
+    // Verify behavior
+    expect(console.error).toHaveBeenCalledWith('Error loading user:', expect.any(Error));
   });
 });

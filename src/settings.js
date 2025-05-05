@@ -1,108 +1,92 @@
 import userInfo from './userInfo.js';
 
-const fetchinfo = async () => {
+export const fetchinfo = async () => {
 	try {
 		const info = await userInfo.fetchFromApi();
-
 		const res = await fetch(`/api/user?id=${encodeURIComponent(info.id)}`);
-        const newinfo = await res.json()
-        const uni = newinfo[0].university;
-        const department = newinfo[0].department;
+        if (!res.ok) throw new Error('Failed to fetch user data');
+		
+		const newinfo = await res.json()
+        const uni = newinfo[0].university || "No listed university";
+        const department = newinfo[0].department  || "No listed department";
 
-		document.getElementById('username').value = info.name;
-
-		if (!info.bio) {
-			document.getElementById('bio').value = "No bio.";
-		} else {
-			document.getElementById('bio').value = info.bio;
-		}
-
-		if (!uni){
-			document.getElementById('university').value = "No listed university";
-		}else{
-			document.getElementById('university').value = uni;
-		}
-
-		if (!department){
-			document.getElementById('department').value = "No listed department";
-		}else{
-			document.getElementById('department').value = department;
-		}
-
+		//there are different generic values loaded in here
+		document.getElementById('username').value = info.name || "";
+		document.getElementById('bio').value = info.bio || "No bio.";
+		document.getElementById('university').value = uni || "No listed university";
+		document.getElementById('department').value = department || "No listed department";
 	} catch (err) {
 		console.error('Error loading user:', err);
 	}
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    fetchinfo();
-  });
-
 const changeDetails = async()=>{
-	const info = await userInfo.fetchFromApi();
-	const id = info.id;
-	const username = document.getElementById('username').value;
-	const bio = document.getElementById('bio').value;
-	const university = document.getElementById('university').value;
-	const department = document.getElementById('department').value;
-
+	event.preventDefault();
 
 	try {
-
-		const res = await fetch('/update/profile', {
+		const info = await userInfo.fetchFromApi();
+		const id = info.id;
+		const username = document.getElementById('username').value;
+		const bio = document.getElementById('bio').value;
+		const university = document.getElementById('university').value;
+		const department = document.getElementById('department').value;
+		
+		await fetch('/update/profile', {
 			method: 'PUT',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ id, username, bio, university, department })
 		  });
+		  await fetchinfo();
 		} catch(error) {
-			console.error('Error changing data users:', error);
+			console.error('Error changing data:', error);
 		}
+};
 
-	fetchinfo();
-}
+const initialize = () => {
+    const changeButton = document.getElementById('changeButton');
+	const resetButton = document.getElementById('resetButton');
+	const deleteButton = document.getElementById('deleteButton');
 
-const changeButton = document.getElementById('changeButton');
+	if (changeButton) {
+		changeButton.addEventListener("click", changeDetails);
+	}
 
-changeButton.addEventListener("click", async function(event) {
-	event.preventDefault();
+	if (resetButton) {
+		resetButton.addEventListener("click", (event) => {
+			event.preventDefault();
+			fetchinfo();
+		});
+	} 
 
-	changeDetails();
-});
-
-const resetButton = document.getElementById('resetButton');
-
-resetButton.addEventListener("submit", async function(event) {
-	event.preventDefault();
-
-	document.addEventListener("DOMContentLoaded", () => {
-		fetchinfo();
-	  });
-});
-
-const deleteButton = document.getElementById('deleteButton');
-
-deleteButton.addEventListener('click', async function() {
-	const userConfirmed = confirm("Are you sure you want to delete your account?");
-			if (!userConfirmed) {
+	if (deleteButton) {
+		deleteButton.addEventListener('click', async (event) => {
+			event.preventDefault();
+			if(!confirm("Are you sure you want to delete your account?")){
 				alert("Account deletion canceled.");
 				return;
 			}
 
-			fetch('/remove/user', {
-				method: 'POST',
-				body: JSON.stringify({ reqToDeleteId: info.id })
-			})
-				.then(response => {
-					if (response.ok) {
-						alert('Account deleted successfully!');
-						window.location.href = '/';
-					} else {
-						alert('Error deleting account. Please try again.');
-					}
-				})
-				.catch(error => {
-					alert('An error occurred: ' + error.message);
-				});
-});
+			try {
+                const info = await userInfo.fetchFromApi();  // Added missing userInfo fetch
+                const response = await fetch('/remove/user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reqToDeleteId: info.id })
+                });
+                
+                if (!response.ok) throw new Error('API error');
+				alert('Account deleted successfully!');
+				window.location.href = '/';
+            } catch (error) {
+                alert('An error occurred: ' + error.message);
+            }
+		});
+	}
 
-document.addEventListener;
+	fetchinfo();
+};
+
+
+document.addEventListener("DOMContentLoaded", initialize);
+window.initialize = initialize;
+window.fetchinfo = fetchinfo;
