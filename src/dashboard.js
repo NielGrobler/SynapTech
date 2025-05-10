@@ -38,10 +38,18 @@ export function initThemeToggle() {
 	});
 }
 
+export function storeJWT() {
+	const token = new URLSearchParams(window.location.search).get('token');
+	if (token) {
+		localStorage.setItem('jwt', token);
+	}
+}
+
 export function initDashboard() {
 	const form = document.getElementById('project-search-form');
 	const input = document.getElementById('project-search-input');
 
+	storeJWT();
 	initThemeToggle();
 
 	if (!form || !input) {

@@ -75,6 +75,67 @@ const addRequestCollaboration = async (userDetails, project) => {
 	return true;
 }
 
+const createUserList = () => {
+	let result = document.createElement('ul');
+	result.id = 'users';
+	return result;
+}
+
+const createInviteForm = () => {
+	let form = document.createElement('form');
+	form.id = "user-search-form";
+	let input = document.createElement('input');
+	input.id = 'user-search-input';
+	input.placeholder = 'Search for users...';
+	let button = document.createElement('button');
+	button.classList.add('nav-item', 'flex-row', 'gap-small', 'center-content-v');
+	let icon = document.createElement('i');
+	icon.classList.add('bx', 'bx-search');
+	button.innerText = 'Submit';
+	button.appendChild(icon);
+
+	form.appendChild(input);
+	form.appendChild(button);
+
+	form.addEventListener('submit', async (e) => {
+		e.preventDefault();
+
+		try {
+			const res = await fetch(`/api/search/user?userName=${encodeURIComponent(name)}`);
+
+			if (!res.ok) {
+				throw new Error('Failed to fetch users.');
+			}
+
+			const users = await res.json();
+			document.getElementById("users").innerHTML = "";
+			pageAdder.assignListToElement(`users`, users, (rawUser) => {
+				const li = document.createElement('li');
+				const title = document.createElement('strong');
+				title = document.createElement('strong');
+				title.textContent = user.name;
+				const description = document.createElement("p");
+				description.textContent = user.bio;
+				const id = user.account_id;
+
+				li.appendChild(title);
+				li.appendChild(description);
+				li.classList.add('highlight-hover');
+				li.addEventListener('click', () => {
+					// add fetching here
+
+
+				});
+			});
+		} catch (error) {
+			console.error(`Error fetching users: ${error}`);
+		}
+		alert("Hello world!");
+	});
+
+	return form;
+}
+
 const addCollaboratorButton = async (userDetails, project) => {
 	if (project.created_by_account_id !== userDetails.id) {
 		return false;
@@ -83,7 +144,14 @@ const addCollaboratorButton = async (userDetails, project) => {
 	let collaboratorSection = document.getElementById("collaborators");
 	let button = document.createElement("button");
 	button.innerText = "Add Collaborator";
+	// add stuff here
 	collaboratorSection.appendChild(button);
+
+	button.addEventListener('click', (e) => {
+		console.log("Hello world!");
+		collaboratorSection.appendChild(createInviteForm());
+		collaboratorSection.appendChild(createUserList());
+	});
 
 	return true;
 }

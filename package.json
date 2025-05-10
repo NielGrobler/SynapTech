@@ -31,6 +31,9 @@
   },
   "dependencies": {
     "@azure/storage-blob": "^12.27.0",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "axios": "^1.9.0",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "express-session": "^1.18.1",
@@ -42,7 +45,8 @@
     "node-fetch": "^3.3.2",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
-    "passport-orcid": "^0.0.4"
+    "passport-orcid": "^0.0.4",
+    "socket.io": "^4.8.1"
   },
   "repository": {
     "type": "git",

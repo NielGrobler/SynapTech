@@ -8,6 +8,7 @@ import fs from 'fs';
 import https from 'https';
 import dotenv from 'dotenv';
 import url from 'url';
+import jwt from 'jsonwebtoken';
 
 import multer from 'multer';
 
@@ -163,21 +164,19 @@ router.get('/auth/google', passport.authenticate('google', {
 router.get('/auth/google/callback',
 	passport.authenticate('google', { failureRedirect: '/' }),
 	(req, res) => {
-		res.redirect('/home');
+		const token = jwt.sign(
+			{ id: req.user.id, name: req.user.name },
+			process.env.SESSION_SECRET,
+			{ expiresIn: '1h' }
+		);
+
+		res.redirect(`/dashboard?token=${token}`);
 	}
 );
 
 export const authenticateRequest = (req) => req.isAuthenticated();
 
 /* Normal Routes */
-router.get('/home', (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-
-	res.redirect('/dashboard');
-});
-
 router.get('/dashboard', (req, res) => {
 	if (!authenticateRequest(req)) {
 		return res.redirect('/forbidden');
@@ -193,8 +192,16 @@ router.get('/styles.css', (req, res) => {
 router.get('/auth/orcid', passport.authenticate('orcid'));
 
 router.get('/auth/orcid/callback',
-	passport.authenticate('orcid', { failureRedirect: '/' }), (req, res) => {
-		res.redirect('/home');
+	passport.authenticate('orcid', { failureRedirect: '/' }),
+	(req, res) => {
+		const token = jwt.sign(
+			{ id: req.user.id, name: req.user.name },
+			process.env.SESSION_SECRET,
+			{ expiresIn: '1h' }
+		);
+
+		res.redirect(`/dashboard?token=${token}`);
+
 	}
 );
 
@@ -539,7 +546,7 @@ router.post('/api/collaboration/request', async (req, res) => {
 
 	try {
 		await db.insertPendingCollaborator(req.user.id, projectId);
-		res.send('Successfully sent project');
+		res.send('Successfully sent collobaroration request.');
 	} catch (err) {
 		res.status(400).json({ error: 'Failed' });
 	}
