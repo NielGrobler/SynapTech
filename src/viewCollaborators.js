@@ -2,46 +2,11 @@
 import pageAdder from './pageAdder.js'
 
 const generateCollaboratorRequestHTML = (collaborator) => {
-	const container = document.createElement('li');
-	container.classList.add('highlight-hover');
-
-	const nameParagraph = document.createElement('p');
-	nameParagraph.innerHTML = `<strong>${collaborator.account_name}</strong> is requesting to collaborate on the <strong>${collaborator.project_name}</strong>`;
-	container.appendChild(nameParagraph);
-
-	const visibilityParagraph = document.createElement('p');
-	visibilityParagraph.innerText = `Project is ${collaborator.project_is_public ? 'public' : 'private'}.`;
-	container.appendChild(visibilityParagraph);
-
-	const roleParagraph = document.createElement('p');
-	roleParagraph.innerText = `Role: ${collaborator.role}`;
-	container.appendChild(roleParagraph);
-
-	let buttonSection = document.createElement('section');
-	buttonSection.classList.add('flex-row', 'gap', 'highlight-hover', 'width-25', 'split');
-
-	const acceptButton = document.createElement('button');
-	acceptButton.classList.add('flex-row', 'center-content-v', 'gap-small');
-	acceptButton.innerHTML = `<i class='bx bx-check' ></i>Accept`;
+	const container = document.createElement('li'); container.classList.add('highlight-hover'); const nameParagraph = document.createElement('p'); nameParagraph.innerHTML = `<strong>${collaborator.account_name}</strong> is requesting to collaborate on the <strong>${collaborator.project_name}</strong>`; container.appendChild(nameParagraph); const visibilityParagraph = document.createElement('p'); visibilityParagraph.innerText = `Project is ${collaborator.project_is_public ? 'public' : 'private'}.`; container.appendChild(visibilityParagraph); const roleParagraph = document.createElement('p'); roleParagraph.innerText = `Role: ${collaborator.role}`; container.appendChild(roleParagraph); let buttonSection = document.createElement('section'); buttonSection.classList.add('flex-row', 'gap', 'highlight-hover', 'width-25', 'split'); const acceptButton = document.createElement('button'); acceptButton.classList.add('flex-row', 'center-content-v', 'gap-small'); acceptButton.innerHTML = `<i class='bx bx-check' ></i>Accept`;
 	acceptButton.onclick = async () => {
 		await handleAccept(collaborator);
-	};
-
-	const rejectButton = document.createElement('button');
-	rejectButton.classList.add('flex-row', 'center-content-v', 'gap-small');
-	rejectButton.innerHTML = `<i class='bx bx-x'></i>Reject`;
-	rejectButton.onclick = async () => {
-		await handleReject(collaborator);
-	};
-
-	buttonSection.appendChild(acceptButton);
-	buttonSection.appendChild(rejectButton);
-
-	container.appendChild(buttonSection);
-
-	return container;
+	}; const rejectButton = document.createElement('button'); rejectButton.classList.add('flex-row', 'center-content-v', 'gap-small'); rejectButton.innerHTML = `<i class='bx bx-x'></i>Reject`; rejectButton.onclick = async () => { await handleReject(collaborator); }; buttonSection.appendChild(acceptButton); buttonSection.appendChild(rejectButton); container.appendChild(buttonSection); return container;
 }
-
 const handleAccept = async (collaborator) => {
 	try {
 		const response = await fetch('/api/accept/collaborator', {
@@ -73,7 +38,6 @@ const handleReject = async (collaborator) => {
 			},
 			body: JSON.stringify({ "userId": collaborator.account_id, "projectId": collaborator.project_id })
 		});
-
 		if (response.ok) {
 			await fetchCollaborators();
 		} else {
@@ -85,19 +49,8 @@ const handleReject = async (collaborator) => {
 		alert('Failed to send collaboration request.');
 	}
 }
-
-const fetchCollaborators = async () => {
-	let res = await fetch('/api/collaborator');
-	let collaboratorData = await res.json();
-	pageAdder.assignListToElement(
-		'collaboratorRequests',
-		collaboratorData,
-		generateCollaboratorRequestHTML
-	);
-
-	console.log(collaboratorData);
-}
-
+const fetchCollaborators = async () => { let res = await fetch('/api/collaborator'); let collaboratorData = await res.json(); pageAdder.assignListToElement('collaboratorRequests', collaboratorData, generateCollaboratorRequestHTML); }
 (async () => {
 	await fetchCollaborators();
 })();
+export default { fetchCollaborators, handleAccept, handleReject, generateCollaboratorRequestHTML }

@@ -1,2 +1,2 @@
-npm install express passport passport-google-oauth20 passport-orcid express-session dotenv mssql joi jest jsdom node-fetch @azure/storage-blob multer
+npm install express passport passport-google-oauth20 passport-orcid express-session dotenv mssql joi jest jsdom node-fetch @azure/storage-blob multer axios
 

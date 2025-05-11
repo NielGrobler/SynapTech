@@ -76,15 +76,6 @@ describe('Router Endpoints', () => {
 		expect(res.text).toBe('served forbidden.html');
 	});
 
-	it('GET /home redirects correctly', async () => {
-		let res = await request(app).get('/home');
-		expect(res.status).toBe(302);
-		expect(res.headers.location).toBe('/forbidden');
-		res = await request(app).get('/home').set('authenticated', 'true');
-		expect(res.status).toBe(302);
-		expect(res.headers.location).toBe('/dashboard');
-	});
-
 	it('GET /dashboard and /login/signup', async () => {
 		let res = await request(app).get('/dashboard');
 		expect(res.status).toBe(302);

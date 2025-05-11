@@ -1,6 +1,19 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// Mock fetch BEFORE importing dashboard
+Object.defineProperty(window, 'matchMedia', {
+	writable: true,
+	value: vi.fn().mockImplementation(query => ({
+		matches: false,
+		media: query,
+		onchange: null,
+		addEventListener: vi.fn(),
+		removeEventListener: vi.fn(),
+		dispatchEvent: vi.fn(),
+	})),
+});
+
+
+import { describe, it, expect, vi, beforeEach, beforeAll, afterEach } from 'vitest';
+
 vi.stubGlobal('fetch', vi.fn(() =>
 	Promise.resolve({
 		json: () => Promise.resolve([
@@ -29,7 +42,6 @@ vi.mock('./stringSearch.js', () => {
 	};
 });
 
-// Import after mocks
 import { initDashboard } from './dashboard.js';
 import pageAdder from './pageAdder.js';
 import stringSearch from './stringSearch.js';
@@ -45,6 +57,7 @@ describe('dashboard.js', () => {
         <input type="text" id="project-search-input" />
         <button type="submit">Search</button>
       </form>
+	<button id="theme-toggle"></button>
     `;
 
 		projectSearchInput = document.getElementById('project-search-input');
