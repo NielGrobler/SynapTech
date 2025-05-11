@@ -185,6 +185,7 @@ const suspendUser = async (userId) => {
 		.sendUsing(agent);
 };
 
+
 const addCollaborator = async (projectId, userId, role) => {
 	await new DatabaseQueryBuilder()
 		.input('project_id', projectId)
@@ -425,7 +426,7 @@ export default {
 	fetchAssociatedProjects,
 	appendCollaborators,
 	deleteUser,
-	isSuspendend,
+	isSuspended,
 	suspendUser,
 	addCollaborator,
 	acceptCollaborator,
@@ -433,11 +434,16 @@ export default {
 	fetchProjectById,
 	fetchPendingCollaborators,
 	insertPendingCollaborator,
+	searchUsers,
+	fetchPublicAssociatedProjects,
+	fetchUserById,
+	updateProfile,
 	permittedToAcceptCollaborator,
 	permittedToRejectCollaborator,
 	removeCollaborator,
 	storeMessage,
 	retrieveMessages,
-	retrieveMessagedUsers
+	retrieveMessagedUsers,
+	is_Admin
 };
 
