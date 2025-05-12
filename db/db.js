@@ -165,7 +165,7 @@ const deleteUser = async (userId) => {
 		.sendUsing(agent);
 };
 
-const isSuspendend = async (userId) => {
+const isSuspended = async (userId) => {
 	const result = await new DatabaseQueryBuilder()
 		.input('id', userId)
 		.query(`
