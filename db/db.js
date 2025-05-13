@@ -134,6 +134,29 @@ const fetchAssociatedProjects = async (user) => {
 	return result.recordSet;
 };
 
+const fetchPublicAssociatedProjects = async (user) => {
+	const result = await new DatabaseQueryBuilder()
+		.input('id', user.id)
+		.query(`
+			SELECT DISTINCT 
+			    Project.project_id AS id,
+			    Project.created_by_account_id AS author_id,
+			    Project.created_at AS created_at,
+			    Project.name AS name,
+			    Project.description AS description,
+			    Project.is_public AS is_public
+			FROM Project
+			LEFT JOIN Collaborator ON Collaborator.project_id = Project.project_id
+			LEFT JOIN Account ON Account.account_id = Collaborator.account_id
+			WHERE Project.created_by_account_id = {{id}} AND Project.isPublic = 1
+			OR (Collaborator.account_id = {{id}} AND Collaborator.is_pending = 0);
+		`)
+		.getResultUsing(agent);
+
+	return result.recordSet;
+};
+
+
 const appendCollaborators = async (projects) => {
 	for (let project of projects) {
 		const result = await new DatabaseQueryBuilder()
@@ -419,6 +442,86 @@ const retrieveMessagedUsers = async (userId) => {
 	return result.recordSet;
 }
 
+const searchUsers = async (userName) => {
+	const lowerName = userName.toLowerCase();
+	const result = await new DatabaseQueryBuilder()
+		.input('userName', `%${lowerName}%`)
+		.query(`
+			SELECT *
+			FROM Project
+			WHERE LOWER(Account.name) LIKE {{user}} AND Account.is_suspended = 0
+			ORDER BY CHAR_LENGTH(Account.name)
+			LIMIT 10;
+		`)
+		.getResultUsing(agent);
+
+	return result.recordSet;
+};
+
+const 	fetchUserById = async (id) => {
+	const result = await new DatabaseQueryBuilder()
+		.input('id', id)
+		.query(`
+			SELECT	DISTINCT
+				Account.acount_id AS id,
+				Account.name AS name,
+				Account.bio AS bio,
+				Account.university AS university,
+				Account.department AS department,
+				Account.is_suspended AS is_suspended
+			WHERE Account.account_id = {{id}}
+			LIMIT 1;
+		`)
+		.getResultUsing(agent);
+
+	let user = result.recordSet[0];
+
+	if (!user) {
+		return null;
+	}
+
+	return user;
+}
+
+const updateProfile = async (params) => {
+	const { id, username, bio, university, department } = params;
+
+	const result = await new DatabaseQueryBuilder()
+		.input('username', username)
+		.input('id', id)
+		.input('bio', bio)
+		.input('university', university)
+		.input('department', department)
+		.query(`
+            UPDATE Account
+			SET Account.name = @username, 
+				Account.bio = {{bio}}, 
+				Account.university = {{university}}, 
+				Account.department= {{department}}
+			WHERE Account.account_id = {{id}}
+		`);
+}
+
+const 	is_Admin = async (id) => {
+	const result = await new DatabaseQueryBuilder()
+		.input('id', id)
+		.query(`
+			SELECT	is_admin
+			WHERE Account.account_id = {{id}}
+			LIMIT 1;
+		`)
+		.getResultUsing(agent);
+
+	let user = result.recordSet[0];
+
+	if (!user) {
+		return null;
+	}
+
+	return user;
+}
+
+
 export default {
 	getUserByGUID,
 	createUser,
@@ -446,4 +549,3 @@ export default {
 	retrieveMessagedUsers,
 	is_Admin
 };
-
