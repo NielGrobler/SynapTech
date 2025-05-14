@@ -521,87 +521,43 @@ const is_Admin = async (id) => {
 	return user;
 }
 
-
-<<<<<<< Updated upstream
-=======
-const searchUsers = async (userName) => {
-	const lowerName = userName.toLowerCase();
+const getProjectReviews = async (projectId, limit = 10, offset = 0) => {
 	const result = await new DatabaseQueryBuilder()
-		.input('userName', `%${lowerName}%`)
+		.input('project_id', projectId)
+		.input('limit', limit)
+		.input('offset', offset)
 		.query(`
-			SELECT *
-			FROM Project
-			WHERE LOWER(Account.name) LIKE {{user}} AND Account.is_suspended = 0
-			ORDER BY CHAR_LENGTH(Account.name)
-			LIMIT 10;
-		`)
+      SELECT 
+        Review.review_id,
+        Review.project_id,
+        Review.reviewer_id,
+        Account.name AS reviewer_name,
+        Review.rating,
+        Review.comment,
+        Review.created_at
+      FROM Review
+      INNER JOIN Account ON Review.reviewer_id = Account.account_id
+      WHERE Review.project_id = {{project_id}}
+      ORDER BY Review.created_at DESC
+      LIMIT {{limit}} OFFSET {{offset}};
+    `)
 		.getResultUsing(agent);
 
 	return result.recordSet;
 };
 
-const fetchUserById = async (id) => {
+const getReviewCount = async (projectId) => {
 	const result = await new DatabaseQueryBuilder()
-		.input('id', id)
+		.input('project_id', projectId)
 		.query(`
-			SELECT	DISTINCT
-				Account.acount_id AS id,
-				Account.name AS name,
-				Account.bio AS bio,
-				Account.university AS university,
-				Account.department AS department,
-				Account.is_suspended AS is_suspended
-			WHERE Account.account_id = {{id}}
-			LIMIT 1;
-		`)
+      SELECT COUNT(*) AS total
+      FROM Review
+      WHERE project_id = {{project_id}};
+    `)
 		.getResultUsing(agent);
 
-	let user = result.recordSet[0];
-
-	if (!user) {
-		return null;
-	}
-
-	return user;
-}
-
-const updateProfile = async (params) => {
-	const { id, username, bio, university, department } = params;
-
-	const result = await new DatabaseQueryBuilder()
-		.input('username', username)
-		.input('id', id)
-		.input('bio', bio)
-		.input('university', university)
-		.input('department', department)
-		.query(`
-            UPDATE Account
-			SET Account.name = @username,
-				Account.bio = {{bio}},
-				Account.university = {{university}},
-				Account.department= {{department}}
-			WHERE Account.account_id = {{id}}
-		`);
-}
-
-const is_Admin = async (id) => {
-	const result = await new DatabaseQueryBuilder()
-		.input('id', id)
-		.query(`
-			SELECT	is_admin
-			WHERE Account.account_id = {{id}}
-			LIMIT 1;
-		`)
-		.getResultUsing(agent);
-
-	let user = result.recordSet[0];
-
-	if (!user) {
-		return null;
-	}
-
-	return user;
-}
+	return result.recordSet[0].total;
+};
 
 const createReview = async (review) => {
 	await new DatabaseQueryBuilder()
@@ -615,9 +571,6 @@ const createReview = async (review) => {
     `)
 		.sendUsing(agent);
 };
-
-
->>>>>>> Stashed changes
 export default {
 	getUserByGUID,
 	createUser,
@@ -643,6 +596,8 @@ export default {
 	storeMessage,
 	retrieveMessages,
 	retrieveMessagedUsers,
+	getProjectReviews,
+	getReviewCount,
 	createReview,
 	is_Admin
 };

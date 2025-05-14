@@ -572,6 +572,30 @@ router.get('/reviewProject', (req, res) => {
 	res.sendFile(path.join(__dirname, "public", "reviewProject.html"));
 });
 
+router.get('/api/reviews', async (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.status(401).json({ error: 'Not authenticated' });
+	}
+
+	const projectId = req.query.projectId;
+	const page = parseInt(req.query.page) || 1;
+	const limit = parseInt(req.query.limit) || 10;
+	const offset = (page - 1) * limit;
+
+	try {
+		const reviews = await db.getProjectReviews(projectId, limit, offset);
+		const totalCount = await db.getReviewCount(projectId);
+
+		res.json({
+			reviews: reviews,
+			totalCount: totalCount
+		});
+	} catch (err) {
+		console.error('Error fetching reviews:', err);
+		res.status(500).json({ error: 'Failed to fetch reviews' });
+	}
+});
+
 /* POST Request Routing */
 router.post('/create/project', async (req, res) => {
 	if (!authenticateRequest(req)) {
