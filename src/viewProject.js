@@ -185,3 +185,23 @@ export async function initPage() {
 
 	await populateElements();
 }
+
+const finances = async (creatorId, collabList) => {
+
+	const params = new URLSearchParams(window.location.search);
+	const userId = params.get('id');
+
+	if (userId == creatorId) {
+		finances = document.createElement('button');
+		finances.innerHTML("View Finances");
+		document.body.appendChild(finances);
+	}
+
+	for() {
+		if (userId == creatorId) {
+			finances = document.createElement('button');
+			finances.innerHTML("View Finances");
+			document.body.appendChild(finances);
+		}
+	}
+};

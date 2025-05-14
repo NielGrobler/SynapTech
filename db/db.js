@@ -134,6 +134,32 @@ const fetchAssociatedProjects = async (user) => {
 	return result.recordSet;
 };
 
+const fetchPublicAssociatedProjects = async (id) => {
+	const result = await new DatabaseQueryBuilder()
+		.input('id', id)
+		.query(`
+			SELECT DISTINCT 
+			    Project.project_id AS id,
+			    Project.created_by_account_id AS author_id,
+			    Project.created_at AS created_at,
+			    Project.name AS name,
+			    Project.description AS description,
+			    Project.is_public AS is_public
+			FROM Project
+			LEFT JOIN Collaborator ON Collaborator.project_id = Project.project_id
+			LEFT JOIN Account ON Account.account_id = Collaborator.account_id
+			WHERE Project.created_by_account_id = {{id}} 
+			OR (Collaborator.account_id = {{id}} AND Collaborator.is_pending = 0);
+		`)
+		.getResultUsing(agent);
+
+		if (!project) {
+		return null;
+	}
+	return result.recordSet;
+};
+
+
 const appendCollaborators = async (projects) => {
 	for (let project of projects) {
 		const result = await new DatabaseQueryBuilder()
@@ -169,20 +195,36 @@ const isSuspended = async (userId) => {
 	const result = await new DatabaseQueryBuilder()
 		.input('id', userId)
 		.query(`
-			SELECT account_id FROM SuspendedAccount WHERE account_id = {{id}};
+			SELECT is_suspended FROM Account WHERE account_id = {{id}};
 		`)
 		.getResultUsing(agent);
 
-	return result.recordSet.length > 0;
+		let isSus = result.recordSet[0].is_suspended;
+	return isSus;
 };
 
 const suspendUser = async (userId) => {
 	await new DatabaseQueryBuilder()
 		.input('id', userId)
 		.query(`
-			INSERT INTO SuspendedAccount(account_id) VALUES({{id}});
+			UPDATE Account
+			SET is_suspended = 1
+			WHERE account_id = {{id}}
 		`)
 		.sendUsing(agent);
+		console.log("Unsuspended");
+};
+
+const unsuspendUser = async (userId) => {
+	await new DatabaseQueryBuilder()
+		.input('id', userId)
+		.query(`
+			UPDATE Account
+			SET is_suspended = 0
+			WHERE account_id = {{id}}
+		`)
+		.sendUsing(agent);
+		console.log("Unsuspended");
 };
 
 
@@ -419,6 +461,112 @@ const retrieveMessagedUsers = async (userId) => {
 	return result.recordSet;
 }
 
+const searchUsers = async (userName) => {
+	const lowerName = userName.toLowerCase();
+	const result = await new DatabaseQueryBuilder()
+		.input('userName', `%${lowerName}%`)
+		.query(`
+			SELECT *
+			FROM Account
+			WHERE LOWER(Account.name) LIKE {{userName}} AND Account.is_suspended = 0
+			ORDER BY CHAR_LENGTH(Account.name)
+			LIMIT 10;
+		`)
+		.getResultUsing(agent);
+
+	return result.recordSet;
+};
+
+const 	fetchUserById = async (id) => {
+	const result = await new DatabaseQueryBuilder()
+		.input('id', id)
+		.query(`
+			SELECT	* FROM Account
+			WHERE Account.account_id = {{id}}
+			LIMIT 1;
+		`)
+		.getResultUsing(agent);
+
+	let user = result.recordSet[0];
+
+	if (!user) {
+		return null;
+	}
+
+	return user;
+}
+
+const updateProfile = async (params) => {
+	const { id, username, bio, university, department } = params;
+
+	const result = await new DatabaseQueryBuilder()
+		.input('username', username)
+		.input('id', id)
+		.input('bio', bio)
+		.input('university', university)
+		.input('department', department)
+		.query(`
+            UPDATE Account
+			SET Account.name = @username, 
+				Account.bio = {{bio}}, 
+				Account.university = {{university}}, 
+				Account.department= {{department}}
+			WHERE Account.account_id = {{id}}
+		`);
+}
+
+const 	is_Admin = async (id) => {
+	const result = await new DatabaseQueryBuilder()
+		.input('id', id)
+		.query(`
+			SELECT	is_admin FROM Account
+			WHERE account_id = {{id}}
+			LIMIT 1;
+		`)
+		.getResultUsing(agent);
+
+	let admin = result.recordSet[0].is_admin;
+	console.log(admin)
+
+	return admin;
+}
+
+const 	getSpending = async (id) => {
+	const result = await new DatabaseQueryBuilder()
+		.input('id', id)
+		.query(`
+			SELECT	* FROM UsedFunding
+			WHERE UsedFunding.funding_id = {{id}}
+		`)
+		.getResultUsing(agent);
+
+	let spending = result.recordSet[0];
+
+	if (!spending) {
+		return null;
+	}
+
+	return spending;
+}
+
+const 	getFunding = async (id) => {
+	const result = await new DatabaseQueryBuilder()
+		.input('id', id)
+		.query(`
+			SELECT	* FROM Funding
+			WHERE Funding.project_id = {{id}}
+		`)
+		.getResultUsing(agent);
+
+	let funding = result.recordSet[0];
+
+	if (!funding) {
+		return null;
+	}
+
+	return spending;
+}
+
 export default {
 	getUserByGUID,
 	createUser,
@@ -428,6 +576,7 @@ export default {
 	deleteUser,
 	isSuspended,
 	suspendUser,
+	unsuspendUser,
 	addCollaborator,
 	acceptCollaborator,
 	searchProjects,
@@ -444,6 +593,8 @@ export default {
 	storeMessage,
 	retrieveMessages,
 	retrieveMessagedUsers,
-	is_Admin
+	is_Admin,
+	getSpending,
+	getFunding
 };
 

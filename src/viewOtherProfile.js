@@ -1,18 +1,16 @@
 import pageAdder from './pageAdder.js';
 let projects = [];
+let pubProjs = [];
 
 let suspend;
 
-const checkAdmin = async () => {
+const checkAdmin = async (isSus) => {
 	const res = await fetch('/admin');
 	const admin = await res.json();
 
 	if (admin) {
 		suspend = document.createElement('button');
-		const params = new URLSearchParams(window.location.search);
-		const userId = params.get('id');
-		const status = await fetch(`/isSuspended?id=${encodeURIComponent(userId)}`);
-		const isSus = await status.json();
+		console.log(isSus)
 
 		if (isSus){
 			suspend.innerText = 'Unuspend User';
@@ -25,14 +23,22 @@ const checkAdmin = async () => {
 		suspend.addEventListener('click', async () => {
 			const params = new URLSearchParams(window.location.search);
 			const userId = params.get('id');
-			await fetch('/suspend/user', {
+			if(isSus){
+				await fetch('/suspend/user?id=${encodeURIComponent(userId)}', {
 				method: 'PUT',
 				headers: {
 					'Content-Type': 'application/json'
 				},
 				body: JSON.stringify({ id: userId })
-			});
-
+			});}else{
+				await fetch('/unsuspend/user?id=${encodeURIComponent(userId)}', {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ id: userId })
+			});}
+			
 			const newStatus = await fetch(`/isSuspended?id=${encodeURIComponent(userId)}`);
 			const newisSus = await newStatus.json();
 	
@@ -41,14 +47,14 @@ const checkAdmin = async () => {
 			} else{
 				suspend.innerText = 'Suspend User';
 			}
+			console.log(newisSus)
 		});
 
 	}
 };
 
 const populateElements = async () => {
-	await checkAdmin();
-
+	
 	const params = new URLSearchParams(window.location.search);
 	const userId = params.get('id');
 	if (!userId) {
@@ -60,27 +66,22 @@ const populateElements = async () => {
 		document.getElementById('userName').innerText = "Could not display user.";
 		return;
 	}
+	await checkAdmin(user.is_suspended);
 
-	document.getElementById('userName').innerText = user[0].name;
-	document.getElementById('userUni').innerHTML = user[0].university;
-	document.getElementById('userDepartment').innerHTML = user[0].department;
-	document.getElementById('userBio').innerHTML = user[0].bio;
+	document.getElementById('userName').innerText = user.name;
+	document.getElementById('userUni').innerHTML = user.university;
+	document.getElementById('userDepartment').innerHTML = user.department;
+	document.getElementById('userBio').innerHTML = user.bio;
 };
 
 document.addEventListener("DOMContentLoaded", () => {
 	populateElements();
 });
 
-(async () => {
-	const params = new URLSearchParams(window.location.search);
-	const userId = params.get('id');
-	if (!userId) return;
 
+(async () => {
 	try {
-		const res = await fetch(`/api/other/project?id=${encodeURIComponent(userId)}`);
-		if (!res.ok) {
-			throw new Error(`Failed to fetch projects: ${res.statusText}`);
-		}
+		const res = await fetch('/api/user/project');
 		projects = await res.json();
 		pageAdder.addProjectsToPage('projectCardList', projects);
 	} catch (err) {

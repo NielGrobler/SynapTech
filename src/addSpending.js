@@ -1,0 +1,1 @@
+/*action="/spend/finances?id=encodeURIComponent{new URLSearchParams(window.location.search)}" method="POST"*/

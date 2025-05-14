@@ -13,8 +13,8 @@ const populateElements = async () => {
 
         const res = await fetch(`/api/user?id=${encodeURIComponent(user.id)}`);
         const newinfo = await res.json();
-        document.getElementById('userUni').innerHTML = newinfo[0].university;
-        document.getElementById('userDepartment').innerHTML = newinfo[0].department;
+        document.getElementById('userUni').innerHTML = newinfo.university;
+        document.getElementById('userDepartment').innerHTML = newinfo.department;
     } catch (error) {
         console.error("User not authenticated:", error);
         document.getElementById('userName').innerText = "Could not display user.";

@@ -542,7 +542,7 @@ router.get('/api/user/project', async (req, res) => {
 //fetch other user project
 router.get('/api/other/project', async (req, res) => {
 	if (!authenticateRequest(req)) {
-		return res.status(401).json({ error: 'Not authenticated' });
+		return res.redirect('/forbidden');;
 	}
 	
 
@@ -715,6 +715,7 @@ router.put('/suspend/user', async (req, res) => {
 	}
 
 	const userId = req.body.id;
+	console.log(userId)
 
 	try {
 		const suspend = await db.suspendUser(userId);
@@ -727,7 +728,25 @@ router.put('/suspend/user', async (req, res) => {
 		res.status(500).json({ error: 'Failed to suspend user', details: err.message });
 	}
 });
+//Unsuspends an account
+router.put('/unsuspend/user', async (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
 
+	const userId = req.body;
+
+	try {
+		const suspend = await db.unsuspendUser(userId);
+
+		res.status(201).json({
+			message: "User's Status changed!",
+		});
+	} catch (err) {
+		console.error('Error suspending user:', err);
+		res.status(500).json({ error: 'Failed to suspend user', details: err.message });
+	}
+});
 
 //Checks if user is an administrator
 router.get('/admin', async(req, res) => {
@@ -766,7 +785,7 @@ router.get('/isSuspended', async(req, res) => {
 	try {
 		const { id } = req.query
 		const result = await db.isSuspended(id);
-		return res.json(result[0].is_suspended);
+		return res.json(result);
 	} catch (err) {
 		console.error('Error checking if user suspended:', err);
 	}
@@ -789,4 +808,84 @@ router.put('user/details', async (req, res) => {
 	const { name, bio } = req.body;
 });
 
+router.post('add/spending', async(req, res)=>{
+	try{
+		db.addSpending(req.body)
+		res.status(200).json({ message: 'Uploaded spending' });
+	}catch{
+		
+		console.error(err);
+		res.status(500).json({ error: 'Upload failed' });
+	}
+});
+
+router.get('/get/spending', async (req, res) => {
+	if (!authenticateRequest(req)) {
+		res.status(401).json({ error: 'Bad Request.' });
+		return;
+	}
+
+	const { id } = req.query;
+	if (!id) {
+		res.status(400).json({ error: "Bad Request." });
+		return;
+	}
+
+	const user = await db.getSpending(id);
+
+	if (!user) {
+		res.json(null);
+		return;
+	}
+
+	res.json(user);
+});
+
+router.get('/get/funding', async (req, res) => {
+	if (!authenticateRequest(req)) {
+		res.status(401).json({ error: 'Bad Request.' });
+		return;
+	}
+
+	const { id } = req.query;
+	if (!id) {
+		res.status(400).json({ error: "Bad Request." });
+		return;
+	}
+
+	const user = await db.getFunding(id);
+
+	if (!user) {
+		res.json(null);
+		return;
+	}
+
+	res.json(user);
+});
+
+router.get('/view/finances', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+
+	res.sendFile(path.join(__dirname, "public", "viewFinances.html"));
+});
+
+router.get('/view/funding', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+
+	res.sendFile(path.join(__dirname, "public", "addFunding.html"));
+});
+
+router.get('/view/spending', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+
+	res.sendFile(path.join(__dirname, "public", "addSpending.html"));
+});
+
 export default router;
+
