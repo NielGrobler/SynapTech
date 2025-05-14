@@ -458,7 +458,7 @@ const searchUsers = async (userName) => {
 	return result.recordSet;
 };
 
-const 	fetchUserById = async (id) => {
+const fetchUserById = async (id) => {
 	const result = await new DatabaseQueryBuilder()
 		.input('id', id)
 		.query(`
@@ -502,7 +502,7 @@ const updateProfile = async (params) => {
 		`);
 }
 
-const 	is_Admin = async (id) => {
+const is_Admin = async (id) => {
 	const result = await new DatabaseQueryBuilder()
 		.input('id', id)
 		.query(`
@@ -522,6 +522,102 @@ const 	is_Admin = async (id) => {
 }
 
 
+<<<<<<< Updated upstream
+=======
+const searchUsers = async (userName) => {
+	const lowerName = userName.toLowerCase();
+	const result = await new DatabaseQueryBuilder()
+		.input('userName', `%${lowerName}%`)
+		.query(`
+			SELECT *
+			FROM Project
+			WHERE LOWER(Account.name) LIKE {{user}} AND Account.is_suspended = 0
+			ORDER BY CHAR_LENGTH(Account.name)
+			LIMIT 10;
+		`)
+		.getResultUsing(agent);
+
+	return result.recordSet;
+};
+
+const fetchUserById = async (id) => {
+	const result = await new DatabaseQueryBuilder()
+		.input('id', id)
+		.query(`
+			SELECT	DISTINCT
+				Account.acount_id AS id,
+				Account.name AS name,
+				Account.bio AS bio,
+				Account.university AS university,
+				Account.department AS department,
+				Account.is_suspended AS is_suspended
+			WHERE Account.account_id = {{id}}
+			LIMIT 1;
+		`)
+		.getResultUsing(agent);
+
+	let user = result.recordSet[0];
+
+	if (!user) {
+		return null;
+	}
+
+	return user;
+}
+
+const updateProfile = async (params) => {
+	const { id, username, bio, university, department } = params;
+
+	const result = await new DatabaseQueryBuilder()
+		.input('username', username)
+		.input('id', id)
+		.input('bio', bio)
+		.input('university', university)
+		.input('department', department)
+		.query(`
+            UPDATE Account
+			SET Account.name = @username,
+				Account.bio = {{bio}},
+				Account.university = {{university}},
+				Account.department= {{department}}
+			WHERE Account.account_id = {{id}}
+		`);
+}
+
+const is_Admin = async (id) => {
+	const result = await new DatabaseQueryBuilder()
+		.input('id', id)
+		.query(`
+			SELECT	is_admin
+			WHERE Account.account_id = {{id}}
+			LIMIT 1;
+		`)
+		.getResultUsing(agent);
+
+	let user = result.recordSet[0];
+
+	if (!user) {
+		return null;
+	}
+
+	return user;
+}
+
+const createReview = async (review) => {
+	await new DatabaseQueryBuilder()
+		.input('project_id', review.project_id)
+		.input('reviewer_id', review.reviewer_id)
+		.input('rating', review.rating)
+		.input('comment', review.comment)
+		.query(`
+      INSERT INTO Review(project_id, reviewer_id, rating, comment)
+      VALUES({{project_id}}, {{reviewer_id}}, {{rating}}, {{comment}});
+    `)
+		.sendUsing(agent);
+};
+
+
+>>>>>>> Stashed changes
 export default {
 	getUserByGUID,
 	createUser,
@@ -547,5 +643,6 @@ export default {
 	storeMessage,
 	retrieveMessages,
 	retrieveMessagedUsers,
+	createReview,
 	is_Admin
 };

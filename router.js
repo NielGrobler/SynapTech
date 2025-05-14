@@ -175,7 +175,8 @@ router.get('/auth/google/callback',
 );
 
 export const authenticateRequest = (req) => req.isAuthenticated();
-export const isSuspended = async(req) => {const result = await db.isSuspended(req.user.id); 
+export const isSuspended = async (req) => {
+	const result = await db.isSuspended(req.user.id);
 	return result[0].is_suspended;
 };
 
@@ -239,7 +240,7 @@ router.get('/signup', (req, res) => {
 
 // Logout
 router.get('/logout', (req, res, next) => {
-	req.logout(function(err) {
+	req.logout(function (err) {
 		if (err) { return next(err); }
 
 		req.session.destroy((err) => {
@@ -544,7 +545,7 @@ router.get('/api/other/project', async (req, res) => {
 	if (!authenticateRequest(req)) {
 		return res.status(401).json({ error: 'Not authenticated' });
 	}
-	
+
 
 	let { id } = req.query;
 	if (!id) {
@@ -562,6 +563,13 @@ router.get('/api/collaborator', async (req, res) => {
 
 	let pending_collaborators = await db.fetchPendingCollaborators(req.user);
 	res.json(pending_collaborators);
+});
+
+router.get('/reviewProject', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+	res.sendFile(path.join(__dirname, "public", "reviewProject.html"));
 });
 
 /* POST Request Routing */
@@ -645,25 +653,23 @@ router.post('/remove/user', async (req, res) => {
 });
 
 //Reviews Page
-router.post('/submit/review', async (req, res) => {
+router.post('/api/review', async (req, res) => {
 	if (!req.isAuthenticated()) {
 		return res.status(403).json({ error: 'Not authenticated' });
 	}
 
 	if (!req.body || !req.body.projectId || !req.body.rating || !req.body.comment) {
-		res.status(400).json({ error: "Missing required fields" });
-		return;
+		return res.status(400).json({ error: "Missing required fields" });
 	}
 
 	const { projectId, rating, comment } = req.body;
 
 	try {
-		const newReview = await db.createReview({
+		await db.createReview({
 			project_id: parseInt(projectId),
 			reviewer_id: req.user.id,
 			rating: parseInt(rating),
 			comment
-			// No date needed - the database will set it automatically
 		});
 
 		res.status(201).json({
@@ -730,7 +736,7 @@ router.put('/suspend/user', async (req, res) => {
 
 
 //Checks if user is an administrator
-router.get('/admin', async(req, res) => {
+router.get('/admin', async (req, res) => {
 	let user = req.user.id;
 	let admin = await db.is_Admin(user);
 	return res.json(admin);
@@ -762,7 +768,7 @@ router.get('/suspended', (req, res) => {
 	res.sendFile(path.join(__dirname, "public", "suspended.html"));
 });
 
-router.get('/isSuspended', async(req, res) => {
+router.get('/isSuspended', async (req, res) => {
 	try {
 		const { id } = req.query
 		const result = await db.isSuspended(id);
@@ -773,14 +779,14 @@ router.get('/isSuspended', async(req, res) => {
 });
 
 //Put request to update profile
-router.put('/update/profile', async (req, res) =>{
+router.put('/update/profile', async (req, res) => {
 	if (!authenticateRequest(req)) {
 		res.status(401).json({ error: 'Not authenticated' });
 		return;
 	}
 
 	const params = req.body;
-	
+
 	res.json(await db.updateProfile(params));
 });
 
