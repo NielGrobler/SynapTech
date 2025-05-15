@@ -161,6 +161,29 @@ const fetchAssociatedProjectsByLatest = async (user) => {
 	return result.recordSet;
 };
 
+const fetchPublicAssociatedProjects = async (user) => {
+	const result = await new DatabaseQueryBuilder()
+		.input('id', user.id)
+		.query(`
+			SELECT DISTINCT 
+			    Project.project_id AS id,
+			    Project.created_by_account_id AS author_id,
+			    Project.created_at AS created_at,
+			    Project.name AS name,
+			    Project.description AS description,
+			    Project.is_public AS is_public
+			FROM Project
+			LEFT JOIN Collaborator ON Collaborator.project_id = Project.project_id
+			LEFT JOIN Account ON Account.account_id = Collaborator.account_id
+			WHERE Project.created_by_account_id = {{id}} AND Project.isPublic = 1
+			OR (Collaborator.account_id = {{id}} AND Collaborator.is_pending = 0);
+		`)
+		.getResultUsing(agent);
+
+	return result.recordSet;
+};
+
+
 const appendCollaborators = async (projects) => {
 	for (let project of projects) {
 		const result = await sender.getResult(new DatabaseQueryBuilder()
@@ -213,6 +236,7 @@ const suspendUser = async (userId) => {
 		.build()
 	);
 };
+
 
 const addCollaborator = async (projectId, userId, role) => {
 	await sender.send(new DatabaseQueryBuilder()
@@ -525,6 +549,137 @@ const getRoleInProject = async (userId, projectId) => {
 	return collaboratorQuery.recordSet[0].role;
 }
 
+  /* functions for user/reviews, was being removed in merge for chat functions but leaving it here */
+const searchUsers = async (userName) => {
+	const lowerName = userName.toLowerCase();
+	const result = await new DatabaseQueryBuilder()
+		.input('userName', `%${lowerName}%`)
+		.query(`
+			SELECT *
+			FROM Project
+			WHERE LOWER(Account.name) LIKE {{user}} AND Account.is_suspended = 0
+			ORDER BY CHAR_LENGTH(Account.name)
+			LIMIT 10;
+		`)
+		.getResultUsing(agent);
+
+	return result.recordSet;
+};
+
+const fetchUserById = async (id) => {
+	const result = await new DatabaseQueryBuilder()
+		.input('id', id)
+		.query(`
+			SELECT	DISTINCT
+				Account.acount_id AS id,
+				Account.name AS name,
+				Account.bio AS bio,
+				Account.university AS university,
+				Account.department AS department,
+				Account.is_suspended AS is_suspended
+			WHERE Account.account_id = {{id}}
+			LIMIT 1;
+		`)
+		.getResultUsing(agent);
+
+	let user = result.recordSet[0];
+
+	if (!user) {
+		return null;
+	}
+
+	return user;
+}
+
+const updateProfile = async (params) => {
+	const { id, username, bio, university, department } = params;
+
+	const result = await new DatabaseQueryBuilder()
+		.input('username', username)
+		.input('id', id)
+		.input('bio', bio)
+		.input('university', university)
+		.input('department', department)
+		.query(`
+            UPDATE Account
+			SET Account.name = @username, 
+				Account.bio = {{bio}}, 
+				Account.university = {{university}}, 
+				Account.department= {{department}}
+			WHERE Account.account_id = {{id}}
+		`);
+}
+
+const is_Admin = async (id) => {
+	const result = await new DatabaseQueryBuilder()
+		.input('id', id)
+		.query(`
+			SELECT	is_admin
+			WHERE Account.account_id = {{id}}
+			LIMIT 1;
+		`)
+		.getResultUsing(agent);
+
+	let user = result.recordSet[0];
+
+	if (!user) {
+		return null;
+	}
+
+	return user;
+}
+
+const getProjectReviews = async (projectId, limit = 10, offset = 0) => {
+	const result = await new DatabaseQueryBuilder()
+		.input('project_id', projectId)
+		.input('limit', limit)
+		.input('offset', offset)
+		.query(`
+      SELECT 
+        Review.review_id,
+        Review.project_id,
+        Review.reviewer_id,
+        Account.name AS reviewer_name,
+        Review.rating,
+        Review.comment,
+        Review.created_at
+      FROM Review
+      INNER JOIN Account ON Review.reviewer_id = Account.account_id
+      WHERE Review.project_id = {{project_id}}
+      ORDER BY Review.created_at DESC
+      LIMIT {{limit}} OFFSET {{offset}};
+    `)
+		.getResultUsing(agent);
+
+	return result.recordSet;
+};
+
+const getReviewCount = async (projectId) => {
+	const result = await new DatabaseQueryBuilder()
+		.input('project_id', projectId)
+		.query(`
+      SELECT COUNT(*) AS total
+      FROM Review
+      WHERE project_id = {{project_id}};
+    `)
+		.getResultUsing(agent);
+
+	return result.recordSet[0].total;
+};
+
+const createReview = async (review) => {
+	await new DatabaseQueryBuilder()
+		.input('project_id', review.project_id)
+		.input('reviewer_id', review.reviewer_id)
+		.input('rating', review.rating)
+		.input('comment', review.comment)
+		.query(`
+      INSERT INTO Review(project_id, reviewer_id, rating, comment)
+      VALUES({{project_id}}, {{reviewer_id}}, {{rating}}, {{comment}});
+    `)
+		.sendUsing(agent);
+};
+
 export default {
 	getUserByGUID,
 	createUser,
@@ -532,7 +687,7 @@ export default {
 	fetchAssociatedProjects,
 	appendCollaborators,
 	deleteUser,
-	isSuspendend,
+	isSuspended,
 	suspendUser,
 	addCollaborator,
 	acceptCollaborator,
@@ -540,6 +695,10 @@ export default {
 	fetchProjectById,
 	fetchPendingCollaborators,
 	insertPendingCollaborator,
+	searchUsers,
+	fetchPublicAssociatedProjects,
+	fetchUserById,
+	updateProfile,
 	permittedToAcceptCollaborator,
 	permittedToRejectCollaborator,
 	removeCollaborator,
@@ -550,5 +709,10 @@ export default {
 	downloadFile,
 	retrieveLatestMessages,
 	fetchAssociatedProjectsByLatest
+	retrieveMessages,
+	retrieveMessagedUsers,
+	getProjectReviews,
+	getReviewCount,
+	createReview,
+	is_Admin
 };
-

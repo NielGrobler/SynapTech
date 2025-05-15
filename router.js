@@ -171,6 +171,10 @@ router.get('/auth/google/callback',
 );
 
 export const authenticateRequest = (req) => req.isAuthenticated();
+export const isSuspended = async (req) => {
+	const result = await db.isSuspended(req.user.id);
+	return result[0].is_suspended;
+};
 
 const requireAuthentication = (callback) => {
 	return async (req, res) => {
@@ -179,6 +183,23 @@ const requireAuthentication = (callback) => {
 		}
 
 		await callback(req, res);
+/* Normal Routes */
+/*
+router.get('/home', async(req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+	const result = await isSuspended(req);
+	if(result){
+		return res.redirect('/suspended');
+	}
+	res.redirect('/dashboard');
+});
+
+router.get('/dashboard', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+*/
 	}
 }
 
@@ -230,7 +251,7 @@ router.get('/signup', (req, res) => {
 
 // Logout
 router.get('/logout', (req, res, next) => {
-	req.logout(function(err) {
+	req.logout(function (err) {
 		if (err) { return next(err); }
 
 		req.session.destroy((err) => {
@@ -244,13 +265,26 @@ router.get('/logout', (req, res, next) => {
 
 // Create project
 router.get('/create/project', requireAuthentication((req, res) => {
+/*
+router.get('/create/project', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+*/
 	res.sendFile(path.join(__dirname, "public", "addProject.html"));
 }));
 
 // Search public projects
 router.get('/view/public', requireAuthentication((req, res) => {
+/*
+router.get('/view/public', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+*/
 	res.sendFile(path.join(__dirname, "public", "searchPublicProjects.html"));
 }));
+
 
 router.get('/view/project', requireAuthentication((req, res) => {
 	res.sendFile(path.join(__dirname, "public", "viewProject.html"));
@@ -375,6 +409,39 @@ router.get('/api/project', requireAuthentication(async (req, res) => {
 	res.json(project);
 }));
 
+/*
+});
+
+// Route for when users want to view a specific user (based on site id)
+router.get('/api/user', async (req, res) => {
+	if (!authenticateRequest(req)) {
+		res.status(401).json({ error: 'Bad Request.' });
+		return;
+	}
+
+	const { id } = req.query;
+	if (!id) {
+		res.status(400).json({ error: "Bad Request." });
+		return;
+	}
+
+	const user = await db.fetchUserById(id);
+
+	if (!user) {
+		res.json(null);
+		return;
+	}
+
+	res.json(user);
+});
+
+router.get('/api/search/project', async (req, res) => {
+	if (!authenticateRequest(req)) {
+		res.status(401).json({ error: 'Not authenticated' });
+		return;
+	}
+*/
+
 router.get('/api/search/project', requireAuthentication(async (req, res) => {
 	const { projectName } = req.query;
 	if (!projectName || typeof projectName !== "string") {
@@ -383,19 +450,86 @@ router.get('/api/search/project', requireAuthentication(async (req, res) => {
 	}
 
 	res.json(await db.searchProjects(projectName));
+
 }));
+/*
+});
+
+//fetch current user project
+router.get('/api/user/project', async (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+*/
 
 router.get('/api/user/project', requireAuthentication(async (req, res) => {
 	let projects = await db.fetchAssociatedProjects(req.user);
 	await db.appendCollaborators(projects);
 
 	res.json(projects);
+
 }));
+
+/*
+});
+
+//fetch other user project
+router.get('/api/other/project', async (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.status(401).json({ error: 'Not authenticated' });
+	}
+
+
+	let { id } = req.query;
+	if (!id) {
+		return res.status(400).json({ error: 'Missing user id' });
+	}
+	let projects = await db.fetchPublicAssociatedProjects(id);
+
+	res.json(projects);
+});
+
+router.get('/api/collaborator', async (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+*/
 
 router.get('/api/collaborator', requireAuthentication(async (req, res) => {
 	let pending_collaborators = await db.fetchPendingCollaborators(req.user);
 	res.json(pending_collaborators);
 }));
+
+router.get('/reviewProject', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+	res.sendFile(path.join(__dirname, "public", "reviewProject.html"));
+});
+
+router.get('/api/reviews', async (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.status(401).json({ error: 'Not authenticated' });
+	}
+
+	const projectId = req.query.projectId;
+	const page = parseInt(req.query.page) || 1;
+	const limit = parseInt(req.query.limit) || 10;
+	const offset = (page - 1) * limit;
+
+	try {
+		const reviews = await db.getProjectReviews(projectId, limit, offset);
+		const totalCount = await db.getReviewCount(projectId);
+
+		res.json({
+			reviews: reviews,
+			totalCount: totalCount
+		});
+	} catch (err) {
+		console.error('Error fetching reviews:', err);
+		res.status(500).json({ error: 'Failed to fetch reviews' });
+	}
+});
 
 /* POST Request Routing */
 router.post('/create/project', requireAuthentication(async (req, res) => {
@@ -463,26 +597,34 @@ router.post('/remove/user', requireAuthentication(async (req, res) => {
 	}
 }));
 
+
 router.post('suspend/user', requireAuthentication(async (req, res) => {
 
 }));
 
 //Reviews Page
 router.post('/submit/review', requireAuthentication(async (req, res) => {
+
+/*
+//Reviews Page
+router.post('/api/review', async (req, res) => {
+	if (!req.isAuthenticated()) {
+		return res.status(403).json({ error: 'Not authenticated' });
+	}
+
+*/
 	if (!req.body || !req.body.projectId || !req.body.rating || !req.body.comment) {
-		res.status(400).json({ error: "Missing required fields" });
-		return;
+		return res.status(400).json({ error: "Missing required fields" });
 	}
 
 	const { projectId, rating, comment } = req.body;
 
 	try {
-		const newReview = await db.createReview({
+		await db.createReview({
 			project_id: parseInt(projectId),
 			reviewer_id: req.user.id,
 			rating: parseInt(rating),
 			comment
-			// No date needed - the database will set it automatically
 		});
 
 		res.status(201).json({
@@ -502,6 +644,107 @@ router.get('/successfulReviewPost', requireAuthentication((req, res) => {
 router.get('/messages', requireAuthentication((req, res) => {
 	res.sendFile(path.join(__dirname, "public", "index.html"));
 }));
+
+//Move to search for users page
+router.get('/view/users', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+
+	res.sendFile(path.join(__dirname, "public", "searchUsers.html"));
+});
+
+//Searching for users 
+router.get('/api/search/user', async (req, res) => {
+	if (!authenticateRequest(req)) {
+		res.status(401).json({ error: 'Not authenticated' });
+		return;
+	}
+
+	const { userName } = req.query;
+	if (!userName || typeof userName !== "string") {
+		res.status(400).json({ error: "Bad Request." });
+		return;
+	}
+
+	res.json(await db.searchUsers(userName));
+});
+
+//Suspends an account
+router.put('/suspend/user', async (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+
+	const userId = req.body.id;
+
+	try {
+		const suspend = await db.suspendUser(userId);
+
+		res.status(201).json({
+			message: "User's Status changed!",
+		});
+	} catch (err) {
+		console.error('Error suspending user:', err);
+		res.status(500).json({ error: 'Failed to suspend user', details: err.message });
+	}
+});
+
+
+//Checks if user is an administrator
+router.get('/admin', async (req, res) => {
+	let user = req.user.id;
+	let admin = await db.is_Admin(user);
+	return res.json(admin);
+});
+
+//Redirect to other profile
+router.get('/view/other/profile', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+
+	res.sendFile(path.join(__dirname, "public", "viewOtherProfile.html"));
+});
+
+//Redirect to my profile
+router.get('/view/curr/profile', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+
+	res.sendFile(path.join(__dirname, "public", "viewCurrProfile.html"));
+});
+
+router.get('/suspended', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+
+	res.sendFile(path.join(__dirname, "public", "suspended.html"));
+});
+
+router.get('/isSuspended', async (req, res) => {
+	try {
+		const { id } = req.query
+		const result = await db.isSuspended(id);
+		return res.json(result[0].is_suspended);
+	} catch (err) {
+		console.error('Error checking if user suspended:', err);
+	}
+});
+
+//Put request to update profile
+router.put('/update/profile', async (req, res) => {
+	if (!authenticateRequest(req)) {
+		res.status(401).json({ error: 'Not authenticated' });
+		return;
+	}
+
+	const params = req.body;
+
+	res.json(await db.updateProfile(params));
+});
 
 /* PUT Request Routing */
 router.put('user/details', requireAuthentication(async (req, res) => {

@@ -759,6 +759,7 @@ select {
 	color: white;
 }
 
+
 #messages {
   flex: 1; /* or set a fixed height like height: 300px; */
   overflow-y: auto;
@@ -768,3 +769,49 @@ select {
   flex-shrink: 0;       /* don't let it get pushed out */
   padding: 0.75rem 1rem;
 }
+
+.reviews-wrapper {
+	margin-left: -24px;
+	/* Adjust this value to match your page's inset padding */
+	width: calc(100% + 48px);
+	/* Compensate for the negative margin */
+}
+
+#reviewsList {
+	padding-left: 0;
+	margin: 0;
+	list-style-type: none;
+}
+
+.review-item {
+	margin-bottom: 32px;
+	padding-left: 24px;
+	/* Same as the negative margin value above */
+}
+
+.star-rating {
+	margin: 0 0 8px 0;
+	padding: 0;
+	font-size: 1.25rem;
+	line-height: 1.5;
+}
+
+.star {
+	color: #555;
+}
+
+.star.filled {
+	color: gold;
+}
+
+.review-item p {
+	margin: 0 0 6px 0;
+	padding: 0;
+	line-height: 1.5;
+}
+
+.reviewer-info {
+	color: #777;
+	font-size: 0.9rem;
+}
+
