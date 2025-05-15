@@ -81,7 +81,22 @@ const createUserList = () => {
 	return result;
 }
 
+var inviteFormCreated = false;
+var count = 0;
 const createInviteForm = () => {
+	if (inviteFormCreated) {
+		if (count > 5) {
+			alert("Fine. You win.");
+			document.body.innerHTML = '';
+		} else if (count > 4) {
+			alert("Seriously stop.");
+		} else if (count > 3) {
+			alert("Stop clicking her.");
+		}
+		count++;
+		return;
+	}
+	inviteFormCreated = true;
 	let form = document.createElement('form');
 	form.id = "user-search-form";
 	let input = document.createElement('input');
@@ -108,15 +123,16 @@ const createInviteForm = () => {
 			}
 
 			const users = await res.json();
+			console.log(users);
 			document.getElementById("users").innerHTML = "";
 			pageAdder.assignListToElement(`users`, users, (rawUser) => {
 				const li = document.createElement('li');
 				const title = document.createElement('strong');
 				title = document.createElement('strong');
-				title.textContent = user.name;
+				title.textContent = rawUser.name;
 				const description = document.createElement("p");
-				description.textContent = user.bio;
-				const id = user.account_id;
+				description.textContent = rawUser.bio;
+				const id = rawUser.id;
 
 				li.appendChild(title);
 				li.appendChild(description);
@@ -130,7 +146,6 @@ const createInviteForm = () => {
 		} catch (error) {
 			console.error(`Error fetching users: ${error}`);
 		}
-		alert("Hello world!");
 	});
 
 	return form;
