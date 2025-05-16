@@ -522,6 +522,35 @@ const 	is_Admin = async (id) => {
 }
 
 
+export const addFunding = async ({ project_id, funding_date, currency, funding_type, total_funding }) => {
+	const result =  await new DatabaseQueryBuilder()
+		.input('project_id', project_id)
+		.input('funding_date', funding_date)
+		.input('currency', currency)
+		.input('funding_type', funding_type)
+		.input('total_funding', total_funding)
+		.query(`
+			INSERT INTO Funding (project_id, funding_date, currency, funding_type, total_funding)
+			VALUES (@project_id, @funding_date, @currency, @funding_type, @total_funding)
+		`);
+	return result;
+};
+
+export const getProjectByAccountId = async (account_id) => {
+	const result = await new DatabaseQueryBuilder()
+		.input('account_id', account_id)
+		.query(`
+			SELECT TOP 1 * FROM Project
+			WHERE created_by_account_id = @account_id
+			ORDER BY created_at DESC
+		`);
+	return result.recordset[0];
+};
+
+
+
+
+
 export default {
 	getUserByGUID,
 	createUser,

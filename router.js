@@ -12,6 +12,10 @@ import jwt from 'jsonwebtoken';
 
 import multer from 'multer';
 
+import { addFunding } from "./db/db.js";
+import { DatabaseQueryBuilder } from './db/query.js';
+
+
 /* Database imports */
 import db from './db/db.js';
 //import fileStorage from './db/azureBlobStorage.js';
@@ -788,5 +792,94 @@ router.put('/update/profile', async (req, res) =>{
 router.put('user/details', async (req, res) => {
 	const { name, bio } = req.body;
 });
+
+/*
+//my one
+router.post('/add-funding', async (req, res) => {
+	const { project_id, funding_date, currency, funding_type, total_funding } = req.body;
+
+	try {
+		await addFunding({ project_id, funding_date, currency, funding_type, total_funding });
+		res.status(200).json({ message: 'Funding added successfully' });
+	} catch (error) {
+		console.error('Error adding funding:', error);
+		res.status(500).json({ message: 'Failed to add funding', error });
+	}
+});
+*/
+
+//i like
+/*
+router.post('/add-funding', async (req, res) => {
+  try {
+    console.log('Received funding data:', req.body);
+    const result = await addFunding(req.body);
+    console.log('Funding added:', result);
+    res.status(200).json({ message: 'Funding added successfully' });
+  } catch (error) {
+    console.error('Error adding funding:', error);
+    res.status(500).json({ message: 'Failed to add funding', error });
+  }
+});
+*/
+
+router.post('/add-funding', async (req, res) => {
+  const {
+    project_id,
+    funding_date,
+    currency,
+    funding_type,
+    total_funding
+  } = req.body;
+
+  if (!project_id) {
+    return res.status(400).json({ message: "Project ID is required" });
+  }
+
+  try {
+    const result = await addFunding({
+      project_id,
+      funding_date,
+      currency,
+      funding_type,
+      total_funding
+    });
+    res.json({ message: "Funding added successfully", result });
+  } catch (err) {
+    console.error("Error adding funding:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+
+/*
+//no duplicates of funding
+router.get('/funding/:project_id', async (req, res) => {
+  const projectId = req.params.project_id;
+  try {
+    const funding = await getFundingByProjectId(projectId);  // You write this helper in your db file
+    if (!funding) {
+      return res.status(404).json({ message: 'No funding found' });
+    }
+    res.status(200).json(funding);
+  } catch (error) {
+    console.error('Error fetching funding:', error);
+    res.status(500).json({ message: 'Failed to fetch funding' });
+  }
+});
+*/
+
+/*
+router.get('/fundings', async (req, res) => {
+	try {
+		const result = await new DatabaseQueryBuilder()
+			.query(`SELECT * FROM Funding ORDER BY funding_id DESC`);
+		res.status(200).json(result.recordSet);
+	} catch (error) {
+		console.error('Error fetching fundings:', error);
+		res.status(500).json({ message: 'Failed to fetch fundings' });
+	}
+});
+*/
 
 export default router;

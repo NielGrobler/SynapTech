@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Add Funding</title>
+	<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+	<main class="inset flex-col gap-medium">
+		<h1>Add Funding</h1>
+		<form id="fundingForm">
+			<input type="hidden" id="projectId" name="projectId">
+
+			<label for="fundingType">Funding Type:</label>
+			<input type="text" id="fundingType" name="fundingType" required>
+
+			<label for="currency">Currency:</label>
+			<input type="text" id="currency" name="currency" required>
+
+			<label for="totalFunding">Total Funding:</label>
+			<input type="number" id="totalFunding" name="totalFunding" step="0.01" required>
+
+			<button type="submit" class="primary-button">Submit</button>
+		</form>
+	</main>
+
+	<script type="module">
+		const form = document.getElementById('fundingForm');
+		const projectId = new URLSearchParams(window.location.search).get('id');
+		document.getElementById('projectId').value = projectId;
+
+		form.addEventListener('submit', async (e) => {
+			e.preventDefault();
+
+			const data = {
+				projectId,
+				fundingType: form.fundingType.value,
+				currency: form.currency.value,
+				totalFunding: form.totalFunding.value
+			};
+
+			const res = await fetch('/api/fund', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(data)
+			});
+
+			if (res.ok) {
+				alert('Funding added!');
+				window.location.href = `/viewProject.html?id=${projectId}`;
+			} else {
+				const msg = await res.text();
+				alert(`Error: ${msg}`);
+			}
+		});
+	</script>
+</body>
+</html>
