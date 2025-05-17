@@ -88,6 +88,7 @@ io.on('connection', (socket) => {
 
 		const projectId = socket.currentRoom;
 		await db.storeMessage(socket.user.id, projectId, content);
+		console.log("LOGGING");
 
 		io.to(roomId).emit('message', {
 			user: socket.user.name,
@@ -113,6 +114,7 @@ io.on('connection', (socket) => {
 			result.role = socket.role;
 			io.to(roomId).emit('message', result);
 		} catch (error) {
+			console.log(error);
 			socket.emit('error', { message: 'Failed sending message.' });
 		}
 	});

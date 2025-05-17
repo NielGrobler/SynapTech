@@ -34,14 +34,18 @@ const genInviteReqHTML = (invite) => {
 	acceptButton.innerHTML = `<i class='bx bx-check' ></i>Accept`;
 	acceptButton.addEventListener('click', async (e) => {
 		e.preventDefault();
+		container.remove();
 		sendReply(true, invite.project_id, invite.role);
+		await fetchInvites();
 	});
 	const rejectButton = document.createElement('button');
 	rejectButton.classList.add('flex-row', 'center-content-v', 'gap-small');
 	rejectButton.innerHTML = `<i class='bx bx-x'></i>Reject`;
 	rejectButton.addEventListener('click', async (e) => {
 		e.preventDefault();
+		container.remove();
 		sendReply(false, invite.project_id, invite.role);
+		await fetchInvites();
 	});
 	buttonSection.appendChild(acceptButton);
 	buttonSection.appendChild(rejectButton);
@@ -49,14 +53,15 @@ const genInviteReqHTML = (invite) => {
 	return container;
 }
 
-const fetchInvites = async () => { 
-	let res = await fetch('/api/collaboration/invites'); 
-	let invites = await res.json(); 
+const fetchInvites = async () => {
+	let res = await fetch('/api/collaboration/invites');
+	let invites = await res.json();
 	console.log(invites);
-	pageAdder.assignListToElement('invite-list', invites, genInviteReqHTML); }
+	pageAdder.assignListToElement('invite-list', invites, genInviteReqHTML);
+}
 
 export {
-	fetchInvites, 
+	fetchInvites,
 	sendReply,
-	genInviteReqHTML 
+	genInviteReqHTML
 }

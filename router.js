@@ -307,7 +307,6 @@ router.post('/api/collaboration/invite', requireAuthentication(async (req, res) 
 			return res.status(400).json({ error: 'accountId must be a number.' });
 		}
 
-
 		const canInvite = await db.canInvite(accountId, projectId);
 		if (!canInvite) {
 			return res.status(400).json({ error: 'cannot invite this user.' });
@@ -358,6 +357,7 @@ router.post('/api/collaboration/invite/reply', requireAuthentication(async (req,
 
 		return res.status(200).json({ message: 'Collaboration invite sent successfully' });
 	} catch (err) {
+		console.log(err);
 		return res.status(500).json({ error: 'Internal Error' });
 	}
 }));

@@ -119,7 +119,7 @@ const canInvite = async (accountId, projectId) => {
 	return result.recordSet.length === 0;
 }
 
-const alreadyInvited = async(accountId, projectId) => {
+const alreadyInvited = async (accountId, projectId) => {
 	const result = await sender.getResult(new DatabaseQueryBuilder()
 		.input("account_id", accountId)
 		.input("project_id", projectId)
@@ -140,10 +140,13 @@ const replyToCollabInvite = async (isAccept, accountId, projectId, role) => {
 		.input("project_id", projectId)
 		.query(`
 			DELETE FROM CollaborationInvite 
-			WHERE account_id = {{account_id}} , project_id = {{project_id)};
+			WHERE account_id = {{account_id}} AND project_id = {{project_id}};
 		`)
 		.build()
 	);
+
+	console.log(isAccept);
+	console.log(result);
 
 	if (isNaN(result.rowsAffected) || result.rowsAffected == 0) {
 		throw new Error("cannot reject a nonexistent invite");
@@ -156,9 +159,9 @@ const replyToCollabInvite = async (isAccept, accountId, projectId, role) => {
 	await sender.send(new DatabaseQueryBuilder()
 		.input("account_id", accountId)
 		.input("project_id", projectId)
-		.role("role", role)
+		.input("role", role)
 		.query(`
-			INSERT Collaboration (account_id, project_id, role, is_active, is_pending)
+			INSERT INTO Collaborator (account_id, project_id, role, is_active, is_pending)
 			VALUES ({{account_id}}, {{project_id}}, {{role}}, 1, 0);
 		`)
 		.build()

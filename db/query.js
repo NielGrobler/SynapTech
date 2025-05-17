@@ -14,7 +14,7 @@ class QueryResult {
 	constructor(res) {
 		this.insertId = res.InsertId;
 		this.recordSet = res.RecordSet;
-		this.rowsAffected = res.rowsAffected;
+		this.rowsAffected = res.RowsAffected;
 	}
 }
 
