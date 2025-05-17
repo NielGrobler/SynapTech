@@ -1,3 +1,4 @@
+// analyticsDashboard.js
 // Define the reports array
 const reports = [
   {
@@ -56,9 +57,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // Render the cards initially
   renderReportCards();
 
-  // Add event listener to the refresh button if it exists
+  // Add event listener to the refresh button with visual feedback
   const refreshButton = document.getElementById('refreshReports');
   if (refreshButton) {
-    refreshButton.addEventListener('click', renderReportCards);
+    refreshButton.addEventListener('click', () => {
+      refreshButton.classList.add('rotating');
+      renderReportCards();
+      setTimeout(() => {
+        refreshButton.classList.remove('rotating');
+      }, 1000);
+    });
   }
 });

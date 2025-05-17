@@ -23,12 +23,19 @@
 	<section id="navigation" class="flex-row fill-width secondary center-content accent-underline">
 		<button id="theme-toggle" class="very-very-round">☀️</button>
 		<nav class="fill-width">
-			<ul class="no-list-style flex-row gap-large center-content">
+			<ul class="no-list-style flex-row gap-small center-content">
 				<li>
 					<button class="nav-item flex-row gap-small center-content-v"
 						onclick="window.location.href='/dashboard'">
 						<i class='bx bxs-dashboard'></i>
 						Dashboard
+					</button>
+				</li>
+				<li>
+					<button class="nav-item flex-row gap-small center-content-v"
+						onclick="window.location.href='/analyticsDashboard'">
+						<i class='bx bxs-analyse'></i>
+						Analytics
 					</button>
 				</li>
 				<li>
@@ -75,13 +82,13 @@
 				</li>
 			</ul>
 		</nav>
-	
+
 		<span class="dropdown pad-right hover-rotate">
 			<button id="userButton" class="flex-row gap-small padding-vert-small center-content-v">
 				<i class='bx bx-chevron-right'></i>
 				<span id="username">Placeholder</span>
 			</button>
-	
+
 			<ul class="dropdown-menu">
 				<li><a href="/view/curr/profile"><i class='bx bx-user-circle'></i>Profile</a></li>
 				<li><a href="/settings"><i class='bx bx-cog'></i>Settings</a></li>
@@ -98,16 +105,13 @@
 			<section class="inset">
 				<section class="split">
 					<h1 class="large-text accent-underline">Active Projects</h1>
-					<button class="very-round pad-small-h no-pad-v"
-						onclick="window.location.href='/create/project'">
+					<button class="very-round pad-small-h no-pad-v" onclick="window.location.href='/create/project'">
 						<i class='bx bx-plus'></i>
 					</button>
 				</section>
 				<form id="project-search-form" type="">
-					<input id="project-search-input" type="text"
-						placeholder="Search your projects...">
-					<button id="searchButton" type="submit"
-						class="nav-item flex-row gap-small center-content-v"> <i
+					<input id="project-search-input" type="text" placeholder="Search your projects...">
+					<button id="searchButton" type="submit" class="nav-item flex-row gap-small center-content-v"> <i
 							class="bx bx-search"></i>
 						Submit
 					</button>
@@ -125,12 +129,12 @@
 </body>
 <script type="module" src="/dashboard.js"></script>
 <script type="module">
-	import {initDashboard} from './dashboard.js';
+	import { initDashboard } from './dashboard.js';
 	initDashboard();
 </script>
 
 <script type="module" src="/fetchUsername.js"></script>
-			<script type="module" src="/savedTheme.js"></script>
+<script type="module" src="/savedTheme.js"></script>
 
 
 </html>
