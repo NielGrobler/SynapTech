@@ -81,7 +81,44 @@ const createUserList = () => {
 	return result;
 }
 
-const createInviteForm = () => {
+const inviteCollaborator = async (accountId, projectId, role) => {
+	try {
+		const response = await fetch('/api/collaboration/invite', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({ "projectId": projectId, "accountId": accountId, "role": role })
+		});
+
+		if (response.ok) {
+			alert('Collaboration invite sent successfully!');
+		} else {
+			const error = await response.text();
+			alert(`Error: ${error}`);
+		}
+	} catch (error) {
+		console.error('Error sending request:', error);
+		alert('Failed to send collaboration request.');
+	}
+};
+
+var inviteFormCreated = false;
+var count = 0;
+const createInviteForm = (projectId) => {
+	if (inviteFormCreated) {
+		if (count > 5) {
+			alert("Fine. You win.");
+			document.body.innerHTML = '';
+		} else if (count > 4) {
+			alert("Seriously stop.");
+		} else if (count > 3) {
+			alert("Stop clicking her.");
+		}
+		count++;
+		return;
+	}
+	inviteFormCreated = true;
 	let form = document.createElement('form');
 	form.id = "user-search-form";
 	let input = document.createElement('input');
@@ -99,6 +136,7 @@ const createInviteForm = () => {
 
 	form.addEventListener('submit', async (e) => {
 		e.preventDefault();
+		var name = input.innerText;
 
 		try {
 			const res = await fetch(`/api/search/user?userName=${encodeURIComponent(name)}`);
@@ -108,29 +146,39 @@ const createInviteForm = () => {
 			}
 
 			const users = await res.json();
+			console.log(users);
 			document.getElementById("users").innerHTML = "";
 			pageAdder.assignListToElement(`users`, users, (rawUser) => {
 				const li = document.createElement('li');
 				const title = document.createElement('strong');
 				title = document.createElement('strong');
-				title.textContent = user.name;
+				title.textContent = rawUser.name;
 				const description = document.createElement("p");
-				description.textContent = user.bio;
-				const id = user.account_id;
+				description.textContent = rawUser.bio;
+				const id = rawUser.id;
+				const buttonAddAsResearcher = document.createElement('button');
+				const buttonAddAsReviewer = document.createElement('button');
+				li.dataset.accountId = id;
+				li.appendChild(buttonAddAsReviewer);
+				li.appendChild(buttonAddAsResearcher);
 
 				li.appendChild(title);
 				li.appendChild(description);
 				li.classList.add('highlight-hover');
-				li.addEventListener('click', () => {
-					// add fetching here
 
+				buttonAddAsResearcher.addEventListener('click', async (e) => {
+					e.preventDefault();
+					await inviteCollaborator(li.dataset.accountId, projectId, "Researcher");
+				});
 
+				buttonAddAsReviewer.addEventListener('click', async (e) => {
+					e.preventDefault();
+					await inviteCollaborator(li.dataset.accountId, projectId, "Reviewer");
 				});
 			});
 		} catch (error) {
 			console.error(`Error fetching users: ${error}`);
 		}
-		alert("Hello world!");
 	});
 
 	return form;
@@ -149,7 +197,7 @@ const addCollaboratorButton = async (userDetails, project) => {
 
 	button.addEventListener('click', (e) => {
 		console.log("Hello world!");
-		collaboratorSection.appendChild(createInviteForm());
+		collaboratorSection.appendChild(createInviteForm(project.id));
 		collaboratorSection.appendChild(createUserList());
 	});
 
@@ -195,7 +243,11 @@ const fetchReviews = async (projectId, page = 1, limit = 10) => {
 		if (!res.ok) {
 			throw new Error('Failed to fetch reviews');
 		}
-		return res.json();
+		const result = await res.json();
+		console.log("=================================================&&&&&");
+		console.log(result);
+		console.log("=================================================&&&&&");
+		return result;
 	} catch (error) {
 		console.error('Error fetching reviews:', error);
 		return { reviews: [], totalCount: 0 };
@@ -273,6 +325,9 @@ const loadProjectReviews = async (project) => {
 	let currentPage = 1;
 
 	const { reviews, totalCount } = await fetchReviews(project.id);
+	console.log("-==================================-");
+	console.log(reviews);
+	console.log("-==================================-");
 	displayReviews(reviews);
 
 	if (totalCount > 10) {

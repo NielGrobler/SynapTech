@@ -2,62 +2,62 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="/styles.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="icon" href="logo.png" type="image/png">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
-    rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="/styles.css">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="icon" href="logo.png" type="image/png">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+		rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+	<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 
 
-  <title>Unilink | Dashboard</title>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
+	<title>Unilink | Dashboard</title>
+	<script src="https://accounts.google.com/gsi/client" async defer></script>
 
 </head>
 
 <body>
 
-  <h1>Invite Collaborators</h1>
-  <input type="text" id="search-input" placeholder="Search by name or email..." />
+	<h1>Invite Collaborators</h1>
+	<input type="text" id="search-input" placeholder="Search by name or email..." />
 
-  <ul id="search-results"></ul>
+	<ul id="search-results"></ul>
 
-  <script>
-    const projectId = new URLSearchParams(window.location.search).get('project_id');
+	<script>
+		const projectId = new URLSearchParams(window.location.search).get('project_id');
 
-    const dummyAccounts = [
-      {account_id: 201, name: "Alice Johnson"},
-      {account_id: 202, name: "Bob Smith"},
-      {account_id: 203, name: "Carla Nguyen"}
-    ];
+		const dummyAccounts = [
+			{account_id: 201, name: "Alice Johnson"},
+			{account_id: 202, name: "Bob Smith"},
+			{account_id: 203, name: "Carla Nguyen"}
+		];
 
-    const input = document.getElementById("search-input");
-    const results = document.getElementById("search-results");
+		const input = document.getElementById("search-input");
+		const results = document.getElementById("search-results");
 
-    input.addEventListener("input", () => {
-      const query = input.value.toLowerCase();
-      results.innerHTML = "";
-      dummyAccounts
-        .filter(a => a.name.toLowerCase().includes(query))
-        .forEach(account => {
-          const li = document.createElement("li");
-          li.innerHTML = `
+		input.addEventListener("input", () => {
+			const query = input.value.toLowerCase();
+			results.innerHTML = "";
+			dummyAccounts
+				.filter(a => a.name.toLowerCase().includes(query))
+				.forEach(account => {
+					const li = document.createElement("li");
+					li.innerHTML = `
             <span>${account.name}</span>
             <button onclick="invite(${account.account_id})">Invite</button>
           `;
-          results.appendChild(li);
-        });
-    });
+					results.appendChild(li);
+				});
+		});
 
-    function invite(accountId) {
-      // You would make a POST request to your backend here
-      alert(`Invited account ID ${accountId} to project ${projectId}`);
-    }
-  </script>
+		function invite(accountId) {
+			// You would make a POST request to your backend here
+			alert(`Invited account ID ${accountId} to project ${projectId}`);
+		}
+	</script>
 </body>
 <script type="module" src="/savedTheme.js"></script>
 

@@ -1,10 +1,10 @@
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function() {
     function getProjectId() {
         const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get('id') || '12345';
+        return urlParams.get('id');
     }
 
-    document.getElementById('submitReviewBtn').addEventListener('click', function () {
+    document.getElementById('submitReviewBtn').addEventListener('click', function() {
         const review = {
             projectId: getProjectId(),
             rating: document.getElementById('rating').value,
@@ -23,7 +23,12 @@ document.addEventListener('DOMContentLoaded', function () {
             },
             body: JSON.stringify(review),
         })
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error(`Request failed with status: ${res.status}`);
+                }
+                return res.json();
+            })
             .then(data => {
                 console.log('Server response:', data);
                 if (data.message === 'Review submitted!') {
