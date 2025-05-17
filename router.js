@@ -53,7 +53,6 @@ router.use((req, res, next) => {
 	}
 
 	if (req.url.endsWith('.js')) {
-		console.log(req.url);
 		return res.sendFile(path.join(__dirname, "src", req.url));
 	}
 
@@ -173,6 +172,8 @@ router.get('/auth/google/callback',
 export const authenticateRequest = (req) => req.isAuthenticated();
 export const isSuspended = async (req) => {
 	const result = await db.isSuspended(req.user.id);
+	console.log("HELLO???????");
+	console.log(result);
 	return result[0].is_suspended;
 };
 
@@ -183,23 +184,23 @@ const requireAuthentication = (callback) => {
 		}
 
 		await callback(req, res);
-/* Normal Routes */
-/*
-router.get('/home', async(req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-	const result = await isSuspended(req);
-	if(result){
-		return res.redirect('/suspended');
-	}
-	res.redirect('/dashboard');
-});
-
-router.get('/dashboard', (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-*/
+		/* Normal Routes */
+		/*
+		router.get('/home', async(req, res) => {
+			if (!authenticateRequest(req)) {
+				return res.redirect('/forbidden');
+			}
+			const result = await isSuspended(req);
+			if(result){
+				return res.redirect('/suspended');
+			}
+			res.redirect('/dashboard');
+		});
+		
+		router.get('/dashboard', (req, res) => {
+			if (!authenticateRequest(req)) {
+				return res.redirect('/forbidden');
+		*/
 	}
 }
 
@@ -251,7 +252,7 @@ router.get('/signup', (req, res) => {
 
 // Logout
 router.get('/logout', (req, res, next) => {
-	req.logout(function (err) {
+	req.logout(function(err) {
 		if (err) { return next(err); }
 
 		req.session.destroy((err) => {
@@ -265,23 +266,23 @@ router.get('/logout', (req, res, next) => {
 
 // Create project
 router.get('/create/project', requireAuthentication((req, res) => {
-/*
-router.get('/create/project', (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-*/
+	/*
+	router.get('/create/project', (req, res) => {
+		if (!authenticateRequest(req)) {
+			return res.redirect('/forbidden');
+		}
+	*/
 	res.sendFile(path.join(__dirname, "public", "addProject.html"));
 }));
 
 // Search public projects
 router.get('/view/public', requireAuthentication((req, res) => {
-/*
-router.get('/view/public', (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-*/
+	/*
+	router.get('/view/public', (req, res) => {
+		if (!authenticateRequest(req)) {
+			return res.redirect('/forbidden');
+		}
+	*/
 	res.sendFile(path.join(__dirname, "public", "searchPublicProjects.html"));
 }));
 
@@ -309,28 +310,69 @@ router.get('/api/user/info', requireAuthentication((req, res) => {
 	res.json(req.user);
 }));
 
-router.post('/api/message/send', requireAuthentication(async (req, res) => {
+router.post('api/collaboration/invite', requireAuthentication(async (req, res) => {
 	try {
-		console.log(req.body);
-		const { messageBody, receivedRecipientId, _attachment } = req.body;
-		if (!messageBody || typeof messageBody !== 'string') {
-			return res.status(400).json({ error: 'Invalid message body' });
+		const { projectId, accountId, role } = req.body;
+		if (!projectId || !accountId || !role) {
+			return res.status(400).json({ error: 'missing required fields: projectId, accountId and role are required.' });
 		}
 
-		const recipientId = Number(receivedRecipientId);
-		if (!recipientId || isNaN(recipientId)) {
-			return res.status(400).json({ error: 'Invalid recipient ID' });
+		const validRoles = ['Reviewer', 'Researcher'];
+
+		if (!validRoles.includes(role)) {
+			return res.status(400).json({ error: `invalid role. Role must be one of the following: ${validRoles.join(', ')}.` });
 		}
 
-		const senderId = req.user.id;
+		if (isNaN(projectId)) {
+			return res.status(400).json({ error: 'projectId must be a number.' });
+		}
 
-		await db.storeMessage(senderId, recipientId, messageBody);
+		if (isNaN(accountId)) {
+			return res.status(400).json({ error: 'accountId must be a number.' });
+		}
 
-		return res.status(200).json({ message: 'Message sent successfully' });
+		await db.sendCollabInvite(accountId, projectId, role);
+
+		return res.status(200).json({ message: 'Collaboration invite sent successfully' });
 	} catch (err) {
 		return res.status(500).json({ error: 'Internal Error' });
 	}
-}));
+});
+
+router.get('/api/collaboration/invites', requireAuthentication(async (req, res) => {
+	try {
+		const userId = req.user.id;
+		const result = await db.getPendingCollabInvites(userId);
+		return res.json(result);
+	} catch (err) {
+		return res.status(400).json({ error: 'bad request' });
+	}
+});
+
+router.post('/api/collaboration/invite/reply', requireAuthentication(async (req, res) => {
+	try {
+		const { projectId, role, isAccept } = req.body;
+		if (!projectId || !role) {
+			return res.status(400).json({ error: 'missing required fields: projectId, accountId and role are required.' });
+		}
+
+		const validRoles = ['Reviewer', 'Researcher'];
+
+		if (!validRoles.includes(role)) {
+			return res.status(400).json({ error: `invalid role. Role must be one of the following: ${validRoles.join(', ')}.` });
+		}
+
+		if (isNaN(projectId)) {
+			return res.status(400).json({ error: 'projectId must be a number.' });
+		}
+
+		await db.replyToCollabInvite(isAccept, req.user.id, projectId, role);
+
+		return res.status(200).json({ message: 'Collaboration invite sent successfully' });
+	} catch (err) {
+		return res.status(500).json({ error: 'Internal Error' });
+	}
+});
 
 router.get('/api/user/projectNames', requireAuthentication(async (req, res) => {
 	let projects = await db.fetchAssociatedProjectsByLatest(req.user);
@@ -410,8 +452,6 @@ router.get('/api/project', requireAuthentication(async (req, res) => {
 }));
 
 /*
-});
-
 // Route for when users want to view a specific user (based on site id)
 router.get('/api/user', async (req, res) => {
 	if (!authenticateRequest(req)) {
@@ -434,12 +474,6 @@ router.get('/api/user', async (req, res) => {
 
 	res.json(user);
 });
-
-router.get('/api/search/project', async (req, res) => {
-	if (!authenticateRequest(req)) {
-		res.status(401).json({ error: 'Not authenticated' });
-		return;
-	}
 */
 
 router.get('/api/search/project', requireAuthentication(async (req, res) => {
@@ -467,12 +501,9 @@ router.get('/api/user/project', requireAuthentication(async (req, res) => {
 	await db.appendCollaborators(projects);
 
 	res.json(projects);
-
 }));
 
 /*
-});
-
 //fetch other user project
 router.get('/api/other/project', async (req, res) => {
 	if (!authenticateRequest(req)) {
@@ -488,11 +519,6 @@ router.get('/api/other/project', async (req, res) => {
 
 	res.json(projects);
 });
-
-router.get('/api/collaborator', async (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
 */
 
 router.get('/api/collaborator', requireAuthentication(async (req, res) => {
@@ -507,11 +533,7 @@ router.get('/reviewProject', (req, res) => {
 	res.sendFile(path.join(__dirname, "public", "reviewProject.html"));
 });
 
-router.get('/api/reviews', async (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.status(401).json({ error: 'Not authenticated' });
-	}
-
+router.get('/api/reviews', requireAuthentication(async (req, res) => {
 	const projectId = req.query.projectId;
 	const page = parseInt(req.query.page) || 1;
 	const limit = parseInt(req.query.limit) || 10;
@@ -520,6 +542,8 @@ router.get('/api/reviews', async (req, res) => {
 	try {
 		const reviews = await db.getProjectReviews(projectId, limit, offset);
 		const totalCount = await db.getReviewCount(projectId);
+		console.log("HI BABY GIRL");
+		console.log(reviews);
 
 		res.json({
 			reviews: reviews,
@@ -529,7 +553,7 @@ router.get('/api/reviews', async (req, res) => {
 		console.error('Error fetching reviews:', err);
 		res.status(500).json({ error: 'Failed to fetch reviews' });
 	}
-});
+}));
 
 /* POST Request Routing */
 router.post('/create/project', requireAuthentication(async (req, res) => {
@@ -603,16 +627,7 @@ router.post('suspend/user', requireAuthentication(async (req, res) => {
 }));
 
 //Reviews Page
-router.post('/submit/review', requireAuthentication(async (req, res) => {
-
-/*
-//Reviews Page
-router.post('/api/review', async (req, res) => {
-	if (!req.isAuthenticated()) {
-		return res.status(403).json({ error: 'Not authenticated' });
-	}
-
-*/
+router.post('/api/review', requireAuthentication(async (req, res) => {
 	if (!req.body || !req.body.projectId || !req.body.rating || !req.body.comment) {
 		return res.status(400).json({ error: "Missing required fields" });
 	}
@@ -724,15 +739,16 @@ router.get('/suspended', (req, res) => {
 	res.sendFile(path.join(__dirname, "public", "suspended.html"));
 });
 
-router.get('/isSuspended', async (req, res) => {
+router.get('/isSuspended', requireAuthentication(async (req, res) => {
 	try {
 		const { id } = req.query
 		const result = await db.isSuspended(id);
+		console.log(result);
 		return res.json(result[0].is_suspended);
 	} catch (err) {
 		console.error('Error checking if user suspended:', err);
 	}
-});
+}));
 
 //Put request to update profile
 router.put('/update/profile', async (req, res) => {
