@@ -36,6 +36,7 @@ const genInviteReqHTML = (invite) => {
 		e.preventDefault();
 		container.remove();
 		sendReply(true, invite.project_id, invite.role);
+		await wait(100);
 		await fetchInvites();
 	});
 	const rejectButton = document.createElement('button');
@@ -45,6 +46,7 @@ const genInviteReqHTML = (invite) => {
 		e.preventDefault();
 		container.remove();
 		sendReply(false, invite.project_id, invite.role);
+		await wait(100);
 		await fetchInvites();
 	});
 	buttonSection.appendChild(acceptButton);
