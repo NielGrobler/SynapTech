@@ -2,6 +2,7 @@ const projectToElement = (project) => {
 	const li = document.createElement("li");
 	const title = document.createElement("strong");
 	title.textContent = project.name;
+	li.dataset.type = "project";
 	const description = document.createElement("p");
 	description.textContent = project.description;
 	const id = !project.id ? project.project_id : project.id;
@@ -17,10 +18,10 @@ const projectToElement = (project) => {
 	return li;
 }
 
-
 const userToElement = (user) => {
 	const li = document.createElement("li");
 	const title = document.createElement("strong");
+	li.dataset.type = "user";
 	title.textContent = user.name;
 	const description = document.createElement("p");
 	description.textContent = user.bio;
@@ -84,5 +85,7 @@ export default {
 	clearProjects,
 	assignListToElement,
 	addUsersToPage,
+	userToElement,
+	projectToElement,
 };
 

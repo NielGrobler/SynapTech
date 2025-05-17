@@ -53,7 +53,6 @@ const createUser = async (user) => {
 	);
 
 	const id = result.insertId;
-	console.log(id);
 
 	await sender.send(new DatabaseQueryBuilder()
 		.input('id', id)
@@ -81,12 +80,12 @@ const getPendingCollabInvites = async (accountId) => {
 			ON Project.project_id = CollaborationInvite.project_id
 			INNER JOIN Account
 			ON Account.account_id = CollaborationInvite.account_id
-			WHERE account_id = {{account_id}};
+			WHERE CollaborationInvite.account_id = {{account_id}};
 		`)
 		.build()
 	);
 
-	return result;
+	return result.recordSet;
 }
 
 const sendCollabInvite = async (accountId, projectId, role) => {
@@ -101,6 +100,39 @@ const sendCollabInvite = async (accountId, projectId, role) => {
 		.build()
 	);
 };
+
+const canInvite = async (accountId, projectId) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input("account_id", accountId)
+		.input("project_id", projectId)
+		.query(`
+			SELECT *
+			FROM Collaborator
+			RIGHT JOIN Project
+			ON Collaborator.project_id = Project.project_id
+			WHERE (Collaborator.account_id = {{account_id}} AND Collaborator.project_id = {{project_id}})
+				OR (Project.project_id = {{project_id}} AND Project.created_by_account_id = {{account_id}});
+		`)
+		.build()
+	);
+
+	return result.recordSet.length === 0;
+}
+
+const alreadyInvited = async(accountId, projectId) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input("account_id", accountId)
+		.input("project_id", projectId)
+		.query(`
+			SELECT *
+			FROM CollaborationInvite
+			WHERE account_id = {{account_id}} AND project_id = {{project_id}};
+		`)
+		.build()
+	);
+
+	return result.recordSet.length === 0;
+}
 
 const replyToCollabInvite = async (isAccept, accountId, projectId, role) => {
 	const result = await sender.getResult(new DatabaseQueryBuilder()
@@ -505,8 +537,6 @@ const retrieveLatestMessages = async (projectId, limit = 64) => {
 		.build()
 	);
 
-	console.log(result.recordSet);
-
 	return result;
 }
 
@@ -596,13 +626,11 @@ const searchUsers = async (userName) => {
 	const result = await sender.getResult(new DatabaseQueryBuilder()
 		.input('userName', `%${lowerName}%`)
 		.query(`
-			SELECT *
-			FROM Project
-			INNER JOIN Account
-			ON Account.account_id = Project.created_by_account_id
+			SELECT DISTINCT *
+			FROM Account
 			WHERE LOWER(Account.name) LIKE {{userName}} AND Account.is_suspended = 0
 			ORDER BY CHAR_LENGTH(Account.name)
-			LIMIT 10;
+			LIMIT 25;
 		`)
 		.build()
 	);
@@ -766,4 +794,6 @@ export default {
 	getPendingCollabInvites,
 	replyToCollabInvite,
 	sendCollabInvite,
+	canInvite,
+	alreadyInvited
 };
