@@ -13,6 +13,12 @@ if (process.env.NODE_ENV === 'production') {
 		console.log(`HTTPS server running in production mode`);
 	});
 } else { //only other option is running locally if it's not set, or rather when it is unspecified.
+
+  const sslOptions = {
+    key: fs.readFileSync('server.key'),
+    cert: fs.readFileSync('server.cert')
+  };
+
 	const server = https.createServer(sslOptions, router)
   const io = new Server(server);
 
