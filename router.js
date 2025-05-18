@@ -841,9 +841,10 @@ router.put('user/details', requireAuthentication(async (req, res) => {
 	const { name, bio } = req.body;
 }));
 
-router.use((err, req, res, next) => {
+/*router.use((err, req, res, next) => {
   console.error('Express error:', err);
   res.status(500).send('Internal Server Error');
 });
+*/
 
 export default router;

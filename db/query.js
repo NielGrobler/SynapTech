@@ -12,9 +12,9 @@ dotenv.config();
  */
 class QueryResult {
 	constructor(res) {
-		this.insertId = res.insertId; //is this case sensative? dont know where InsertId is coming from. same for the other two below.
-		this.recordSet = res.recordSet;
-		this.rowsAffected = res.rowsAffected;
+		this.insertId = res.insertId ?? res.InsertId; //THE DATABASE IS InsertId BUT THE JS CODE IS insertId AAAAA
+		this.recordSet = res.recordSet ?? res.RecordSet;
+		this.rowsAffected = res.rowsAffected ?? res.RowsAffected;
 	}
 }
 
