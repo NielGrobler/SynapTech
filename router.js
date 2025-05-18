@@ -126,6 +126,10 @@ passport.deserializeUser(async (id, done) => {
 
 /* Routes */
 router.use(express.json());
+
+/* Health Check */
+router.get('/ping', (req, res) => res.send('pong'));
+
 /* GET Request Routing */
 router.get('/forbidden', (req, res) => {
 	res.status(403).sendFile(path.join(__dirname, "public", "forbidden.html"));
