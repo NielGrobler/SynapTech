@@ -17,34 +17,43 @@
 	<link rel="stylesheet" href="/styles.css" />
 </head>
 
-<main class="inset flex-col gap-medium">
-	<section class="border-solid-thin shadow">
-		<section id="userCard" class="inset">
-			<section class="split gap" id="infoAndName">
-				<h1 id="userName" class="large-text">Placeholder</h1>
-				<section
-					class="flex-row very-round secondary space-between padding-vert-xsmall small-text gap-medium">
-					<p>University: <span id="userUni">Unknown</span></p>
-					<p>Department: <span id="userDepartment">Unknown</span></p>
+<body>
+	<nav class="inset secondary fill accent-underline">
+        <button class="nav-item flex-row center-content-v gap-small" onclick="history.back()">
+            <i class='bx bx-chevron-left'></i>
+            Back
+        </button>
+    </nav>
+
+	<main class="inset flex-col gap-medium">
+		<section class="border-solid-thin shadow">
+			<section id="userCard" class="inset">
+				<section class="split gap" id="infoAndName">
+					<h1 id="userName" class="large-text">Placeholder</h1>
+					<section
+						class="flex-row very-round secondary space-between padding-vert-xsmall small-text gap-medium">
+						<p>University: <span id="userUni">Unknown</span></p>
+						<p>Department: <span id="userDepartment">Unknown</span></p>
+					</section>
 				</section>
+				<h1 class="accent-underline">Description</h1>
+				<p id="userBio">Lorem ipsum dolar sit amet.</p>
 			</section>
-			<h1 class="accent-underline">Description</h1>
-			<p id="userBio">Lorem ipsum dolar sit amet.</p>
+
+			<section id="projects" class="inset">
+				<h1 class="accent-underline">User's Projects:</h1>
+				<ul id="projectCardList">
+				</ul>
+			</section>
+			<section id="adminOnly" class="inset"></section>
 		</section>
-
-		<section id="projects" class="inset">
-			<h1 class="accent-underline">User's Projects:</h1>
-			<ul id="projectCardList">
-			</ul>
 		</section>
-		<section id="adminOnly" class="inset"></section>
-	</section>
-	</section>
-</main>
-<footer class="inset">
-	<p>&copy; 2025 Unilink. All rights reserved.</p>
-</footer>
+	</main>
+	<footer class="inset">
+		<p>&copy; 2025 Unilink. All rights reserved.</p>
+	</footer>
 
-<script type="module" src="/viewOtherProfile.js"></script>
-
+	<script type="module" src="/viewOtherProfile.js"></script>
+	<script type="module" src="/savedTheme.js"></script>
+</body>
 </html>

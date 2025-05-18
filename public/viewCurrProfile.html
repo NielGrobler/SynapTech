@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Unilink | View Project</title>
+    <title>Unilink | View Profile</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="icon" href="/logo.png" type="image/png">
@@ -17,92 +17,43 @@
     <link rel="stylesheet" href="/styles.css" />
 </head>
 
-<section id="navigation" class="flex-row fill-width secondary center-content accent-underline">
-    <nav class="fill-width">
-        <ul class="no-list-style flex-row gap-large center-content">
-            <li>
-                <button class="nav-item flex-row gap-small center-content-v"
-                    onclick="window.location.href='/dashboard'">
-                    <i class='bx bxs-dashboard'></i>
-                    Dashboard
-                </button>
-            </li>
-            <li>
-                <button class="nav-item flex-row gap-small center-content-v">
-                    <i class='bx bxs-analyse'></i>
-                    Analytics
-                </button>
-            </li>
-            <li>
-                <button class="nav-item flex-row gap-small center-content-v"
-                    onclick="window.location.href='/view/public'">
-                    <i class='bx bx-globe'></i>
-                    View Public Projects
-                </button>
-            </li>
-            <li>
-                <button class="nav-item flex-row gap-small center-content-v"
-                    onclick="window.location.href='/view/users'">
-                    <i class='bx bx-user'></i>
-                    Find Other Users
-                </button>
-            </li>
-            <li>
-                <button class="nav-item flex-row gap-small center-content-v"
-                    onclick="window.location.href='/create/project'">
-                    <i class='bx bx-book-content'></i>
-                    Create Project
-                </button>
-            </li>
-            <li>
-                <button class="nav-item flex-row gap-small center-content-v"
-                    onclick="window.location.href='/collaboration'">
-                    <i class='bx bx-user-voice'></i>
-                    Collaboration Requests
-                </button>
-            </li>
-        </ul>
+<body>
+    <nav class="inset secondary fill accent-underline">
+        <button class="nav-item flex-row center-content-v gap-small" onclick="history.back()">
+            <i class='bx bx-chevron-left'></i>
+            Back
+        </button>
     </nav>
 
-    <span class="dropdown pad-right hover-rotate">
-        <button id="userButton" class="flex-row gap-small padding-vert-small center-content-v">
-            <i class='bx bx-chevron-right'></i>
-            <span id="username">Ellie</span>
-        </button>
-
-        <ul class="dropdown-menu">
-            <li><a href="/view/curr/profile"><i class='bx bx-user-circle'></i>Profile</a></li>
-            <li><a href="/settings"><i class='bx bx-cog'></i>Settings</a></li>
-            <li><a href="/logout"><i class='bx bx-run'></i>Logout</a></li>
-        </ul>
-    </span>
-</section>
-
-<main class="inset flex-col gap-medium">
-    <section class="border-solid-thin shadow">
-        <section id="userCard" class="inset">
-            <section class="split gap" id="infoAndName">
-                <h1 id="userName" class="large-text">Placeholder</h1>
-                <section class="flex-row very-round secondary space-between padding-vert-xsmall small-text gap-medium">
-                    <p>University: <span id="userUni">Unknown</span></p>
-                    <p>Department: <span id="userDepartment">Unknown</span></p>
+    <main class="inset flex-col gap-medium">
+        <section class="border-solid-thin shadow">
+            <section id="userCard" class="inset">
+                <section class="split gap" id="infoAndName">
+                    <h1 id="userName" class="large-text">Placeholder</h1>
+                    <section class="flex-row very-round secondary space-between padding-vert-xsmall small-text gap-medium">
+                        <p>University: <span id="userUni">Unknown</span></p>
+                        <p>Department: <span id="userDepartment">Unknown</span></p>
+                    </section>
                 </section>
+                <h1 class="accent-underline">Description</h1>
+                <p id="userBio">Lorem ipsum dolar sit amet.</p>
             </section>
-            <h1 class="accent-underline">Description</h1>
-            <p id="userBio">Lorem ipsum dolar sit amet.</p>
-        </section>
 
-        <section id="projects" class="inset">
-            <h1 class="accent-underline">User's Projects:</h1>
-            <ul id="projectCardList">
-            </ul>
+            <section id="projects" class="inset">
+                <h1 class="accent-underline">User's Projects:</h1>
+                <ul id="projectCardList">
+                </ul>
+            </section>
         </section>
-    </section>
-</main>
-<footer class="inset">
-    <p>&copy; 2025 Unilink. All rights reserved.</p>
-</footer>
+    </main>
 
-<script type="module" src="/viewCurrProfile.js"></script>
+    <footer class="inset">
+        <p>&copy; 2025 Unilink. All rights reserved.</p>
+    </footer>
+
+    <script type="module" src="/viewCurrProfile.js"></script>
+    <script type="module" src="/savedTheme.js"></script>
+</body>
+
 
 </html>
