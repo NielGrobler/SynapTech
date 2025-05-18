@@ -30,10 +30,80 @@ const fetchProject = async () => {
 	return project;
 }
 
+const fetchProjectFiles = async (project) => {
+	try {
+		const res = await fetch(`/api/project/${project.id}/files`);
+
+		if (!res.ok) {
+			throw new Error(`Failed to fetch files. Status: ${res.status}`);
+		}
+
+		const files = await res.json();
+		return files;
+	} catch (err) {
+		console.error("Error fetching project files:", err.message || err);
+		return { error: err.message || "An error occurred while fetching project files" };
+	}
+}
+
+const downloadProjectFile = async (projectId, uuid, filename, ext) => {
+	try {
+		const res = await fetch(`/api/project/${projectId}/file/${uuid}/${ext}`);
+
+		if (!res.ok) {
+			throw new Error(`Failed to download file: ${res.statusText}`);
+		}
+
+		const blob = await res.blob();
+		const contentType = res.headers.get('Content-Type');
+
+		const url = URL.createObjectURL(blob);
+
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = filename;
+		document.body.appendChild(a);
+		a.click();
+		a.remove();
+
+		URL.revokeObjectURL(url);
+	} catch (err) {
+		console.error("Error downloading file:", err.message || err);
+		alert("There was an error downloading the file.");
+	}
+};
+
+const getFileExt = (fileName) => {
+	const parts = fileName.split('.');
+	return parts.length > 1 ? parts.pop() : '';
+};
+
+const projectFileToHTML = (projectFile) => {
+	const li = document.createElement('li');
+	const link = document.createElement('a');
+	link.href = '#';
+	console.log(projectFile);
+	link.textContent = `${projectFile.original_filename}`;
+	link.dataset.projectId = projectFile.project_id;
+	link.dataset.ext = getFileExt(projectFile.original_filename);
+	link.dataset.uuid = projectFile.file_uuid;
+	link.dataset.name = projectFile.original_filename;
+
+	link.addEventListener('click', async (e) => {
+		e.preventDefault();
+		try {
+			await downloadProjectFile(link.dataset.projectId, link.dataset.uuid, link.dataset.name, link.dataset.ext);
+		} catch (err) {
+			console.error("Error downloading the project file:", err);
+			alert("There was an error downloading the file.");
+		}
+	});
+	li.appendChild(link);
+
+	return li;
+}
+
 const isParticipant = (userId, project) => {
-	console.log('ISPARTICIPANT');
-	console.log(userId);
-	console.log(project);
 	if (userId === project.created_by_account_id) {
 		console.log("WENT HERE");
 		return true;
@@ -91,11 +161,6 @@ const createUserList = () => {
 }
 
 const inviteCollaborator = async (accountId, projectId, role) => {
-	console.log("<<<< Hello from inviteCollaborator >>>>");
-	console.log(accountId);
-	console.log(projectId);
-	console.log(role);
-	console.log("<<<< Goodbye >>>>");
 	try {
 		const response = await fetch('/api/collaboration/invite', {
 			method: 'POST',
@@ -121,9 +186,6 @@ var inviteFormCreated = false;
 var count = 0;
 const createInviteForm = (project) => {
 	const projectId = project.id;
-	console.log("#### Hello from createInviteForm ####");
-	console.log(projectId);
-	console.log("#### Goodbye ####");
 	if (inviteFormCreated) {
 		if (count > 5) {
 			alert("Fine. You win.");
@@ -160,7 +222,6 @@ const createInviteForm = (project) => {
 			const res = await fetch(`/api/search/user?userName=${encodeURIComponent(name)}`);
 
 			if (!res.ok) {
-				console.log(res);
 				throw new Error('Failed to fetch users.');
 			}
 
@@ -176,7 +237,6 @@ const createInviteForm = (project) => {
 				title.textContent = rawUser.name;
 				const description = document.createElement("p");
 				description.textContent = rawUser.bio;
-				console.log(rawUser);
 				const id = rawUser.account_id;
 				let buttonSection = document.createElement('section');
 				buttonSection.classList.add('flex-row', 'gap', 'width-30', 'split');
@@ -225,15 +285,10 @@ const addCollaboratorButton = async (userDetails, project) => {
 	let button = document.createElement("button");
 	button.id = 'collaboration-section-button';
 	button.innerText = "Add Collaborator";
-	// add stuff here
 	collaboratorSection.appendChild(button);
 
 	button.addEventListener('click', (e) => {
-		console.log("Hello world!");
 		collaboratorSection.removeChild(button);
-		console.log("^^^^ Hello from addCollaboratorButton ^^^^");
-		console.log(project);
-		console.log("^^^^ Goodybe ^^^^");
 		collaboratorSection.appendChild(createInviteForm(project));
 		collaboratorSection.appendChild(createUserList());
 	});
@@ -241,9 +296,77 @@ const addCollaboratorButton = async (userDetails, project) => {
 	return true;
 }
 
+const loadProjectFiles = (project) => {
+	fetchProjectFiles(project)
+		.then((files) => {
+			filesList.innerHTML = '';
+			pageAdder.assignListToElement("filesList", files, projectFileToHTML);
+		})
+		.catch((err) => {
+			console.error('Error fetching files:', err);
+		});
+}
+
+const addUploadButton = (userDetails, project) => {
+	if (project.created_by_account_id !== userDetails.id) {
+		return false;
+	}
+
+	const button = document.getElementById("uploadButton");
+	button.style.display = '';
+	const filesSection = document.getElementById('files');
+
+	button.addEventListener('click', (e) => {
+		e.preventDefault();
+		const fileInput = document.createElement('input');
+		fileInput.type = 'file';
+		fileInput.accept = '*';
+
+		fileInput.addEventListener('change', async (event) => {
+			const file = event.target.files[0];
+			if (!file) {
+				alert("No file selected.");
+				return;
+			}
+
+			const loadingMessage = document.createElement('p');
+			loadingMessage.innerText = "Uploading file...";
+			filesSection.appendChild(loadingMessage);
+
+			const formData = new FormData();
+			formData.append('file', file);
+
+			const projectId = project.id;
+			try {
+				const response = await fetch(`/api/project/${projectId}/upload`, {
+					method: 'POST',
+					body: formData,
+				});
+
+				const data = await response.json();
+
+				if (response.ok) {
+					alert('File uploaded successfully!');
+					loadProjectFiles(project);
+				} else {
+					alert(`Error: ${data.error || 'Failed to upload file.'}`);
+				}
+			} catch (error) {
+				console.error('Error uploading file:', error);
+				alert('An error occurred while uploading the file.');
+			} finally {
+				loadingMessage.remove();
+			}
+		});
+
+		fileInput.click();
+	});
+
+	return true;
+}
+
 const populateElements = async () => {
 	const project = await fetchProject();
-	console.log(project);
 	if (!project) {
 		document.getElementById('projectName').innerText = "Could not display project.";
 		return;
@@ -258,9 +381,11 @@ const populateElements = async () => {
 	populateCollaborators(project);
 	addCollaboratorButton(info, project);
 	addRequestCollaboration(info, project)
+	addUploadButton(info, project);
 
 	document.addEventListener('DOMContentLoaded', () => {
 		loadProjectReviews(project);
+    loadProjectFiles(project);
 	});
 }
 

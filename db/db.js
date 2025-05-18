@@ -1,6 +1,5 @@
 import Joi from 'joi';
 import dotenv from 'dotenv';
-import https from 'https';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -64,6 +63,77 @@ const createUser = async (user) => {
 		`)
 		.build()
 	);
+};
+
+const uploadToProject = async (projectId, fileBuffer, filename) => {
+	const response = await fileClient.uploadFile(fileBuffer, filename);
+	const uuid = response.uuid;
+
+	await sender.send(new DatabaseQueryBuilder()
+		.input("project_id", projectId)
+		.input("filename", filename)
+		.input("uuid", uuid)
+		.query(`
+				INSERT INTO ProjectFile (file_uuid, original_filename, project_id)
+				VALUES({{uuid}}, {{filename}}, {{project_id}})
+			`)
+		.build()
+	);
+}
+
+const mayUploadToProject = async (projectId, accountId) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input("project_id", projectId)
+		.input("account_id", accountId)
+		.query(`
+			SELECT 	Project.project_id,
+				Collaborator.account_id,	
+				Project.created_by_account_id
+			FROM Collaborator
+			RIGHT JOIN Project
+				ON Collaborator.project_id = Project.project_id
+			WHERE (Project.project_id = {{project_id}} AND Collaborator.account_id = {{account_id}} 
+				AND Collaborator.role = 'Researcher')
+				OR (Project.created_by_account_id = {{account_id}});
+		`)
+		.build()
+	);
+
+	return result.recordSet.length > 0;
+}
+
+const getProjectFiles = async (projectId) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input("project_id", projectId)
+		.query(`
+			SELECT * 
+			FROM ProjectFile
+			WHERE project_id = {{project_id}};
+		`)
+		.build()
+	);
+
+	return result.recordSet;
+}
+
+const mayAccessProject = async (projectId, accountId) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input("project_id", projectId)
+		.input("account_id", accountId)
+		.query(`
+			SELECT 	Project.project_id,
+				Collaborator.account_id,	
+				Project.created_by_account_id
+			FROM Collaborator
+			RIGHT JOIN Project
+				ON Collaborator.project_id = Project.project_id
+			WHERE (Project.project_id = {{project_id}} AND Collaborator.account_id = {{account_id}}) 
+				OR (Project.created_by_account_id = {{account_id}});
+		`)
+		.build()
+	);
+
+	return result.recordSet.length > 0;
 };
 
 const getPendingCollabInvites = async (accountId) => {
@@ -798,5 +868,9 @@ export default {
 	replyToCollabInvite,
 	sendCollabInvite,
 	canInvite,
-	alreadyInvited
+	alreadyInvited,
+	getProjectFiles,
+	mayAccessProject,
+	mayUploadToProject,
+	uploadToProject
 };

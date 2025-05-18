@@ -18,13 +18,17 @@
 
 		<title>Unilink | Profile</title>
 		<script src="https://accounts.google.com/gsi/client" async defer></script>
+		<script type="module" src="/savedTheme.js"></script>
 
 	</head>
 
 <body>
-	<nav class="inset">
-		<a href="javascript:history.back()">&larr; Back</a>
-	</nav>
+	<nav class="inset secondary fill accent-underline">
+        <button class="nav-item flex-row center-content-v gap-small" onclick="history.back()">
+            <i class='bx bx-chevron-left'></i>
+            Back
+        </button>
+    </nav>
 
 	<main class="inset">
 		<h1>Profile</h1>
@@ -37,8 +41,9 @@
 			</section>
 		</form>
 	</main>
-</body>
-					<script type="module" src="/savedTheme.js"></script>
 
+	
+</body>
+					
 
 </html>

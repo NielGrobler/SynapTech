@@ -16,6 +16,7 @@
 		<script src="https://accounts.google.com/gsi/client" async defer></script>
 		<script src="/socket.io/socket.io.js"></script>
 		<link rel="stylesheet" href="/styles.css">
+		<script type="module" src="/savedTheme.js"></script>
 
 
 	</head>
@@ -39,27 +40,22 @@
 				<section id="inputs" class="border-above">
 					<section class="flex-row center-content-v">
 					<button type="submit" id="uploadBtn" aria-label="Upload file">
-						<i class='bx  bx-paperclip'  ></i>
+						<i class='bx  bx-paperclip'></i>
 					</button>
-					<input
-						id="text"
-						name="text"
-						type="text"
-						placeholder="Enter your message..."
-						required
-					>
+					<input id="text" name="text" type="text" placeholder="Enter your message..."
+						required>
 					<button type="submit" id="sendBtn" aria-label="Send message">
 						<i class="bx bx-send" aria-hidden="true"></i>
 					</button>
-					</section>
-					<p id="attachment-name">No file chosen</p>
-					
-					<input type="file" id="file" style="display:none;">
-
 				</section>
+				<p id="attachment-name">No file chosen</p>
+
+				<input type="file" id="file" style="display:none;">
+
+			</section>
 
 
-				<script type="module">
+			<script type="module">
 				const uploadBtn = document.getElementById("uploadBtn");
 				const trueUploadBtn = document.getElementById("file");
 				uploadBtn.addEventListener("click", () => {
@@ -84,7 +80,7 @@
 				document.addEventListener('DOMContentLoaded', async () => {
 					await fetchProjects();
 					if (messages) {
-						messages.scrollTop = messages.scrollHeight; 
+						messages.scrollTop = messages.scrollHeight;
 					}
 				});
 
@@ -97,7 +93,7 @@
 						txt.innerHTML = "No file chosen";
 					}
 				});
-				
+
 
 				async function fetchProjects() {
 					try {
@@ -116,7 +112,7 @@
 						selectedRoomId = data[0].id;
 
 						const projectsList = document.getElementById('projects');
-						projectsList.innerHTML = ''; 
+						projectsList.innerHTML = '';
 
 						if (data.length === 0) {
 							projectsList.innerHTML = 'Nothing to display.';
@@ -128,12 +124,12 @@
 
 						data.forEach(project => {
 							const li = document.createElement('li');
-							li.textContent = project.name; 
-							li.dataset.projectId = project.id; 
+							li.textContent = project.name;
+							li.dataset.projectId = project.id;
 							li.classList.add('highlight-hover');
 							li.addEventListener('click', (e) => {
 								selectedRoomId = li.dataset.projectId;
-								socket.emit('join-room', { roomId: li.dataset.projectId });
+								socket.emit('join-room', {roomId: li.dataset.projectId});
 							});
 							projectsList.appendChild(li);
 						});
@@ -149,16 +145,16 @@
 				const projects = await fetchProjects();
 				var selectedRoomId = projects[0].id;
 
-				const socket = io({ auth: { token: localStorage.getItem('jwt') } });
+				const socket = io({auth: {token: localStorage.getItem('jwt')}});
 
 				let hasJoinedRoom = false;
 
 				socket.on('connect', () => {
 					console.log('Connected to server');
-					socket.emit('join-room', { roomId: projects[0].id });
+					socket.emit('join-room', {roomId: projects[0].id});
 				});
 
-				socket.on('joined-room', ({ roomId, latestMessages }) => {
+				socket.on('joined-room', ({roomId, latestMessages}) => {
 					console.log(`Joined room: ${roomId}`);
 					console.log(latestMessages);
 					hasJoinedRoom = true;
@@ -193,7 +189,7 @@
 						link.textContent = `${msg.name}`;
 						link.onclick = async (e) => {
 							e.preventDefault();
-							const ext = msg.name.split('.').pop(); 
+							const ext = msg.name.split('.').pop();
 							socket.emit('download-request', {
 								attachmentUuid: msg.uuid,
 								ext: ext
@@ -213,7 +209,7 @@
 				});
 
 				socket.on('download-response', (file) => {
-					const blob = new Blob([new Uint8Array(file.buffer)], { type: file.contentType });
+					const blob = new Blob([new Uint8Array(file.buffer)], {type: file.contentType});
 					const url = URL.createObjectURL(blob);
 
 					const a = document.createElement('a');
@@ -236,7 +232,7 @@
 					const file = fileInput.files[0];
 
 					if (!file) {
-						socket.emit('message', { roomId: selectedRoomId, content: text });
+						socket.emit('message', {roomId: selectedRoomId, content: text});
 					} else {
 						const arrayBuffer = await file.arrayBuffer();
 
@@ -250,7 +246,7 @@
 							}
 						});
 					}
-					
+
 					document.getElementById('attachment-name').innerHTML = "No file chosen";
 					document.getElementById('text').value = '';
 					fileInput.value = '';
@@ -258,7 +254,8 @@
 				</script>
 			</section>
 		</main>
-		<script type="module" src="/savedTheme.js"></script>
+		
 	</body>
 </html>
 
+</html>

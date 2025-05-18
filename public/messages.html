@@ -17,13 +17,14 @@
 
 	<title>Unilink | Messages</title>
 	<script src="https://accounts.google.com/gsi/client" async defer></script>
+	<script type="module" src="/savedTheme.js"></script>
 
 </head>
 
 <body class="full-vh">
 	<nav class="inset secondary fill accent-underline flex-prop-1-5">
 		<button class="nav-item flex-row center-content-v gap-small"
-			onclick="window.location.href=history.back()">
+			onclick="history.back()">
 			<i class='bx bx-chevron-left'></i>
 			Back
 		</button>
@@ -50,7 +51,7 @@
 						placeholder="Type a message..." required></textarea>
 					<button id="sendButton" type="submit"
 						class="nav-item to-end flex-row gap-small center-content-v">
-						Submit
+						Send
 						<i class="bx bx-send"></i>
 					</button>
 				</section>
@@ -66,7 +67,7 @@
 
 	message.initMessages();
 </script>
-<script type="module" src="/savedTheme.js"></script>
+
 
 
 </html>
