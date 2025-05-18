@@ -1,42 +1,25 @@
-//import sql, { UniqueIdentifier } from 'mssql';
-import sql from 'mssql';
-const {UniqueIdentifier} = sql;
 import Joi from 'joi';
 import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+import { QuerySender, FileStorageClient } from './connectionInterfaces.js';
+import { DatabaseQueryBuilder } from './query.js';
 
 dotenv.config();
 
-const config = {
-	user: process.env.AZURE_DB_USER,
-	password: process.env.AZURE_DB_PASSWORD,
-	server: process.env.AZURE_DB_SERVER,
-	database: process.env.AZURE_DB_NAME,
-	options: {
-		encrypt: true,
-		trustServerCertificate: false,
-		multipleStatements: true,
-	},
-	pool: {
-		max: 10,
-		min: 0,
-		idleTimeoutMillis: 30000
-	}
-};
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const poolPromise = new sql.ConnectionPool(config).connect()
-	.then(pool => {
-		console.log('Connected to Azure DB with pool');
-		return pool;
-	})
-	.catch(err => {
-		console.error('Database connection failed. Bad Config: ', err);
-		throw err;
-	});
+const ca = fs.readFileSync(path.join(__dirname, 'server.crt'));
+
+const sender = new QuerySender();
+const fileClient = new FileStorageClient();
 
 const getUserByGUID = async (guid) => {
-	const pool = await poolPromise;
-	const result = await pool.request()
-		.input('guid', sql.NVarChar, guid)
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('guid', guid)
 		.query(`
 			SELECT
 				A.account_id AS id,
@@ -44,33 +27,215 @@ const getUserByGUID = async (guid) => {
 				A.bio,
 				L.uuid,
 				L.source
-			FROM [dbo].[Account] A
-			INNER JOIN [dbo].[AccountLink] L ON L.account_id = A.account_id
-			WHERE L.source = 'Google' AND uuid = @guid;
-		`);
-	return result.recordset[0];
+			FROM Account A
+			INNER JOIN AccountLink L ON L.account_id = A.account_id
+			WHERE L.source = 'Google' AND uuid = {{guid}};
+		`)
+		.build()
+	);
+
+	return result.recordSet[0];
 };
 
 const createUser = async (user) => {
-	const pool = await poolPromise;
-	await pool.request()
-		.input('name', sql.NVarChar, user.name)
-		.input('is_admin', sql.Bit, false)
-		.input('university', sql.NVarChar, null)
-		.input('department', sql.NVarChar, null)
-		.input('bio', sql.NVarChar, null)
-		.input('uuid', sql.NVarChar, user.id)
-		.input('source', sql.NVarChar, user.source)
-		.batch(`
-			DECLARE @InsertedAccounts TABLE (account_id INT);
-
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('name', user.name)
+		.input('is_admin', false)
+		.input('department', null)
+		.input('bio', null)
+		.input('university', null)
+		.query(`
 			INSERT INTO Account (name, is_admin, university, department, bio)
-			OUTPUT INSERTED.account_id INTO @InsertedAccounts
-			VALUES (@name, @is_admin, @university, @department, @bio);
+			VALUES ({{name}}, {{is_admin}}, {{university}}, {{department}}, {{bio}});
+		`)
+		.build()
+	);
 
+	const id = result.insertId;
+
+	await sender.send(new DatabaseQueryBuilder()
+		.input('id', id)
+		.input('uuid', user.id)
+		.input('source', user.source)
+		.query(`
 			INSERT INTO AccountLink (uuid, source, account_id)
-			VALUES (@uuid, @source, (SELECT account_id FROM @InsertedAccounts));
-		`);
+			VALUES ({{uuid}}, {{source}}, {{id}});
+		`)
+		.build()
+	);
+};
+
+const uploadToProject = async (projectId, fileBuffer, filename) => {
+	const response = await fileClient.uploadFile(fileBuffer, filename);
+	const uuid = response.uuid;
+
+	await sender.send(new DatabaseQueryBuilder()
+		.input("project_id", projectId)
+		.input("filename", filename)
+		.input("uuid", uuid)
+		.query(`
+				INSERT INTO ProjectFile (file_uuid, original_filename, project_id)
+				VALUES({{uuid}}, {{filename}}, {{project_id}})
+			`)
+		.build()
+	);
+}
+
+const mayUploadToProject = async (projectId, accountId) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input("project_id", projectId)
+		.input("account_id", accountId)
+		.query(`
+			SELECT 	Project.project_id,
+				Collaborator.account_id,	
+				Project.created_by_account_id
+			FROM Collaborator
+			RIGHT JOIN Project
+				ON Collaborator.project_id = Project.project_id
+			WHERE (Project.project_id = {{project_id}} AND Collaborator.account_id = {{account_id}} 
+				AND Collaborator.role = 'Researcher')
+				OR (Project.created_by_account_id = {{account_id}});
+		`)
+		.build()
+	);
+
+	return result.recordSet.length > 0;
+}
+
+const getProjectFiles = async (projectId) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input("project_id", projectId)
+		.query(`
+			SELECT * 
+			FROM ProjectFile
+			WHERE project_id = {{project_id}};
+		`)
+		.build()
+	);
+
+	return result.recordSet;
+}
+
+const mayAccessProject = async (projectId, accountId) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input("project_id", projectId)
+		.input("account_id", accountId)
+		.query(`
+			SELECT 	Project.project_id,
+				Collaborator.account_id,	
+				Project.created_by_account_id
+			FROM Collaborator
+			RIGHT JOIN Project
+				ON Collaborator.project_id = Project.project_id
+			WHERE (Project.project_id = {{project_id}} AND Collaborator.account_id = {{account_id}}) 
+				OR (Project.created_by_account_id = {{account_id}});
+		`)
+		.build()
+	);
+
+	return result.recordSet.length > 0;
+};
+
+const getPendingCollabInvites = async (accountId) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input("account_id", accountId)
+		.query(`
+			SELECT DISTINCT Account.account_id,
+				Project.project_id,
+				role,
+				Project.name AS project_name,
+				Account.name AS account_name
+			FROM CollaborationInvite
+			INNER JOIN Project
+			ON Project.project_id = CollaborationInvite.project_id
+			INNER JOIN Account
+			ON Account.account_id = CollaborationInvite.account_id
+			WHERE CollaborationInvite.account_id = {{account_id}};
+		`)
+		.build()
+	);
+
+	return result.recordSet;
+}
+
+const sendCollabInvite = async (accountId, projectId, role) => {
+	await sender.send(new DatabaseQueryBuilder()
+		.input("account_id", accountId)
+		.input("project_id", projectId)
+		.input("role", role)
+		.query(`
+			INSERT INTO CollaborationInvite (account_id, project_id, role)
+			VALUES({{account_id}}, {{project_id}}, {{role}});
+		`)
+		.build()
+	);
+};
+
+const canInvite = async (accountId, projectId) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input("account_id", accountId)
+		.input("project_id", projectId)
+		.query(`
+			SELECT *
+			FROM Collaborator
+			RIGHT JOIN Project
+			ON Collaborator.project_id = Project.project_id
+			WHERE (Collaborator.account_id = {{account_id}} AND Collaborator.project_id = {{project_id}})
+				OR (Project.project_id = {{project_id}} AND Project.created_by_account_id = {{account_id}});
+		`)
+		.build()
+	);
+
+	return result.recordSet.length === 0;
+}
+
+const alreadyInvited = async (accountId, projectId) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input("account_id", accountId)
+		.input("project_id", projectId)
+		.query(`
+			SELECT *
+			FROM CollaborationInvite
+			WHERE account_id = {{account_id}} AND project_id = {{project_id}};
+		`)
+		.build()
+	);
+
+	return result.recordSet.length === 0;
+}
+
+const replyToCollabInvite = async (isAccept, accountId, projectId, role) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input("account_id", accountId)
+		.input("project_id", projectId)
+		.query(`
+			DELETE FROM CollaborationInvite 
+			WHERE account_id = {{account_id}} AND project_id = {{project_id}};
+		`)
+		.build()
+	);
+
+	console.log(isAccept);
+	console.log(result);
+
+	if (isNaN(result.rowsAffected) || result.rowsAffected == 0) {
+		throw new Error("cannot reject a nonexistent invite");
+	}
+
+	if (!isAccept) {
+		return;
+	}
+
+	await sender.send(new DatabaseQueryBuilder()
+		.input("account_id", accountId)
+		.input("project_id", projectId)
+		.input("role", role)
+		.query(`
+			INSERT INTO Collaborator (account_id, project_id, role, is_active, is_pending)
+			VALUES ({{account_id}}, {{project_id}}, {{role}}, 1, 0);
+		`)
+		.build()
+	);
 };
 
 const projectSchema = Joi.object({
@@ -82,23 +247,24 @@ const projectSchema = Joi.object({
 
 // Project names are unique up to user id
 const checkProjectNameUniqueness = async (project, user) => {
-	const pool = await poolPromise;
-	const result = await pool.request()
-		.input('name', sql.NVarChar, project.name)
-		.input('created_by_account_id', sql.Int, user.id)
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('name', project.name)
+		.input('created_by_account_id', user.id)
 		.query(`
 			SELECT *
-			FROM [dbo].[Project]
-			WHERE [dbo].[Project].name = @name AND [dbo].[Project].created_by_account_id = @created_by_account_id;
-		`);
+			FROM Project
+			WHERE Project.name = {{name}} AND Project.created_by_account_id = {{created_by_account_id}};
+		`)
+		.build()
+	);
 
-	return result.recordset.length === 0;
+	return result.recordSet.length === 0;
 }
 
 const createProject = async (project, user) => {
 	const { _, error } = projectSchema.validate(project);
 	if (error) {
-		throw new Error(`Malformed project.`);
+		throw new Error(error.message);
 	}
 
 	const isUnique = await checkProjectNameUniqueness(project, user);
@@ -106,165 +272,179 @@ const createProject = async (project, user) => {
 		throw new Error(`Project with name ${project.name} already exists.`);
 	}
 
-	const pool = await poolPromise;
-	await pool.request()
-		.input('name', sql.NVarChar, project.name)
-		.input('description', sql.NVarChar, project.description)
-		.input('is_public', sql.Bit, project.isPublic)
-		.input('created_by_account_id', sql.Int, user.id)
+	await sender.send(new DatabaseQueryBuilder()
+		.input('name', project.name)
+		.input('description', project.description)
+		.input('is_public', project.isPublic)
+		.input('created_by_account_id', user.id)
 		.query(`
 			INSERT INTO Project(name, description, is_public, created_by_account_id)
-			VALUES(@name, @description, @is_public, @created_by_account_id);
-		`);
+			VALUES({{name}}, {{description}}, {{is_public}}, {{created_by_account_id}});
+		`)
+		.build()
+	);
 };
 
 const fetchAssociatedProjects = async (user) => {
-	const pool = await poolPromise;
-	const result = await pool.request()
-		.input('id', sql.Int, user.id)
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('id', user.id)
 		.query(`
 			SELECT DISTINCT 
-				[dbo].[Project].project_id AS id,
-				[dbo].[Project].created_by_account_id AS author_id,
-				[dbo].[Project].created_at AS created_at,
-				[dbo].[Project].name AS name,
-				[dbo].[Project].description AS description,
-				[dbo].[Project].is_public AS is_public
-			FROM [dbo].[Project]
-			LEFT JOIN [dbo].[Collaborator] ON [dbo].[Collaborator].project_id = [dbo].[Project].project_id
-			LEFT JOIN [dbo].[Account] ON [dbo].[Account].account_id = [dbo].[Collaborator].account_id
-			WHERE [dbo].[Project].created_by_account_id = @id OR ([dbo].[Collaborator].account_id = @id AND [dbo].[Collaborator].is_pending = 0);
-		`);
-	return result.recordset;
+			    Project.project_id AS id,
+			    Project.created_by_account_id AS author_id,
+			    Project.created_at AS created_at,
+			    Project.name AS name,
+			    Project.description AS description,
+			    Project.is_public AS is_public
+			FROM Project
+			LEFT JOIN Collaborator ON Collaborator.project_id = Project.project_id
+			LEFT JOIN Account ON Account.account_id = Collaborator.account_id
+			WHERE Project.created_by_account_id = {{id}}
+			OR (Collaborator.account_id = {{id}} AND Collaborator.is_pending = 0);
+		`)
+		.build()
+	);
+
+	return result.recordSet;
 };
 
-const fetchPublicAssociatedProjects = async (id) => {
-	const pool = await poolPromise;
-	const result = await pool.request()
-		.input('id', sql.Int, id)
+// Like fetchAssociatedProjects, except returning less information and orders projects based on the latest message
+const fetchAssociatedProjectsByLatest = async (user) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('id', user.id)
 		.query(`
-			SELECT [dbo].[Project].project_id AS id,
-				[dbo].[Project].created_by_account_id AS author_id,
-				[dbo].[Project].created_at AS created_at,
-				[dbo].[Project].name AS name,
-				[dbo].[Project].description AS description,
-				[dbo].[Project].is_public AS is_public
-			FROM [dbo].[Project]
-			LEFT JOIN [dbo].[Collaborator] ON [dbo].[Collaborator].project_id = [dbo].[Project].project_id
-			LEFT JOIN [dbo].[Account] ON [dbo].[Account].account_id = [dbo].[Collaborator].account_id
-			WHERE [dbo].[Project].created_by_account_id = @id AND is_public = 1;
-		`);
-	return result.recordset;
-}
+			SELECT 
+			    Project.project_id AS id,
+			    Project.name AS name,
+			    MAX(Message.created_at) AS latest_message_date
+			FROM Project
+			LEFT JOIN Collaborator ON Collaborator.project_id = Project.project_id
+			LEFT JOIN Account ON Account.account_id = Collaborator.account_id
+			LEFT JOIN Message ON Message.project_id = Project.project_id
+			WHERE Project.created_by_account_id = {{id}}
+			   OR (Collaborator.account_id = {{id}} AND Collaborator.is_pending = 0)
+			GROUP BY Project.project_id, Project.name
+			ORDER BY latest_message_date DESC;
+		`)
+		.build()
+	);
+
+	return result.recordSet;
+};
+
+const fetchPublicAssociatedProjects = async (user) => {
+	const result = await new DatabaseQueryBuilder()
+		.input('id', user.id)
+		.query(`
+			SELECT DISTINCT 
+			    Project.project_id AS id,
+			    Project.created_by_account_id AS author_id,
+			    Project.created_at AS created_at,
+			    Project.name AS name,
+			    Project.description AS description,
+			    Project.is_public AS is_public
+			FROM Project
+			LEFT JOIN Collaborator ON Collaborator.project_id = Project.project_id
+			LEFT JOIN Account ON Account.account_id = Collaborator.account_id
+			WHERE Project.created_by_account_id = {{id}} AND Project.isPublic = 1
+			OR (Collaborator.account_id = {{id}} AND Collaborator.is_pending = 0);
+		`)
+		.getResultUsing(agent);
+
+	return result.recordSet;
+};
+
 
 const appendCollaborators = async (projects) => {
-	const pool = await poolPromise;
-	const transaction = new sql.Transaction(pool);
-	try {
-		await transaction.begin();
-		for (let project of projects) {
-			const request = new sql.Request(transaction);
-			const queryResult = await request
-				.input('project_id', sql.Int, project.id)
-				.query(`
-					SELECT DISTINCT
-						[dbo].[Account].account_id AS account_id,
-						[dbo].[Collaborator].is_active AS is_active,
-						[dbo].[Account].name AS name,
-						[dbo].[Collaborator].role AS role
-					FROM [dbo].[Collaborator]
-					INNER JOIN [dbo].[Account] ON [dbo].[Account].account_id = [dbo].[Collaborator].account_id
-					WHERE [dbo].[Collaborator].project_id = @project_id AND [dbo].[Collaborator].is_pending = 0;
-				`);
-			project.collaborators = queryResult.recordset;
-		}
-		await transaction.commit();
-	} catch (err) {
-		await transaction.rollback();
-		console.error('Transaction rolled back.', err);
+	for (let project of projects) {
+		const result = await sender.getResult(new DatabaseQueryBuilder()
+			.input('project_id', project.id)
+			.query(`
+				SELECT DISTINCT
+					Account.account_id AS account_id,
+					Collaborator.is_active AS is_active,
+					Account.name AS name,
+					Collaborator.role AS role
+				FROM Collaborator
+				INNER JOIN Account ON Account.account_id = Collaborator.account_id
+				WHERE Collaborator.project_id = {{project_id}} AND Collaborator.is_pending = 0;
+			`)
+			.build()
+		);
+		project.collaborators = result.recordSet;
 	}
 };
 
 const deleteUser = async (userId) => {
-	const pool = await poolPromise;
-	await pool.request()
-		.input('id', sql.Int, userId)
+	await sender.send(new DatabaseQueryBuilder()
+		.input('id', userId)
 		.query(`
-			DELETE FROM [dbo].[AccountLink] WHERE [dbo].[AccountLink].account_id = @id;
-			DELETE FROM [dbo].[Project] WHERE [dbo].[Project].created_by_account_id = @id;
-			DELETE FROM [dbo].[Collaborator] WHERE [dbo].[Collaborator].account_id = @id;
-			DELETE FROM [dbo].[Account] WHERE [dbo].[Account].account_id = @id;
-		`);
+			DELETE FROM AccountLink WHERE AccountLink.account_id = {{id}};
+			DELETE FROM Project WHERE Project.created_by_account_id = {{id}};
+			DELETE FROM Collaborator WHERE Collaborator.account_id = {{id}};
+			DELETE FROM Account WHERE Account.account_id = {{id}};
+		`)
+		.build()
+	);
 };
 
-const is_Admin = async (userId) => {
-	const pool = await poolPromise;
-	const result = await pool.request()
-		.input('id', sql.Int, userId)
-		.query(`
-			SELECT is_admin FROM [dbo].[Account] WHERE account_id = @id;
-		`);
-	return result.recordset[0].is_admin;
-}
-
 const isSuspended = async (userId) => {
-	const pool = await poolPromise;
-	const result = await pool.request()
-		.input('id', sql.Int, userId)
+  const result = await sender.getResult(new DatabaseQueryBuilder() 
+		.input('id', userId)
 		.query(`
-			SELECT is_suspended FROM [dbo].[Account] WHERE account_id = @id;
-		`);
-	return result.recordset;
+			SELECT is_suspended
+			FROM Account
+			WHERE account_id = {{id}};
+		`)
+		.build()
+	);
+
+	return result.recordSet;
 };
 
 const suspendUser = async (userId) => {
-	const pool = await poolPromise;
 	const result = await isSuspended(userId);
-	if (result[0].is_suspended) {
-		await pool.request()
-			.input('id', sql.Int, userId)
-			.query(`
+	const negation = result[0].is_suspended == 0 ? 1 : 0;
+	sender.send(new DatabaseQueryBuilder()
+		.input('id', userId)
+		.input('negation', negation)
+		.query(`
 				UPDATE [dbo].[Account]
-				SET is_suspended = 0
-				WHERE account_id = @id
-			`);
-	} else {
-		await pool.request()
-			.input('id', sql.Int, userId)
-			.query(`
-				UPDATE [dbo].[Account]
-				SET is_suspended = 1
-				WHERE account_id = @id
-			`);
-	}
+				SET is_suspended = {{negation}}
+				WHERE account_id = {{id}};
+		`)
+		.build()
+	);
 };
 
-
 const addCollaborator = async (projectId, userId, role) => {
-	const pool = await poolPromise;
-	await pool.request()
-		.input('project_id', sql.NVarChar, projectId)
-		.input('account_id', sql.NVarChar, userId)
-		.input('role', sql.NVarChar, role)
+	await sender.send(new DatabaseQueryBuilder()
+		.input('project_id', projectId)
+		.input('account_id', userId)
+		.input('role', role)
 		.query(`
 			INSERT INTO Collaborator (account_id, project_id, role, is_active, is_pending)
-			VALUES(@account_id, @project_id, @role, 1, 1);
-		`);
+			VALUES({{account_id}}, {{project_id}}, {{role}}, 1, 1);
+		`)
+		.build()
+	);
 };
 
 const permittedToAcceptCollaborator = async (user, collabUserId, projectId) => {
-	const pool = await poolPromise;
-	const result = await pool.request()
-		.input('project_id', sql.Int, projectId)
-		.input('account_id', sql.Int, user.id)
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('project_id', projectId)
+		.input('account_id', user.id)
 		.query(`
-			SELECT *
-			FROM [dbo].[Project]
-			WHERE [dbo].[Project].project_id = @project_id AND [dbo].[Project].created_by_account_id = @account_id;
-		`);
+			SELECT project_id
+			FROM Project
+			WHERE Project.project_id = {{project_id}} AND Project.created_by_account_id = {{account_id}};
+		`)
+		.build()
+	);
 
-	return result.recordset.length > 0;
+	return result.recordSet.length > 0;
 }
+
 
 const permittedToRejectCollaborator = async (user, collabUserId, projectId) => {
 	if (collabUserId === user.id) {
@@ -276,115 +456,125 @@ const permittedToRejectCollaborator = async (user, collabUserId, projectId) => {
 }
 
 const removeCollaborator = async (userId, projectId) => {
-	const pool = await poolPromise;
-	await pool.request()
-		.input('account_id', sql.Int, userId)
-		.input('project_id', sql.Int, projectId)
+	await sender.send(new DatabaseQueryBuilder()
+		.input('account_id', userId)
+		.input('project_id', projectId)
 		.query(`
 			DELETE
-			FROM [dbo].[Collaborator]
-			WHERE account_id = @account_id AND project_id = @project_id;
-		`);
+			FROM Collaborator
+			WHERE account_id = {{account_id}} AND project_id = {{project_id}};
+		`)
+		.build()
+	);
 }
 
 const acceptCollaborator = async (userId, projectId) => {
-	const pool = await poolPromise;
-	await pool.request()
-		.input('account_id', sql.Int, userId)
-		.input('project_id', sql.Int, projectId)
+	await sender.send(new DatabaseQueryBuilder()
+		.input('account_id', userId)
+		.input('project_id', projectId)
 		.query(`
-			UPDATE [dbo].[Collaborator]
+			UPDATE Collaborator
 			SET is_pending = 0 
-			WHERE account_id = @account_id AND project_id = @project_id;
-		`);
+			WHERE account_id = {{account_id}} AND project_id = {{project_id}};
+		`)
+		.build()
+	);
 };
 
 const searchProjects = async (projectName) => {
 	const lowerName = projectName.toLowerCase();
-	const pool = await poolPromise;
-	const result = await pool.request()
-		.input('projectName', sql.NVarChar, `%${lowerName}%`)
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('projectName', `%${lowerName}%`)
 		.query(`
-			SELECT TOP 10 *
-			FROM [dbo].[Project]
-			WHERE LOWER([dbo].[Project].name) LIKE @projectName AND [dbo].[Project].is_public = 1
-			ORDER BY LEN([dbo].[Project].name);
-		`);
-	return result.recordset;
+			SELECT *
+			FROM Project
+			WHERE LOWER(Project.name) LIKE {{projectName}} AND Project.is_public = 1
+			ORDER BY CHAR_LENGTH(Project.name)
+			LIMIT 10;
+		`)
+		.build()
+	);
+
+	return result.recordSet;
 };
 
 const fetchCollaborators = async (projectId) => {
-	const pool = await poolPromise;
-	const result = await pool.request()
-		.input('project_id', sql.Int, projectId)
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('project_id', projectId)
 		.query(`
 			SELECT DISTINCT
-				[dbo].[Account].account_id AS account_id,
-				[dbo].[Collaborator].is_active AS is_active,
-				[dbo].[Account].name AS name,
-				[dbo].[Collaborator].role AS role
-			FROM [dbo].[Collaborator]
-			INNER JOIN [dbo].[Account] ON [dbo].[Account].account_id = [dbo].[Collaborator].account_id
-			WHERE [dbo].[Collaborator].project_id = @project_id AND [dbo].[Collaborator].is_pending = 0;
-		`);
+			    Account.account_id AS account_id,
+			    Collaborator.is_active AS is_active,
+			    Account.name AS name,
+			    Collaborator.role AS role
+			FROM Collaborator
+			INNER JOIN Account ON Account.account_id = Collaborator.account_id
+			WHERE Collaborator.project_id = {{project_id}} AND Collaborator.is_pending = 0;
+		`)
+		.build()
+	);
 
-	return result.recordset;
+	return result.recordSet;
 }
 
 const fetchPendingCollaborators = async (user) => {
-	const pool = await poolPromise;
-	const result = await pool.request()
-		.input('id', sql.Int, user.id)
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('id', user.id)
 		.query(`
 			SELECT DISTINCT
-				[dbo].[Collaborator].account_id AS account_id,
-				[dbo].[Collaborator].project_id AS project_id,
-				[dbo].[Account].name AS account_name,
-				[dbo].[Project].name AS project_name,
-				[dbo].[Project].is_public AS project_is_public,
-				[dbo].[Collaborator].role AS role
-			FROM [dbo].[Collaborator]
-			INNER JOIN [dbo].[Project]
-			ON [dbo].[Project].project_id = [dbo].[Collaborator].project_id
-			INNER JOIN [dbo].[Account]
-			ON [dbo].[Collaborator].account_id = [dbo].[Account].account_id
-			WHERE [dbo].[Project].created_by_account_id = @id AND [dbo].[Collaborator].is_pending = 1;
-		`);
+				Collaborator.account_id AS account_id,
+				Collaborator.project_id AS project_id,
+				Account.name AS account_name,
+				Project.name AS project_name,
+				Project.is_public AS project_is_public,
+				Collaborator.role AS role
+			FROM Collaborator
+			INNER JOIN Project
+			ON Project.project_id = Collaborator.project_id
+			INNER JOIN Account
+			ON Collaborator.account_id = Account.account_id
+			WHERE Project.created_by_account_id = {{id}} AND Collaborator.is_pending = 1;
+		`)
+		.build()
+	);
 
-	return result.recordset;
+	return result.recordSet;
 }
 
 const insertPendingCollaborator = async (userId, projectId) => {
-	const pool = await poolPromise;
-	const result = await pool.request()
-		.input('account_id', sql.Int, userId)
-		.input('project_id', sql.Int, projectId)
+	await sender.send(new DatabaseQueryBuilder()
+		.input('account_id', userId)
+		.input('project_id', projectId)
 		.query(`
 			INSERT INTO Collaborator (account_id, project_id, role, is_active, is_pending)
-			VALUES(@account_id, @project_id, 'Researcher', 1, 1);
-		`);
+			VALUES({{account_id}}, {{project_id}}, 'Researcher', 1, 1);
+		`)
+		.build()
+	);
 }
 
 const fetchProjectById = async (id) => {
-	const pool = await poolPromise;
-	const result = await pool.request()
-		.input('id', sql.Int, id)
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('id', id)
 		.query(`
 			SELECT	DISTINCT
-				[dbo].[Project].project_id AS id,
-				[dbo].[Project].name AS name,
-				[dbo].[Project].created_by_account_id AS created_by_account_id,
-				[dbo].[Account].name AS author_name,
-				[dbo].[Project].created_at AS created_at,
-				[dbo].[Project].description AS description,
-				[dbo].[Project].is_public AS is_public
-			FROM [dbo].[Project]
-			INNER JOIN [dbo].[Account]
-			ON [dbo].[Project].created_by_account_id = [dbo].[Account].account_id
-			WHERE [dbo].[Project].project_id = @id;
-		`);
+				Project.project_id AS id,
+				Project.name AS name,
+				Project.created_by_account_id AS created_by_account_id,
+				Account.name AS author_name,
+				Project.created_at AS created_at,
+				Project.description AS description,
+				Project.is_public AS is_public
+			FROM Project
+			INNER JOIN Account
+			ON Project.created_by_account_id = Account.account_id
+			WHERE Project.project_id = {{id}}
+			LIMIT 1;
+		`)
+		.build()
+	);
 
-	let project = result.recordset[0];
+	let project = result.recordSet[0];
 
 	if (!project) {
 		return null;
@@ -395,111 +585,252 @@ const fetchProjectById = async (id) => {
 	return project;
 }
 
-const storeMessage = async (senderId, recipientId, messageBody) => {
-	const pool = await poolPromise;
-	const result = await pool.request()
-		.input('sender_id', sql.Int, senderId)
-		.input('receiver_id', sql.Int, recipientId)
-		.input('content', sql.NVarChar, messageBody)
+// ======================================= */
+/* == Here is new message stuff == */
+
+const retrieveLatestMessages = async (projectId, limit = 64) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('project_id', projectId)
+		.input('limit', limit)
 		.query(`
-			INSERT INTO [dbo].[Message] (sender_id, receiver_id, content)
-			VALUES(@sender_id, @receiver_id, @content);
-		`);
+			SELECT	Message.account_id AS id,
+				Account.name AS user,
+				content AS text,
+				file_uuid AS uuid,
+				original_filename AS name
+			FROM Message
+			LEFT JOIN MessageAttachment
+			ON MessageAttachment.message_id = Message.message_id
+			INNER JOIN Account
+			ON Message.account_id = Account.account_id
+			WHERE Message.project_id = {{project_id}}
+			ORDER BY Message.created_at
+			LIMIT {{limit}};
+		`)
+		.build()
+	);
+
+	return result;
 }
 
-const retrieveMessages = async (fstPersonId, sndPersonId) => {
-	const pool = await poolPromise;
-	const result = await pool.request()
-		.input('fst_id', sql.Int, fstPersonId)
-		.input('snd_id', sql.Int, sndPersonId)
+const storeMessageWithAttachment = async (userId, projectId, text, attachment) => {
+	const messageResult = await storeMessage(userId, projectId, text);
+	const uploadResult = await fileClient.uploadFile(attachment.buffer, attachment.name);
+	const uuid = uploadResult.uuid;
+	const messageId = messageResult.insertId;
+
+	await sender.send(new DatabaseQueryBuilder()
+		.input("message_id", messageId)
+		.input("file_uuid", uuid)
+		.input("original_filename", attachment.name)
 		.query(`
-			SELECT TOP 50 	[dbo].[Message].created_at AS created_at,
-					[dbo].[Message].content AS you_sent
-			FROM [dbo].[Message]
-			WHERE sender_id = @fst_id AND receiver_id = @snd_id
-			ORDER BY [dbo].[Message].created_at;
+			INSERT INTO MessageAttachment (message_id, file_uuid, original_filename)
+			VALUES({{message_id}}, {{file_uuid}}, {{original_filename}});
+		`)
+		.build()
+	);
 
-			SELECT TOP 50 	[dbo].[Message].created_at AS created_at,
-					[dbo].[Message].content AS they_sent
-			FROM [dbo].[Message]
-			WHERE sender_id = @snd_id AND receiver_id = @fst_id
-			ORDER BY [dbo].[Message].created_at;
-		`);
-
-
-	return result.recordsets;
+	return {
+		uuid: uuid,
+		name: attachment.name,
+		text: text,
+	};
 }
 
-const retrieveMessagedUsers = async (userId) => {
-	const pool = await poolPromise;
-	const result = await pool.request()
-		.input('user_id', sql.Int, userId)
+const storeMessage = async (userId, projectId, text) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input("user_id", userId)
+		.input("project_id", projectId)
+		.input("content", text)
 		.query(`
-			SELECT DISTINCT [dbo].[Account].account_id, [dbo].[Account].name, idAndLatest.latest_message_at
-			FROM [dbo].[Account]
-			JOIN (
-				SELECT 
-				CASE 
-					WHEN [dbo].[Message].sender_id = @user_id THEN [dbo].[Message].receiver_id
-					ELSE [dbo].[Message].sender_id
-				END AS snd_account_id,
-				MAX([dbo].[Message].created_at) AS latest_message_at
-				FROM [dbo].[Message] 
-				WHERE [dbo].[Message].sender_id = @user_id OR [dbo].[Message].receiver_id = @user_id
-				GROUP BY 
-				CASE 
-					WHEN [dbo].[Message].sender_id = @user_id THEN [dbo].[Message].receiver_id
-					ELSE [dbo].[Message].sender_id
-				END
-			) idAndLatest ON [dbo].[Account].account_id = idAndLatest.snd_account_id
-			ORDER BY idAndLatest.latest_message_at;
-		`);
+			INSERT INTO Message (project_id, account_id, content)
+			VALUES({{project_id}}, {{user_id}}, {{content}});
+		`)
+		.build()
+	);
 
-	return result.recordset;
+	return result;
 }
 
+const downloadFile = async (uuid, ext) => {
+	return await fileClient.downloadFile(uuid, ext);
+}
+
+// Returns role of the user in the project, or null if the user is not part of the project
+const getRoleInProject = async (userId, projectId) => {
+	const ownerQuery = await sender.getResult(new DatabaseQueryBuilder()
+		.input("user_id", userId)
+		.input("project_id", projectId)
+		.query(`
+			SELECT project_id
+			FROM Project
+			WHERE project_id = {{project_id}} AND created_by_account_id = {{user_id}};
+		`)
+		.build()
+	);
+
+	const isOwner = ownerQuery.recordSet.length > 0;
+	if (isOwner) {
+		return "Owner";
+	}
+
+	const collaboratorQuery = await sender.getResult(new DatabaseQueryBuilder()
+		.input("user_id", userId)
+		.input("project_id", projectId)
+		.query(`
+			SELECT role
+			FROM Collaborator
+			WHERE project_id = {{project_id}} AND account_id = {{user_id}};
+		`)
+		.build()
+	);
+
+	const isCollaborator = collaboratorQuery.recordSet.length > 0;
+	if (!isCollaborator) {
+		return null;
+	}
+
+	return collaboratorQuery.recordSet[0].role;
+}
+
+/* functions for user/reviews, was being removed in merge for chat functions but leaving it here */
 const searchUsers = async (userName) => {
 	const lowerName = userName.toLowerCase();
-	const pool = await poolPromise;
-	const result = await pool.request()
-		.input('userName', sql.NVarChar, `%${lowerName}%`)
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('userName', `%${lowerName}%`)
 		.query(`
-            SELECT TOP 10 *
-			FROM [dbo].[Account]
-			WHERE LOWER([dbo].[Account].name) LIKE @userName 
-			ORDER BY LEN([dbo].[Account].name);
-		`);
-    return result.recordset;
-}
+			SELECT DISTINCT *
+			FROM Account
+			WHERE LOWER(Account.name) LIKE {{userName}} AND Account.is_suspended = 0
+			ORDER BY CHAR_LENGTH(Account.name)
+			LIMIT 25;
+		`)
+		.build()
+	);
 
-//Function to get user by id
-const fetchUserById = async (uuid) => {
-	const id = parseInt(uuid);
-	const pool = await poolPromise;
-	const result = await pool.request()
-		.input('Uid', sql.Int, id)
-		.batch(`
-            SELECT * FROM [dbo].[Account] WHERE [dbo].[Account].account_id = @Uid;
-		`);
-    return result.recordset;
+	return result.recordSet;
+};
+
+const fetchUserById = async (id) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('id', id)
+		.query(`
+			SELECT	DISTINCT
+				Account.acount_id AS id,
+				Account.name AS name,
+				Account.bio AS bio,
+				Account.university AS university,
+				Account.department AS department,
+				Account.is_suspended AS is_suspended
+			WHERE Account.account_id = {{id}}
+			LIMIT 1;
+		`)
+		.build()
+	);
+
+	let user = result.recordSet[0];
+
+	if (!user) {
+		return null;
+	}
+
+	return user;
 }
 
 const updateProfile = async (params) => {
 	const { id, username, bio, university, department } = params;
 
-	const pool = await poolPromise;
-	const result = await pool.request()
-		.input('username', sql.NVarChar, username)
-		.input('id', sql.Int, id)
-		.input('bio', sql.NVarChar, bio)
-		.input('university', sql.NVarChar, university)
-		.input('department', sql.NVarChar, department)
+	await sender.send(new DatabaseQueryBuilder()
+		.input('username', username)
+		.input('id', id)
+		.input('bio', bio)
+		.input('university', university)
+		.input('department', department)
 		.query(`
-            UPDATE [dbo].[Account]
-			SET name = @username, bio = @bio, university = @university, department=@department
-			WHERE [dbo].[Account].account_id = @id
-		`);
+			UPDATE Account
+			SET Account.name = @username, 
+			Account.bio = {{bio}}, 
+			Account.university = {{university}}, 
+			Account.department= {{department}}
+			WHERE Account.account_id = {{id}}
+		`)
+		.build()
+	);
 }
+
+const is_Admin = async (id) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('id', id)
+		.query(`
+			SELECT	is_admin
+			FROM Account
+			WHERE Account.account_id = {{id}}
+			LIMIT 1;
+		`)
+		.build()
+	);
+
+	let user = result.recordSet[0];
+
+	if (!user) {
+		return null;
+	}
+
+	return user;
+}
+
+const getProjectReviews = async (projectId, limit = 10, offset = 0) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('project_id', projectId)
+		.input('limit', limit)
+		.input('offset', offset)
+		.query(`
+			SELECT 
+			Review.review_id,
+			Review.project_id,
+			Review.reviewer_id,
+			Account.name AS reviewer_name,
+			Review.rating,
+			Review.comment,
+			Review.created_at
+			FROM Review
+			INNER JOIN Account ON Review.reviewer_id = Account.account_id
+			WHERE Review.project_id = {{project_id}}
+			ORDER BY Review.created_at DESC
+			LIMIT {{limit}} OFFSET {{offset}};
+	    `)
+	);
+
+	return result.recordSet;
+};
+
+const getReviewCount = async (projectId) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('project_id', projectId)
+		.query(`
+			SELECT COUNT(*) AS total
+			FROM Review
+			WHERE project_id = {{project_id}};
+		`)
+		.build()
+	);
+
+	return result.recordSet[0].total;
+};
+
+const createReview = async (review) => {
+	await sender.send(new DatabaseQueryBuilder()
+		.input('project_id', review.project_id)
+		.input('reviewer_id', review.reviewer_id)
+		.input('rating', review.rating)
+		.input('comment', review.comment)
+		.query(`
+			INSERT INTO Review(project_id, reviewer_id, rating, comment)
+			VALUES({{project_id}}, {{reviewer_id}}, {{rating}}, {{comment}});
+		`)
+		.build()
+	);
+};
 
 export default {
 	getUserByGUID,
@@ -524,8 +855,22 @@ export default {
 	permittedToRejectCollaborator,
 	removeCollaborator,
 	storeMessage,
-	retrieveMessages,
-	retrieveMessagedUsers,
-	is_Admin
+	getRoleInProject,
+	storeMessageWithAttachment,
+	downloadFile,
+	retrieveLatestMessages,
+	fetchAssociatedProjectsByLatest,
+	getProjectReviews,
+	getReviewCount,
+	createReview,
+	is_Admin,
+	getPendingCollabInvites,
+	replyToCollabInvite,
+	sendCollabInvite,
+	canInvite,
+	alreadyInvited,
+	getProjectFiles,
+	mayAccessProject,
+	mayUploadToProject,
+	uploadToProject
 };
-

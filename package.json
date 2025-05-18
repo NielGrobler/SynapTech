@@ -31,12 +31,16 @@
   },
   "dependencies": {
     "@azure/storage-blob": "^12.27.0",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "axios": "^1.9.0",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "express-session": "^1.18.1",
-    "google-auth-library": "^9.15.1",
+    "file-type": "^20.5.0",
     "joi": "^17.13.3",
     "jsdom": "^26.1.0",
+    "jsonwebtoken": "^9.0.2",
     "msql": "^1.0.3",
     "mssql": "^11.0.1",
     "multer": "^1.4.5-lts.2",
@@ -44,7 +48,8 @@
     "oauth": "^0.10.2",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
-    "passport-orcid": "^0.0.4"
+    "passport-orcid": "^0.0.4",
+    "socket.io": "^4.8.1"
   },
   "repository": {
     "type": "git",

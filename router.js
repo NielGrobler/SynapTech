@@ -4,26 +4,26 @@ import GoogleStrategy from 'passport-google-oauth20';
 import ORCIDStrategy from 'passport-orcid';
 import session from 'express-session';
 import path from 'path';
-import fs from 'fs';
-import https from 'https';
 import dotenv from 'dotenv';
 import url from 'url';
-
+import jwt from 'jsonwebtoken';
 import multer from 'multer';
 
 /* Database imports */
 import db from './db/db.js';
-//import fileStorage from './db/azureBlobStorage.js';
+import { FileStorageClient } from './db/connectionInterfaces.js';
 
 // Configure .env
 dotenv.config();
+if (!process.env.SESSION_SECRET) {
+  throw new Error('SESSION_SECRET is not set. Check your .env or CI environment variables.');
+}
 
 // For convenience, as these don't exist in ES modules.
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const router = express();
-const port = process.env.PORT || 3000;
 
 /* For HTML form */
 router.use(express.urlencoded({ extended: true }));
@@ -52,7 +52,6 @@ router.use((req, res, next) => {
 	}
 
 	if (req.url.endsWith('.js')) {
-		console.log(req.url);
 		return res.sendFile(path.join(__dirname, "src", req.url));
 	}
 
@@ -60,15 +59,7 @@ router.use((req, res, next) => {
 });
 
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
-// Middleware for uploading
-const upload = multer({
-	storage: multer.memoryStorage(),
-	limits: { fileSize: MAX_FILE_SIZE }
-});
-
 /* passport.js Strategies */
-
 // Specify strategy for how to handle Google Authentication
 passport.use(new GoogleStrategy({
 	clientID: process.env.GOOGLE_CLIENT_ID,
@@ -139,12 +130,12 @@ passport.deserializeUser(async (id, done) => {
 
 /* Routes */
 router.use(express.json());
+
+/* Health Check */
+router.get('/ping', (req, res) => res.send('pong'));
+
 /* GET Request Routing */
 router.get('/forbidden', (req, res) => {
-	res.status(403).sendFile(path.join(__dirname, "public", "forbidden.html"));
-});
-
-router.post('/forbidden', (req, res) => {
 	res.status(403).sendFile(path.join(__dirname, "public", "forbidden.html"));
 });
 
@@ -163,51 +154,70 @@ router.get('/auth/google', passport.authenticate('google', {
 router.get('/auth/google/callback',
 	passport.authenticate('google', { failureRedirect: '/' }),
 	(req, res) => {
-		res.redirect('/home');
+		const token = jwt.sign(
+			{ id: req.user.id, name: req.user.name },
+			process.env.SESSION_SECRET,
+			{ expiresIn: '1h' }
+		);
+
+		res.redirect(`/dashboard?token=${token}`);
 	}
 );
 
-export const authenticateRequest = (req) => req.isAuthenticated();
-export const isSuspended = async(req) => {const result = await db.isSuspended(req.user.id); 
+export const authenticateRequest = (req) => {
+	return typeof req.isAuthenticated === 'function' ? req.isAuthenticated() : false;
+};
+export const isSuspended = async (req) => {
+	const result = await db.isSuspended(req.user.id);
 	return result[0].is_suspended;
 };
 
+const requireAuthentication = (callback, opts = {}) => {
+	return async (req, res) => {
+		if (!authenticateRequest(req)) {
+			if (opts.statusCode) { //should allow custom status codes, hopefully
+				return res.sendStatus(opts.statusCode);
+			}
+			return res.redirect('/forbidden');
+		}
+
+		await callback(req, res);
+	}
+}
+
 /* Normal Routes */
-router.get('/home', async(req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-	const result = await isSuspended(req);
-	if(result){
-		return res.redirect('/suspended');
-	}
-	res.redirect('/dashboard');
-});
-
-router.get('/dashboard', (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-
+router.get('/dashboard', requireAuthentication((req, res) => {
 	res.sendFile(path.join(__dirname, "public", "dashboard.html"));
-});
+}));
 
 router.get('/styles.css', (req, res) => {
 	res.sendFile(path.join(__dirname, 'public', 'styles.css'));
 });
 
+router.get('/message_style.css', (req, res) => {
+	res.sendFile(path.join(__dirname, 'public', 'message_style.css'));
+});
+
 router.get('/auth/orcid', passport.authenticate('orcid'));
 
 router.get('/auth/orcid/callback',
-	passport.authenticate('orcid', { failureRedirect: '/' }), (req, res) => {
-		res.redirect('/home');
+	passport.authenticate('orcid', { failureRedirect: '/' }),
+	(req, res) => {
+		const token = jwt.sign(
+			{ id: req.user.id, name: req.user.name },
+			process.env.SESSION_SECRET,
+			{ expiresIn: '1h' }
+		);
+
+		res.redirect(`/dashboard?token=${token}`);
+
 	}
 );
 
 // Default route
 router.get('/', (req, res) => {
 	if (!authenticateRequest(req)) {
-		return res.redirect('/login');
+		return res.redirect('login');
 	}
 
 	res.redirect('/dashboard');
@@ -236,157 +246,212 @@ router.get('/logout', (req, res, next) => {
 });
 
 // Create project
-router.get('/create/project', (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
+router.get('/create/project', requireAuthentication((req, res) => {
 	res.sendFile(path.join(__dirname, "public", "addProject.html"));
-});
+}));
 
 // Search public projects
-router.get('/view/public', (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
+router.get('/view/public', requireAuthentication((req, res) => {
 	res.sendFile(path.join(__dirname, "public", "searchPublicProjects.html"));
-});
+}));
 
-router.get('/view/project', (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
+router.get('/view/search', requireAuthentication((req, res) => {
+	res.sendFile(path.join(__dirname, "public", "search.html"));
+}));
 
-
+router.get('/view/project', requireAuthentication((req, res) => {
+	
 	res.sendFile(path.join(__dirname, "public", "viewProject.html"));
-});
+}));
 
 // Settings Page
-router.get('/settings', (req, res) => {
-	if (authenticateRequest(req)) {
-		res.sendFile(path.join(__dirname, "public", "settings.html"));
-	} else {
+router.get('/settings', requireAuthentication((req, res) => {
+	if (!authenticateRequest(req)) {
 		res.status(401).json({ error: 'Not authenticated' });
+		return;
 	}
-});
+
+	res.sendFile(path.join(__dirname, "public", "settings.html"));
+}, { statusCode: 401 }));
 
 // Invite Collaborator Page
-router.get('/invite', (req, res) => {
-	if (authenticateRequest(req)) {
-		res.sendFile(path.join(__dirname, "public", "invite.html"));
-	} else {
-		res.status(401).json({ error: 'Not authenticated' });
-	}
-});
-
-router.get('/message', (req, res) => {
+router.get('/invite', requireAuthentication((req, res) => {
 	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
+		res.status(401).json({ error: 'Not authenticated' });
+		return;
+	}
+
+	res.sendFile(path.join(__dirname, "public", "invite.html"));
+}, { statusCode: 401 }));
+
+router.get('/message', requireAuthentication((req, res) => {
+	if (!authenticateRequest(req)) {
+		res.status(401).json({ error: 'Not authenticated' });
+		return;
 	}
 
 	res.sendFile(path.join(__dirname, "public", "messages.html"));
-});
+}));
 
 /* API Routing */
-router.get('/api/user/info', (req, res) => {
-	if (authenticateRequest(req)) {
-		res.json(req.user);
-	} else {
+const upload = multer({
+	storage: multer.memoryStorage(),
+	limits: { fileSize: 10 * 1024 * 1024 } // 10MB
+});
+const fileStorageClient = new FileStorageClient();
+
+// File upload route
+router.post('/api/project/:projectId/upload', upload.single('file'), requireAuthentication(async (req, res) => {
+	if (!req.file) {
+		return res.status(400).json({ error: 'No file uploaded.' });
+	}
+
+	try {
+		console.log(req.file);
+		const maxSize = 10 * 1024 * 1024;
+		if (req.file.size > maxSize) {
+			return res.status(400).json({ error: 'File size exceeds the 10MB limit.' });
+		}
+
+		const projectId = req.params.projectId;
+		const mayUpload = await db.mayUploadToProject(projectId, req.user.id);
+		if (!mayUpload) {
+			return res.status(400).json({ error: 'Not authorized for upload to this project.' });
+		}
+
+
+		const fileBuffer = req.file.buffer;
+		const filename = req.file.originalname;
+		await db.uploadToProject(projectId, fileBuffer, filename);
+
+		return res.status(200).json({ message: 'File uploaded successfully' });
+	} catch (error) {
+		console.error('Error uploading file:', error);
+		return res.status(500).json({ error: error.message });
+	}
+}));
+
+router.get('/api/project/:projectId/file/:fileId/:ext', requireAuthentication(async (req, res) => {
+	try {
+		const projectId = req.params.projectId;
+		const fileId = req.params.fileId;
+		const ext = req.params.ext;
+		const mayAccess = await db.mayAccessProject(projectId, req.user.id);
+		if (!mayAccess) {
+			return res.status(403).json({ error: "cannot access project" });
+		}
+	
+		const result = await db.downloadFile(fileId, ext);
+		res.send(result.buffer);
+	} catch (err) {
+		res.json({ error: err.message || err.toString() });
+	}
+}));
+
+router.get('/api/project/:projectId/files', requireAuthentication(async (req, res) => {
+	try {
+		const projectId = req.params.projectId;
+		const mayAccess = await db.mayAccessProject(projectId, req.user.id);
+		if (!mayAccess) {
+			return res.status(403).json({ error: "cannot access project" });
+		}
+
+		const result = await db.getProjectFiles(projectId);
+		res.json(result);
+	} catch (err) {
+		res.json({ error: err.message || err.toString() });
+	}
+}));
+
+router.get('/api/user/info', requireAuthentication((req, res) => {
+	if (!authenticateRequest(req)) {
 		res.status(401).json({ error: 'Not authenticated' });
+		return;
 	}
-});
 
-// Upload, this not complete
-router.post('/api/message/uploadFile', upload.single('file'), async (req, res) => {
+	res.json(req.user);
+}, { statusCode: 401 }));
+
+router.post('/api/collaboration/invite', requireAuthentication(async (req, res) => {
 	try {
-		const userId = req.user?.id || 1;
-		const file = req.file;
-
-		if (!file) {
-			return res.status(400).json({ error: 'No file uploaded' });
+		const { projectId, accountId, role } = req.body;
+		if (!projectId || !accountId || !role) {
+			return res.status(400).json({ error: 'missing required fields: projectId, accountId and role are required.' });
 		}
 
-		const blobName = await fileStorage.upload(file);
-		const fileUrl = `https://${process.env.AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${process.env.AZURE_CONTAINER_NAME}/${blobName}`;
+		const validRoles = ['Reviewer', 'Researcher'];
 
-		res.status(200).json({ message: 'Uploaded', blobName });
-	} catch (err) {
-		console.error(err);
-		res.status(500).json({ error: 'Upload failed' });
-	}
-});
-
-// Download, this is not complete
-router.get('/download/:fileId', async (req, res) => {
-	try {
-		// should use SaS URL
-	} catch (err) {
-		console.error(err);
-		res.status(500).json({ error: 'Download failed' });
-	}
-});
-
-router.post('/api/message/send', async (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-
-	try {
-		console.log(req.body);
-		const { messageBody, receivedRecipientId, _attachment } = req.body;
-		if (!messageBody || typeof messageBody !== 'string') {
-			return res.status(400).json({ error: 'Invalid message body' });
+		if (!validRoles.includes(role)) {
+			return res.status(400).json({ error: `invalid role. Role must be one of the following: ${validRoles.join(', ')}.` });
 		}
 
-		const recipientId = Number(receivedRecipientId);
-		if (!recipientId || isNaN(recipientId)) {
-			return res.status(400).json({ error: 'Invalid recipient ID' });
+		if (isNaN(projectId)) {
+			return res.status(400).json({ error: 'projectId must be a number.' });
 		}
 
-		const senderId = req.user.id;
+		if (isNaN(accountId)) {
+			return res.status(400).json({ error: 'accountId must be a number.' });
+		}
 
-		await db.storeMessage(senderId, recipientId, messageBody);
+		const canInvite = await db.canInvite(accountId, projectId);
+		if (!canInvite) {
+			return res.status(400).json({ error: 'cannot invite this user.' });
+		}
 
-		return res.status(200).json({ message: 'Message sent successfully' });
+		const alreadyInvited = await db.alreadyInvited(accountId, projectId);
+		if (!alreadyInvited) {
+			return res.status(400).json({ error: 'Already invited this user.' });
+		}
+
+		await db.sendCollabInvite(accountId, projectId, role);
+
+		return res.status(200).json({ message: 'Collaboration invite sent successfully' });
 	} catch (err) {
 		return res.status(500).json({ error: 'Internal Error' });
 	}
-});
+}));
 
-router.get('/api/message/allMessagedUsers', async (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-
+router.get('/api/collaboration/invites', requireAuthentication(async (req, res) => {
 	try {
-		const records = await db.retrieveMessagedUsers(req.user.id);
-		res.status(200).json(records);
+		const userId = req.user.id;
+		const result = await db.getPendingCollabInvites(userId);
+		return res.json(result);
 	} catch (err) {
 		console.error(err);
-		return res.status(500).json({ error: 'Internal Error' });
+		return res.status(400).json({ error: 'bad request' });
 	}
-});
+}));
 
-router.get('/api/message/:secondPersonId', async (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-
+router.post('/api/collaboration/invite/reply', requireAuthentication(async (req, res) => {
 	try {
-		const sndPersonId = Number(req.params.secondPersonId);
-		if (!sndPersonId || isNaN(sndPersonId)) {
-			return res.status(400).json({ error: 'Invalid snd person ID' });
+		const { projectId, role, isAccept } = req.body;
+		if (!projectId || !role) {
+			return res.status(400).json({ error: 'missing required fields: projectId, accountId and role are required.' });
 		}
 
-		const fstPersonId = req.user.id;
+		const validRoles = ['Reviewer', 'Researcher'];
 
-		const messageRecords = await db.retrieveMessages(fstPersonId, sndPersonId);
+		if (!validRoles.includes(role)) {
+			return res.status(400).json({ error: `invalid role. Role must be one of the following: ${validRoles.join(', ')}.` });
+		}
 
-		res.status(200).json(messageRecords);
+		if (isNaN(projectId)) {
+			return res.status(400).json({ error: 'projectId must be a number.' });
+		}
 
+		await db.replyToCollabInvite(isAccept, req.user.id, projectId, role);
+
+		return res.status(200).json({ message: 'Collaboration invite sent successfully' });
 	} catch (err) {
+		console.log(err);
 		return res.status(500).json({ error: 'Internal Error' });
 	}
-});
+}));
+
+router.get('/api/user/projectNames', requireAuthentication(async (req, res) => {
+	let projects = await db.fetchAssociatedProjectsByLatest(req.user);
+	res.json(projects);
+}));
 
 const authenticatedForView = (project, user) => {
 	if (project.is_public || user.id === project.created_by_account_id) {
@@ -397,11 +462,7 @@ const authenticatedForView = (project, user) => {
 }
 
 // For when a user accepts a request to collaborate on a project
-router.put('/api/accept/collaborator', async (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-
+router.put('/api/accept/collaborator', requireAuthentication(async (req, res) => {
 	const { userId, projectId } = req.body;
 	if (!userId || !projectId) {
 		return res.status(400).json({ error: 'Bad Request.' });
@@ -419,13 +480,9 @@ router.put('/api/accept/collaborator', async (req, res) => {
 	} catch (err) {
 		res.status(400).json({ error: 'Error.' });
 	}
-});
+}));
 
-router.delete('/api/reject/collaborator', async (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-
+router.delete('/api/reject/collaborator', requireAuthentication(async (req, res) => {
 	const { userId, projectId } = req.body;
 	if (!userId || !projectId) {
 		return res.status(400).json({ error: 'Bad Request.' });
@@ -443,15 +500,15 @@ router.delete('/api/reject/collaborator', async (req, res) => {
 	} catch (err) {
 		res.status(400).json({ error: 'Error.' });
 	}
-});
+}));
 
 // Route for when users want to fetch a specific project (based on id)
-router.get('/api/project', async (req, res) => {
+router.get('/api/project', requireAuthentication(async (req, res) => {
 	if (!authenticateRequest(req)) {
-		res.status(401).json({ error: 'Bad Request.' });
+		res.status(401).json({ error: 'Not authenticated' });
 		return;
 	}
-
+	
 	const { id } = req.query;
 	if (!id) {
 		res.status(400).json({ error: "Bad Request." });
@@ -471,8 +528,9 @@ router.get('/api/project', async (req, res) => {
 	}
 
 	res.json(project);
-});
+}, { statusCode: 401 }));
 
+/*
 // Route for when users want to view a specific user (based on site id)
 router.get('/api/user', async (req, res) => {
 	if (!authenticateRequest(req)) {
@@ -495,13 +553,9 @@ router.get('/api/user', async (req, res) => {
 
 	res.json(user);
 });
+*/
 
-router.get('/api/search/project', async (req, res) => {
-	if (!authenticateRequest(req)) {
-		res.status(401).json({ error: 'Not authenticated' });
-		return;
-	}
-
+router.get('/api/search/project', requireAuthentication(async (req, res) => {
 	const { projectName } = req.query;
 	if (!projectName || typeof projectName !== "string") {
 		res.status(400).json({ error: "Bad Request." });
@@ -509,6 +563,9 @@ router.get('/api/search/project', async (req, res) => {
 	}
 
 	res.json(await db.searchProjects(projectName));
+
+}));
+/*
 });
 
 //fetch current user project
@@ -516,19 +573,22 @@ router.get('/api/user/project', async (req, res) => {
 	if (!authenticateRequest(req)) {
 		return res.redirect('/forbidden');
 	}
+*/
 
+router.get('/api/user/project', requireAuthentication(async (req, res) => {
 	let projects = await db.fetchAssociatedProjects(req.user);
 	await db.appendCollaborators(projects);
 
 	res.json(projects);
-});
+}));
 
+/*
 //fetch other user project
 router.get('/api/other/project', async (req, res) => {
 	if (!authenticateRequest(req)) {
 		return res.status(401).json({ error: 'Not authenticated' });
 	}
-	
+
 
 	let { id } = req.query;
 	if (!id) {
@@ -538,23 +598,49 @@ router.get('/api/other/project', async (req, res) => {
 
 	res.json(projects);
 });
+*/
 
-router.get('/api/collaborator', async (req, res) => {
+router.get('/api/collaborator', requireAuthentication(async (req, res) => {
+	let pending_collaborators = await db.fetchPendingCollaborators(req.user);
+	res.json(pending_collaborators);
+}));
+
+router.get('/reviewProject', (req, res) => {
 	if (!authenticateRequest(req)) {
 		return res.redirect('/forbidden');
 	}
+	res.sendFile(path.join(__dirname, "public", "reviewProject.html"));
+});
 
-	let pending_collaborators = await db.fetchPendingCollaborators(req.user);
-	res.json(pending_collaborators);
+router.get('/api/reviews', requireAuthentication(async (req, res) => {
+	const projectId = req.query.projectId;
+	const page = parseInt(req.query.page) || 1;
+	const limit = parseInt(req.query.limit) || 10;
+	const offset = (page - 1) * limit;
+
+	try {
+		const reviews = await db.getProjectReviews(projectId, limit, offset);
+		const totalCount = await db.getReviewCount(projectId);
+
+		res.json({
+			reviews: reviews,
+			totalCount: totalCount
+		});
+	} catch (err) {
+		console.error('Error fetching reviews:', err);
+		res.status(500).json({ error: 'Failed to fetch reviews' });
+	}
+}));
+
+router.get('/analyticsDashboard', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+	res.sendFile(path.join(__dirname, "public", "analyticsDashboard.html"));
 });
 
 /* POST Request Routing */
-router.post('/create/project', async (req, res) => {
-	if (!authenticateRequest(req)) {
-		res.status(403).json({ error: 'Not authenticated' });
-		return;
-	}
-
+router.post('/create/project', requireAuthentication(async (req, res) => {
 	const { projectName, description, field, visibility } = req.body;
 
 	const project = {
@@ -570,13 +656,9 @@ router.post('/create/project', async (req, res) => {
 	} catch (err) {
 		res.sendFile(path.join(__dirname, "public", "failureProjectPost.html"));
 	}
-});
+}));
 
-router.post('/api/collaboration/request', async (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.status(403).json({ error: 'Not authenticated' });
-	}
-
+router.post('/api/collaboration/request', requireAuthentication(async (req, res) => {
 	const { projectId } = req.body;
 	if (!projectId || typeof projectId !== 'number') {
 		return res.status(400).send("Bad Request");
@@ -584,18 +666,13 @@ router.post('/api/collaboration/request', async (req, res) => {
 
 	try {
 		await db.insertPendingCollaborator(req.user.id, projectId);
-		res.send('Successfully sent project');
+		res.send('Successfully sent collobaroration request.');
 	} catch (err) {
 		res.status(400).json({ error: 'Failed' });
 	}
-});
+}));
 
-router.post('/remove/user', async (req, res) => {
-	if (!authenticateRequest(req)) {
-		res.status(403).json({ error: 'Not authenticated' });
-		return;
-	}
-
+router.post('/remove/user', requireAuthentication(async (req, res) => {
 	if (!req.body) {
 		let reqToDeleteId = req.user.id;
 		if (!req.user.is_admin && req.user.id !== reqToDeleteId) {
@@ -626,28 +703,22 @@ router.post('/remove/user', async (req, res) => {
 	} catch (err) {
 		res.status(400).json({ error: err });
 	}
-});
+}));
 
 //Reviews Page
-router.post('/submit/review', async (req, res) => {
-	if (!req.isAuthenticated()) {
-		return res.status(403).json({ error: 'Not authenticated' });
-	}
-
+router.post('/api/review', requireAuthentication(async (req, res) => {
 	if (!req.body || !req.body.projectId || !req.body.rating || !req.body.comment) {
-		res.status(400).json({ error: "Missing required fields" });
-		return;
+		return res.status(400).json({ error: "Missing required fields" });
 	}
 
 	const { projectId, rating, comment } = req.body;
 
 	try {
-		const newReview = await db.createReview({
+		await db.createReview({
 			project_id: parseInt(projectId),
 			reviewer_id: req.user.id,
 			rating: parseInt(rating),
 			comment
-			// No date needed - the database will set it automatically
 		});
 
 		res.status(201).json({
@@ -658,23 +729,20 @@ router.post('/submit/review', async (req, res) => {
 		console.error('Error creating review:', err);
 		res.status(500).json({ error: 'Failed to submit review', details: err.message });
 	}
-});
+})); 
 
-router.get('/successfulReviewPost', (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
+router.get('/successfulReviewPost', requireAuthentication((req, res) => {
 	res.sendFile(path.join(__dirname, "public", "successfulReviewPost.html"));
-});
+}));
+
+router.get('/messages', requireAuthentication((req, res) => {
+	res.sendFile(path.join(__dirname, "public", "index.html"));
+}));
 
 //Move to search for users page
-router.get('/view/users', (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-
+router.get('/view/users', requireAuthentication((req, res) => {
 	res.sendFile(path.join(__dirname, "public", "searchUsers.html"));
-});
+}));
 
 //Searching for users 
 router.get('/api/search/user', async (req, res) => {
@@ -714,7 +782,7 @@ router.put('/suspend/user', async (req, res) => {
 
 
 //Checks if user is an administrator
-router.get('/admin', async(req, res) => {
+router.get('/admin', async (req, res) => {
 	let user = req.user.id;
 	let admin = await db.is_Admin(user);
 	return res.json(admin);
@@ -746,7 +814,7 @@ router.get('/suspended', (req, res) => {
 	res.sendFile(path.join(__dirname, "public", "suspended.html"));
 });
 
-router.get('/isSuspended', async(req, res) => {
+router.get('/isSuspended', requireAuthentication(async (req, res) => {
 	try {
 		const { id } = req.query
 		const result = await db.isSuspended(id);
@@ -754,23 +822,29 @@ router.get('/isSuspended', async(req, res) => {
 	} catch (err) {
 		console.error('Error checking if user suspended:', err);
 	}
-});
+}));
 
 //Put request to update profile
-router.put('/update/profile', async (req, res) =>{
+router.put('/update/profile', async (req, res) => {
 	if (!authenticateRequest(req)) {
 		res.status(401).json({ error: 'Not authenticated' });
 		return;
 	}
 
 	const params = req.body;
-	
+
 	res.json(await db.updateProfile(params));
 });
 
 /* PUT Request Routing */
-router.put('user/details', async (req, res) => {
+router.put('user/details', requireAuthentication(async (req, res) => {
 	const { name, bio } = req.body;
+}));
+
+/*router.use((err, req, res, next) => {
+  console.error('Express error:', err);
+  res.status(500).send('Internal Server Error');
 });
+*/
 
 export default router;

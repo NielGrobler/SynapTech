@@ -133,6 +133,18 @@ select {
 	background-color: red;
 }
 
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
 
 .large-text {
 	font-size: 1.5rem;
@@ -266,6 +278,67 @@ select {
 .padding-vert-xsmall {
 	padding-top: 0.0rem;
 	padding-bottom: 0.0rem;
+}
+
+.small-line-height {
+	line-height: 1;
+}
+
+#messages li a {
+	margin-top: 0;
+	/* Ensure there's no extra margin */
+}
+
+#messages li.small-line-height {
+	margin-bottom: 6px;
+	line-height: 1.2;
+	padding: 4px 0;
+}
+
+/* Remove excess margin from child elements */
+#messages li.small-line-height strong,
+#messages li.small-line-height p,
+#messages li.small-line-height a {
+	display: inline;
+	/* keeps elements inline unless you want them on separate lines */
+	margin: 0;
+	padding: 0;
+	line-height: 1.2;
+}
+
+#inputs button {
+	padding-top: 0.4rem;
+	padding-bottom: 0.4rem;
+	margin-bottom: 0.7rem;
+}
+
+#inputs p {
+	display: inline;
+	/* keeps elements inline unless you want them on separate lines */
+	margin: 0;
+	padding-left: 0.7rem;
+	margin-bottom: 5rem;
+	line-height: 1.0;
+}
+
+.border-above {
+	border-top: 1px solid var(--color-secondary);
+}
+
+/* If you want each piece on a separate line but with tight spacing */
+#messages li.small-line-height p,
+#messages li.small-line-height a {
+	display: block;
+	margin-top: 2px;
+	margin-bottom: 2px;
+}
+
+#messages li.small-line-height p {
+	color: var(--color-text);
+}
+
+#messages li.small-line-height a {
+	color: var(--color-accent);
 }
 
 .inset {
@@ -593,20 +666,27 @@ select {
 	width: 15%;
 }
 
+.width-30 {
+	width: 25%;
+}
+
 /* Dropdown menu */
 .dropdown {
 	position: relative;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
+	color: var(--color-text);
 }
 
 .dropdown-menu {
+	color: var(--color-text);
 	position: absolute;
 	top: 100%;
 	right: 0;
-	background: white;
+	background: var(--color-bg);
 	border: 1px solid #ccc;
+	border-color: var(--color-muted-light);
 	box-shadow: var(--shadow);
 	border-radius: var(--radius);
 	list-style: none;
@@ -628,6 +708,7 @@ select {
 
 .dropdown:hover button i.bx-chevron-right {
 	transform: rotate(90deg);
+	color: white;
 }
 
 .dropdown:hover .dropdown-menu {
@@ -635,6 +716,7 @@ select {
 	opacity: 1;
 	transform: translateY(0);
 	pointer-events: auto;
+	color: var(--color-text);
 }
 
 .dropdown:hover>button {
@@ -645,15 +727,17 @@ select {
 
 .dropdown-menu li {
 	padding: 10px;
+	color: var(--color-text);
 }
 
 .dropdown-menu li:hover {
 	background-color: var(--color-muted-light);
+	color: var(--color-text);
 }
 
 .dropdown-menu li a {
 	text-decoration: none;
-	color: black;
+	color: var(--color-text);
 	display: block;
 }
 
@@ -684,4 +768,145 @@ select {
 
 .nav-item button a:hover {
 	color: white;
+}
+
+
+#messages {
+	flex: 1;
+	/* or set a fixed height like height: 300px; */
+	overflow-y: auto;
+	padding-right: 0.5rem;
+	/* optional, prevents scrollbars from overlapping content */
+}
+
+#inputs {
+	flex-shrink: 0;
+	/* don't let it get pushed out */
+	padding: 0.75rem 1rem;
+}
+
+.reviews-wrapper {
+	margin-left: -24px;
+	width: calc(100% + 48px);
+}
+
+#reviewsList {
+	padding-left: 0;
+	margin: 0;
+	list-style-type: none;
+}
+
+.review-item {
+	margin-bottom: 32px;
+	padding-left: 24px;
+}
+
+.star-rating {
+	margin: 0 0 8px 0;
+	padding: 0;
+	font-size: 1.25rem;
+	line-height: 1.5;
+}
+
+.star {
+	color: #555;
+}
+
+.star.filled {
+	color: gold;
+}
+
+.review-item p {
+	margin: 0 0 6px 0;
+	padding: 0;
+	line-height: 1.5;
+}
+
+.reviewer-info {
+	color: #777;
+	font-size: 0.9rem;
+}
+
+/* Container styling */
+.toggle-container {
+	padding: 1rem;
+	background-color: var(--color-secondary);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	margin-bottom: 1rem;
+}
+
+/* Fieldset reset and layout */
+.toggle-container fieldset {
+	border: 1px solid var(--color-muted-light);
+	padding: 1rem;
+	border-radius: var(--radius);
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1rem;
+	align-items: center;
+	margin: 0;
+}
+
+/* Legend styling */
+.toggle-container legend {
+	font-weight: 600;
+	font-size: 1.1rem;
+	color: var(--color-text);
+	padding: 0 0.5rem;
+	margin-bottom: 0.5rem;
+}
+
+/* Label + checkbox layout */
+.toggle-container label {
+	margin-right: 0.5rem;
+	font-size: 0.95rem;
+	color: var(--color-text);
+	cursor: pointer;
+}
+
+.toggle-container input[type="checkbox"] {
+	margin-right: 1.5rem;
+	transform: scale(1.2);
+	cursor: pointer;
+	accent-color: var(--color-accent);
+}
+.radio-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-right: 1.5rem;
+  cursor: pointer;
+}
+
+.radio-label input[type="radio"] {
+  accent-color: var(--color-accent); /* Optional if you're using custom accent color */
+  cursor: pointer;
+}
+
+.no-padding {
+	padding: 0;
+}
+
+.no-margin {
+	margin: 0;
+}
+
+.recent-reports {
+	margin-top: 0;
+}
+
+.recent-reports li {
+	padding-top: 0.5rem;
+}
+
+@media (max-width: 768px) {
+	.flex-row.gap-large {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.flex-row.gap-large>li {
+		margin-bottom: 1rem;
+	}
 }

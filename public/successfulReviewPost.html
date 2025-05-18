@@ -13,7 +13,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 
-    <title>Unilink | Dashboard</title>
+    <title>Unilink | Review Submitted</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script type="module" src="/savedTheme.js"></script>
 </head>
 
 <body>
@@ -25,12 +27,11 @@
     </nav>
 
     <main class="inset">
+        <header>
+        </header>
         <section class="inset shadow border-solid-thin">
-            <h1>Successfully reviewed project!</h1>
-            <p>You can now review other projects on the platform</p>
-            <button class="primary-button" onclick="window.location.href='/dashboard'">
-                Return to Dashboard
-            </button>
+            <h1>Successfully submitted review!</h1>
+            <p>Thank you for sharing your feedback. Your review has been successfully submitted.</p>
         </section>
     </main>
 
@@ -38,7 +39,8 @@
         <p>&copy; 2025 Unilink. All rights reserved.</p>
     </footer>
 </body>
-				<script type="module" src="/savedTheme.js"></script>
+<script type="module" src="/dashboard.js"></script>
+<script type="module" src="/fetchUsername.js"></script>
 
 
 </html>

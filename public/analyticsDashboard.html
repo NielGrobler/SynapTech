@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="icon" href="logo.png" type="image/png" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+
+    <title>Unilink | Report Dashboard</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script type="module" src="/savedTheme.js"></script>
+</head>
+
+<body>
+    <nav class="inset secondary fill accent-underline flex-prop-1-5">
+		<button class="nav-item flex-row center-content-v gap-small"
+			onclick="history.back()">
+			<i class='bx bx-chevron-left'></i>
+			Back
+		</button>
+	</nav>
+    <main>
+        <header>
+            <section class="inset">
+                <h1 class="large-text">Report Dashboard</h1>
+                <p>Select a report to view detailed analytics</p>
+            </section>
+        </header>
+
+        <section id="availableReports" class="inset">
+            <h1 class="accent-underline">Available Reports</h1>
+            <ul class="flex-row gap-large no-list-style center-content-v">
+
+                <!-- Funding Used vs. Available Report -->
+                <li class="border-solid-thin shadow secondary" onclick="window.location.href='/reports/resource-usage'"
+                    style="flex: 1; min-width: 200px; max-width: 300px; cursor: pointer;">
+                    <header>
+                        <h3>Funding Used vs. Available</h3>
+                    </header>
+                    <figure class="center-content pad-top">
+                        <i class="bx bx-pie-chart-alt-2" style="font-size: 3rem;"></i>
+                    </figure>
+                    <footer class="inset">
+                        <p>Track resource utilization across projects</p>
+                    </footer>
+                </li>
+
+                <!-- Project Completion Status Report -->
+                <li class="border-solid-thin shadow secondary"
+                    onclick="window.location.href='/reports/completion-status'"
+                    style="flex: 1; min-width: 200px; max-width: 300px; cursor: pointer; text-emphasis: center;">
+                    <header>
+                        <h3>Project Completion Status</h3>
+                    </header>
+                    <figure class="center-content pad-top">
+                        <i class="bx bx-bar-chart-alt-2" style="font-size: 3rem;"></i>
+                    </figure>
+                    <footer class="inset">
+                        <p>Monitor progress per project</p>
+                    </footer>
+                </li>
+
+                <!-- Customizable View Report -->
+                <li class="border-solid-thin shadow secondary" onclick="window.location.href='/reports/custom'"
+                    style="flex: 1; min-width: 200px; max-width: 300px; cursor: pointer;">
+                    <header>
+                        <h3>Customizable Report</h3>
+                    </header>
+                    <figure class="center-content pad-top">
+                        <i class="bx bx-customize" style="font-size: 3rem;"></i>
+                    </figure>
+                    <footer class="inset">
+                        <p>Create and customize your own reports</p>
+                    </footer>
+                </li>
+            </ul>
+        </section>
+
+        <section id="recentlyViewReporst" class="inset">
+            <h1 class="accent-underline">Recently Viewed Reports</h1>
+            <ul class="recent-reports no-list-style no-padding">
+                <li class="no-margin">
+                    <a href="/reports/completion-status" class="flex-row gap-small center-content-v">
+                        <i class="bx bx-bar-chart-alt-2"></i>
+                        Completion Status Report
+                        <span class="recent-timestamp small-text">Viewed 2 hours ago</span>
+                    </a>
+                </li>
+            </ul>
+        </section>
+    </main>
+
+    <footer class="inset">
+        <p>&copy; 2025 Unilink. All rights reserved.</p>
+    </footer>
+    
+</body>
+
+</html>

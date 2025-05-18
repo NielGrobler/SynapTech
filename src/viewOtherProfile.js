@@ -13,10 +13,11 @@ const checkAdmin = async () => {
 		const userId = params.get('id');
 		const status = await fetch(`/isSuspended?id=${encodeURIComponent(userId)}`);
 		const isSus = await status.json();
+		console.log(isSus);
 
-		if (isSus){
-			suspend.innerText = 'Unuspend User';
-		} else{
+		if (isSus) {
+			suspend.innerText = 'Unsuspend User';
+		} else {
 			suspend.innerText = 'Suspend User';
 		}
 		suspend.id = 'suspendButton';
@@ -35,10 +36,10 @@ const checkAdmin = async () => {
 
 			const newStatus = await fetch(`/isSuspended?id=${encodeURIComponent(userId)}`);
 			const newisSus = await newStatus.json();
-	
-			if (newisSus){
-				suspend.innerText = 'Unuspend User';
-			} else{
+
+			if (newisSus) {
+				suspend.innerText = 'Unsuspend User';
+			} else {
 				suspend.innerText = 'Suspend User';
 			}
 		});
@@ -84,6 +85,6 @@ document.addEventListener("DOMContentLoaded", () => {
 		projects = await res.json();
 		pageAdder.addProjectsToPage('projectCardList', projects);
 	} catch (err) {
-		console.error('Error loading Projects:', err);
+		console.error('Error', err);
 	}
 })();

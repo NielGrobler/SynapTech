@@ -16,14 +16,14 @@
 
 	<title>Unilink | Dashboard</title>
 	<script src="https://accounts.google.com/gsi/client" async defer></script>
+	<script type="module" src="/savedTheme.js"></script>
 
 </head>
 
 <body>
 	<section id="navigation" class="flex-row fill-width secondary center-content accent-underline">
-		<button id="theme-toggle" class="very-very-round">☀️</button>
 		<nav class="fill-width">
-			<ul class="no-list-style flex-row gap-large center-content">
+			<ul class="no-list-style flex-row gap-small center-content">
 				<li>
 					<button class="nav-item flex-row gap-small center-content-v"
 						onclick="window.location.href='/dashboard'">
@@ -33,23 +33,23 @@
 				</li>
 				<li>
 					<button class="nav-item flex-row gap-small center-content-v"
+						onclick="window.location.href='/analyticsDashboard'">
+						<i class='bx bxs-analyse'></i>
+						Analytics
+					</button>
+				</li>
+				<li>
+					<button class="nav-item flex-row gap-small center-content-v"
 						onclick="window.location.href='/message'">
 						<i class='bx bx-message-dots'></i>
-						Direct Messages
+						Messages
 					</button>
 				</li>
 				<li>
 					<button class="nav-item flex-row gap-small center-content-v"
-						onclick="window.location.href='/view/public'">
+						onclick="window.location.href='/view/search'">
 						<i class='bx bx-globe'></i>
-						View Public Projects
-					</button>
-				</li>
-				<li>
-					<button class="nav-item flex-row gap-small center-content-v"
-						onclick="window.location.href='/view/users'">
-						<i class='bx bx-user'></i>
-						Find Other Users
+						Search
 					</button>
 				</li>
 				<li>
@@ -68,24 +68,25 @@
 				</li>
 				<li>
 					<button class="nav-item flex-row gap-small center-content-v"
-						onclick="window.location.href='/collaboration'">
+						onclick="window.location.href='/invite'">
 						<i class='bx bxs-party'></i>
 						Collaboration Invites
 					</button>
 				</li>
 			</ul>
 		</nav>
-	
+
 		<span class="dropdown pad-right hover-rotate">
 			<button id="userButton" class="flex-row gap-small padding-vert-small center-content-v">
 				<i class='bx bx-chevron-right'></i>
-				<span id="username">Placeholder</span>
+				<span id="username">Loading...</span>
 			</button>
-	
+
 			<ul class="dropdown-menu">
 				<li><a href="/view/curr/profile"><i class='bx bx-user-circle'></i>Profile</a></li>
 				<li><a href="/settings"><i class='bx bx-cog'></i>Settings</a></li>
 				<li><a href="/logout"><i class='bx bx-run'></i>Logout</a></li>
+				<li id="theme-toggle">☀️Light</li>
 			</ul>
 		</span>
 	</section>
@@ -98,22 +99,19 @@
 			<section class="inset">
 				<section class="split">
 					<h1 class="large-text accent-underline">Active Projects</h1>
-					<button class="very-round pad-small-h no-pad-v"
-						onclick="window.location.href='/create/project'">
+					<button class="very-round pad-small-h no-pad-v" onclick="window.location.href='/create/project'">
 						<i class='bx bx-plus'></i>
 					</button>
 				</section>
 				<form id="project-search-form" type="">
-					<input id="project-search-input" type="text"
-						placeholder="Search your projects...">
-					<button id="searchButton" type="submit"
-						class="nav-item flex-row gap-small center-content-v"> <i
+					<input id="project-search-input" type="text" placeholder="Search your projects...">
+					<button id="searchButton" type="submit" class="nav-item flex-row gap-small center-content-v"> <i
 							class="bx bx-search"></i>
-						Submit
+						Search
 					</button>
 				</form>
 			</section>
-			<ul id="project-list" class="minh">
+			<ul id="project-list" class="minh no-list-style">
 			</ul>
 		</section>
 
@@ -125,12 +123,12 @@
 </body>
 <script type="module" src="/dashboard.js"></script>
 <script type="module">
-	import {initDashboard} from './dashboard.js';
+	import { initDashboard } from './dashboard.js';
 	initDashboard();
 </script>
 
 <script type="module" src="/fetchUsername.js"></script>
-			<script type="module" src="/savedTheme.js"></script>
+
 
 
 </html>
