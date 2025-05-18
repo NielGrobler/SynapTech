@@ -12,9 +12,9 @@ dotenv.config();
  */
 class QueryResult {
 	constructor(res) {
-		this.insertId = res.InsertId;
-		this.recordSet = res.RecordSet;
-		this.rowsAffected = res.RowsAffected;
+		this.insertId = res.insertId; //is this case sensative? dont know where InsertId is coming from. same for the other two below.
+		this.recordSet = res.recordSet;
+		this.rowsAffected = res.rowsAffected;
 	}
 }
 
@@ -58,6 +58,7 @@ class DatabaseQueryBuilder {
 		return new DatabaseQuery(this.statement, this.params);
 	}
 }
+
 
 export {
 	DatabaseQuery,

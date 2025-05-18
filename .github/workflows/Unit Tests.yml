@@ -5,6 +5,22 @@ on: [push, pull_request]
 jobs:
   Jest:
     runs-on: ubuntu-latest
+
+    env:
+      SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+      GOOGLE_CALLBACK_URL: ${{ secrets.GOOGLE_CALLBACK_URL }}
+      ORCID_CLIENT_ID: ${{ secrets.ORCID_CLIENT_ID }}
+      ORCID_CLIENT_SECRET: ${{ secrets.ORCID_CLIENT_SECRET }}
+      ORCID_CALLBACK_URL: ${{ secrets.ORCID_CALLBACK_URL }}
+      DB_HOST: ${{ secrets.DB_HOST }}
+      DB_PORT: ${{ secrets.DB_PORT }}
+      DB_API_KEY: ${{ secrets.DB_API_KEY }}
+      FILE_STORAGE_HOST: ${{ secrets.FILE_STORAGE_HOST }}
+      FILE_STORAGE_PORT: ${{ secrets.FILE_STORAGE_PORT }}
+      FILE_STORAGE_API_KEY: ${{ secrets.FILE_STORAGE_API_KEY }}
+    
     steps:
       - uses: actions/checkout@v4
 

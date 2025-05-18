@@ -18,6 +18,8 @@ describe('initPage', () => {
 			<div id="projectDescription"></div>
 			<ul id="collaboratorList"></ul>
 			<div id="collaborators"></div>
+			<button id="uploadButton" style="display:none"></button>
+        	<div id="files"></div>
 		`;
 		document.body.appendChild(container);
 

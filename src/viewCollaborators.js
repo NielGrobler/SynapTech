@@ -49,8 +49,12 @@ const handleReject = async (collaborator) => {
 		alert('Failed to send collaboration request.');
 	}
 }
-const fetchCollaborators = async () => { let res = await fetch('/api/collaborator'); let collaboratorData = await res.json(); pageAdder.assignListToElement('collaboratorRequests', collaboratorData, generateCollaboratorRequestHTML); }
-(async () => {
-	await fetchCollaborators();
-})();
+const fetchCollaborators = async () => {
+	let res = await fetch('/api/collaborator');
+	let collaboratorData = await res.json();
+	pageAdder.assignListToElement('collaboratorRequests', collaboratorData, generateCollaboratorRequestHTML); 
+}
+if (typeof vi === 'undefined' && process.env.VITEST !== 'true') { //to account for a specific testing issue
+	(async () => {	await fetchCollaborators();})();
+}
 export default { fetchCollaborators, handleAccept, handleReject, generateCollaboratorRequestHTML }
