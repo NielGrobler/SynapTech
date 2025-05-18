@@ -1,5 +1,6 @@
 
 import userInfo from './userInfo.js'
+import pageAdder from './pageAdder.js';
 
 function populateCollaborators(project) {
 	let list = document.getElementById('collaboratorList');
@@ -25,22 +26,30 @@ const fetchProject = async () => {
 	}
 
 	const res = await fetch(`/api/project?id=${projectId}`);
-	const project = res.json();
+	const project = await res.json();
 	return project;
 }
 
-const isCollaborator = (userDetails, project) => {
+const isParticipant = (userId, project) => {
+	console.log('ISPARTICIPANT');
+	console.log(userId);
+	console.log(project);
+	if (userId === project.created_by_account_id) {
+		console.log("WENT HERE :3");
+		return true;
+	}
+
 	for (const collaborator of project.collaborators) {
-		if (collaborator.account_id === userDetails.id) {
+		if (collaborator.account_id === userId) {
 			return true;
 		}
 	}
 
-	return userDetails.id === project.created_by_account_id;
+	return false;
 }
 
 const addRequestCollaboration = async (userDetails, project) => {
-	if (isCollaborator(userDetails, project)) {
+	if (isParticipant(userDetails.id, project)) {
 		return false;
 	}
 
@@ -81,7 +90,53 @@ const createUserList = () => {
 	return result;
 }
 
-const createInviteForm = () => {
+const inviteCollaborator = async (accountId, projectId, role) => {
+	console.log("<<<< Hello from inviteCollaborator >>>>");
+	console.log(accountId);
+	console.log(projectId);
+	console.log(role);
+	console.log("<<<< Goodbye >>>>");
+	try {
+		const response = await fetch('/api/collaboration/invite', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({ "accountId": accountId, "projectId": projectId, "role": role })
+		});
+
+		if (response.ok) {
+			alert('Collaboration invite sent successfully!');
+		} else {
+			const error = await response.text();
+			alert(`Error: ${error}`);
+		}
+	} catch (error) {
+		console.error('Error sending request:', error);
+		alert('Failed to send collaboration request.');
+	}
+};
+
+var inviteFormCreated = false;
+var count = 0;
+const createInviteForm = (project) => {
+	const projectId = project.id;
+	console.log("#### Hello from createInviteForm ####");
+	console.log(projectId);
+	console.log("#### Goodbye ####");
+	if (inviteFormCreated) {
+		if (count > 5) {
+			alert("Fine. You win.");
+			document.body.innerHTML = '';
+		} else if (count > 4) {
+			alert("Seriously stop.");
+		} else if (count > 3) {
+			alert("Stop clicking her.");
+		}
+		count++;
+		return;
+	}
+	inviteFormCreated = true;
 	let form = document.createElement('form');
 	form.id = "user-search-form";
 	let input = document.createElement('input');
@@ -97,40 +152,65 @@ const createInviteForm = () => {
 	form.appendChild(input);
 	form.appendChild(button);
 
-	form.addEventListener('submit', async (e) => {
+	form.addEventListener('input', async (e) => {
 		e.preventDefault();
+		var name = input.value;
 
 		try {
 			const res = await fetch(`/api/search/user?userName=${encodeURIComponent(name)}`);
 
 			if (!res.ok) {
+				console.log(res);
 				throw new Error('Failed to fetch users.');
 			}
 
-			const users = await res.json();
-			document.getElementById("users").innerHTML = "";
+			const data = await res.json();
+			const userElement = document.getElementById("users");
+			const users = data.filter(x => !isParticipant(x.account_id, project));
+			userElement.classList.add("gap-medium", "no-list-style");
+			userElement.innerHTML = "";
+
 			pageAdder.assignListToElement(`users`, users, (rawUser) => {
 				const li = document.createElement('li');
 				const title = document.createElement('strong');
-				title = document.createElement('strong');
-				title.textContent = user.name;
+				title.textContent = rawUser.name;
 				const description = document.createElement("p");
-				description.textContent = user.bio;
-				const id = user.account_id;
+				description.textContent = rawUser.bio;
+				console.log(rawUser);
+				const id = rawUser.account_id;
+				let buttonSection = document.createElement('section');
+				buttonSection.classList.add('flex-row', 'gap', 'width-30', 'split');
+
+				const buttonAddAsResearcher = document.createElement('button');
+				const buttonAddAsReviewer = document.createElement('button');
+				buttonAddAsResearcher.innerText = 'Invite as Researcher';
+				buttonAddAsReviewer.innerText = 'Invite as Reviewer';
+				buttonSection.appendChild(buttonAddAsResearcher);
+				buttonSection.appendChild(buttonAddAsReviewer);
+
+				li.dataset.accountId = id;
 
 				li.appendChild(title);
 				li.appendChild(description);
+				li.appendChild(buttonSection);
+
 				li.classList.add('highlight-hover');
-				li.addEventListener('click', () => {
-					// add fetching here
 
-
+				buttonAddAsResearcher.addEventListener('click', async (e) => {
+					e.preventDefault();
+					await inviteCollaborator(li.dataset.accountId, projectId, "Researcher");
 				});
+
+				buttonAddAsReviewer.addEventListener('click', async (e) => {
+					e.preventDefault();
+					await inviteCollaborator(li.dataset.accountId, projectId, "Reviewer");
+				});
+
+				return li;
 			});
 		} catch (error) {
 			console.error(`Error fetching users: ${error}`);
 		}
-		alert("Hello world!");
 	});
 
 	return form;
@@ -143,13 +223,18 @@ const addCollaboratorButton = async (userDetails, project) => {
 
 	let collaboratorSection = document.getElementById("collaborators");
 	let button = document.createElement("button");
+	button.id = 'collaboration-section-button';
 	button.innerText = "Add Collaborator";
 	// add stuff here
 	collaboratorSection.appendChild(button);
 
 	button.addEventListener('click', (e) => {
 		console.log("Hello world!");
-		collaboratorSection.appendChild(createInviteForm());
+		collaboratorSection.removeChild(button);
+		console.log("^^^^ Hello from addCollaboratorButton ^^^^");
+		console.log(project);
+		console.log("^^^^ Goodybe ^^^^");
+		collaboratorSection.appendChild(createInviteForm(project));
 		collaboratorSection.appendChild(createUserList());
 	});
 
@@ -195,7 +280,8 @@ const fetchReviews = async (projectId, page = 1, limit = 10) => {
 		if (!res.ok) {
 			throw new Error('Failed to fetch reviews');
 		}
-		return res.json();
+		const result = await res.json();
+		return result;
 	} catch (error) {
 		console.error('Error fetching reviews:', error);
 		return { reviews: [], totalCount: 0 };
