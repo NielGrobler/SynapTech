@@ -7,10 +7,11 @@ import path from 'path';
 import dotenv from 'dotenv';
 import url from 'url';
 import jwt from 'jsonwebtoken';
+import multer from 'multer';
 
 /* Database imports */
 import db from './db/db.js';
-//import fileStorage from './db/azureBlobStorage.js';
+import { FileStorageClient } from './db/connectionInterfaces.js';
 
 // Configure .env
 dotenv.config();
@@ -169,23 +170,6 @@ const requireAuthentication = (callback) => {
 		}
 
 		await callback(req, res);
-		/* Normal Routes */
-		/*
-		router.get('/home', async(req, res) => {
-			if (!authenticateRequest(req)) {
-				return res.redirect('/forbidden');
-			}
-			const result = await isSuspended(req);
-			if(result){
-				return res.redirect('/suspended');
-			}
-			res.redirect('/dashboard');
-		});
-		
-		router.get('/dashboard', (req, res) => {
-			if (!authenticateRequest(req)) {
-				return res.redirect('/forbidden');
-		*/
 	}
 }
 
@@ -282,6 +266,75 @@ router.get('/message', requireAuthentication((req, res) => {
 }));
 
 /* API Routing */
+const upload = multer({
+	storage: multer.memoryStorage(),
+	limits: { fileSize: 10 * 1024 * 1024 } // 10MB
+});
+const fileStorageClient = new FileStorageClient();
+
+// File upload route
+router.post('/api/project/:projectId/upload', upload.single('file'), requireAuthentication(async (req, res) => {
+	if (!req.file) {
+		return res.status(400).json({ error: 'No file uploaded.' });
+	}
+
+	try {
+		console.log(req.file);
+		const maxSize = 10 * 1024 * 1024;
+		if (req.file.size > maxSize) {
+			return res.status(400).json({ error: 'File size exceeds the 10MB limit.' });
+		}
+
+		const projectId = req.params.projectId;
+		const mayUpload = await db.mayUploadToProject(projectId, req.user.id);
+		if (!mayUpload) {
+			return res.status(400).json({ error: 'Not authorized for upload to this project.' });
+		}
+
+
+		const fileBuffer = req.file.buffer;
+		const filename = req.file.originalname;
+		await db.uploadToProject(projectId, fileBuffer, filename);
+
+		return res.status(200).json({ message: 'File uploaded successfully' });
+	} catch (error) {
+		console.error('Error uploading file:', error);
+		return res.status(500).json({ error: error.message });
+	}
+}));
+
+router.get('/api/project/:projectId/file/:fileId/:ext', requireAuthentication(async (req, res) => {
+	try {
+		const projectId = req.params.projectId;
+		const fileId = req.params.fileId;
+		const ext = req.params.ext;
+		const mayAccess = await db.mayAccessProject(projectId, req.user.id);
+		if (!mayAccess) {
+			return res.status(403).json({ error: "cannot access project" });
+		}
+	
+		const result = await db.downloadFile(fileId, ext);
+		res.send(result.buffer);
+	} catch (err) {
+		res.json({ error: err.message || err.toString() });
+	}
+}));
+
+router.get('/api/project/:projectId/files', requireAuthentication(async (req, res) => {
+	try {
+		const projectId = req.params.projectId;
+		const mayAccess = await db.mayAccessProject(projectId, req.user.id);
+		if (!mayAccess) {
+			return res.status(403).json({ error: "cannot access project" });
+		}
+
+		const result = await db.getProjectFiles(projectId);
+		res.json(result);
+	} catch (err) {
+		res.json({ error: err.message || err.toString() });
+	}
+}));
+
 router.get('/api/user/info', requireAuthentication((req, res) => {
 	res.json(req.user);
 }));
