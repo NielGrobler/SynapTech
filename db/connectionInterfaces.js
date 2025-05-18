@@ -104,7 +104,6 @@ class FileStorageClient {
 		return response.data;
 	}
 
-
 	extractFilename(contentDisposition) {
 		if (!contentDisposition) {
 			return null;
