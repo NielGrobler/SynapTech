@@ -49,7 +49,11 @@ const handleReject = async (collaborator) => {
 		alert('Failed to send collaboration request.');
 	}
 }
-const fetchCollaborators = async () => { let res = await fetch('/api/collaborator'); let collaboratorData = await res.json(); pageAdder.assignListToElement('collaboratorRequests', collaboratorData, generateCollaboratorRequestHTML); }
+const fetchCollaborators = async () => {
+	let res = await fetch('/api/collaborator');
+	let collaboratorData = await res.json();
+	pageAdder.assignListToElement('collaboratorRequests', collaboratorData, generateCollaboratorRequestHTML); 
+}
 (async () => {
 	await fetchCollaborators();
 })();
