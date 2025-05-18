@@ -9,41 +9,41 @@ import FormData from 'form-data';
 import { QueryResult } from './query.js';
 
 function decodeBase64(val) { //okay so this is for multiple different objects ???
-  // Handle primitives
-  if (val === null || val === undefined) return val;
-  if (typeof val === 'number' || typeof val === 'boolean') return val;
+	// Handle primitives
+	if (val === null || val === undefined) return val;
+	if (typeof val === 'number' || typeof val === 'boolean') return val;
 
-  // Handle arrays
-  if (Array.isArray(val)) {
-    return val.map(decodeBase64);
-  }
+	// Handle arrays
+	if (Array.isArray(val)) {
+		return val.map(decodeBase64);
+	}
 
-  // Handle objects
-  if (typeof val === 'object') {
-    const result = {};
-    for (const key in val) {
-      result[key] = decodeBase64(val[key]);
-    }
-    return result;
-  }
+	// Handle objects
+	if (typeof val === 'object') {
+		const result = {};
+		for (const key in val) {
+		result[key] = decodeBase64(val[key]);
+		}
+		return result;
+	}
 
-  // Handle strings: try to decode as base64, fallback to original string if not valid JSON
-  if (typeof val === 'string') {
-    try {
-      const decoded = Buffer.from(val, 'base64').toString('utf-8');
-      // Try to parse as JSON, fallback to string if fails
-      try {
-        return JSON.parse(decoded);
-      } catch {
-        return decoded;
-      }
-    } catch {
-      return val;
-    }
-  }
+	// Handle strings: try to decode as base64, fallback to original string if not valid JSON
+	if (typeof val === 'string') {
+		try {
+		const decoded = Buffer.from(val, 'base64').toString('utf-8');
+		// Try to parse as JSON, fallback to string if fails
+		try {
+			return JSON.parse(decoded);
+		} catch {
+			return decoded;
+		}
+		} catch {
+		return val;
+		}
+	}
 
-  return val;
-}
+	return val;
+	}
 
 class QuerySender {
 	constructor() {
