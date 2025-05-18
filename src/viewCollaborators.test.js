@@ -9,7 +9,11 @@ vi.mock('./pageAdder.js', () => ({
 }));
 
 global.alert = vi.fn(); // mock alert
-global.fetch = vi.fn();
+global.fetch = vi.fn().mockResolvedValue({
+  json: vi.fn().mockResolvedValue([]),
+  ok: true,
+  text: vi.fn().mockResolvedValue(''),
+});
 
 describe('generateCollaboratorRequestHTML', () => {
   const collaborator = {

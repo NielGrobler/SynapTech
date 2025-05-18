@@ -54,7 +54,7 @@ const fetchCollaborators = async () => {
 	let collaboratorData = await res.json();
 	pageAdder.assignListToElement('collaboratorRequests', collaboratorData, generateCollaboratorRequestHTML); 
 }
-(async () => {
-	await fetchCollaborators();
-})();
+if (typeof vi === 'undefined' && process.env.VITEST !== 'true') { //to account for a specific testing issue
+	(async () => {	await fetchCollaborators();})();
+}
 export default { fetchCollaborators, handleAccept, handleReject, generateCollaboratorRequestHTML }

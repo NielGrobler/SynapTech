@@ -35,7 +35,7 @@ const isParticipant = (userId, project) => {
 	console.log(userId);
 	console.log(project);
 	if (userId === project.created_by_account_id) {
-		console.log("WENT HERE :3");
+		console.log("WENT HERE");
 		return true;
 	}
 
