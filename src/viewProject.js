@@ -259,7 +259,9 @@ const populateElements = async () => {
 	addCollaboratorButton(info, project);
 	addRequestCollaboration(info, project)
 
-	loadProjectReviews(project);
+	document.addEventListener('DOMContentLoaded', () => {
+		loadProjectReviews(project);
+	});
 }
 
 export async function initPage() {

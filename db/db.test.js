@@ -1,4 +1,3 @@
-// db.test.js
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import sql from 'mssql';
 import db from './db.js'; // Adjust path as needed
@@ -182,7 +181,7 @@ describe('Database Module Tests', () => {
 		it('should check if a user is suspended', async () => {
 			const userId = 1;
 			// Change this line back to use the likely actual function name from db.js
-			const suspended = await db.isSuspendend(userId); // <-- Changed back to isSuspendend
+			const suspended = await db.isSuspended(userId); // <-- Changed back to isSuspended
 			expect(suspended).toBe(false); // Based on mock returning []
 		});
 	});

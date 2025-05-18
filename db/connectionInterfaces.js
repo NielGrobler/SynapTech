@@ -152,5 +152,6 @@ class FileStorageClient {
 
 export {
 	QuerySender,
-	FileStorageClient
+	FileStorageClient,
+	decodeBase64
 }

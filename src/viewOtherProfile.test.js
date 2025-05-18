@@ -69,10 +69,10 @@ describe('viewOtherProfile.js', () => {
       <html>
         <head></head>
         <body>
-          <div id="name"></div>
-          <div id="university"></div>
-          <div id="department"></div>
-          <div id="bio"></div>
+          <div id="userName"></div>
+          <div id="userUni"></div>
+          <div id="userDepartment"></div>
+          <div id="userBio"></div>
           <div id="projects"></div>
         </body>
       </html>
