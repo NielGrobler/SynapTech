@@ -127,6 +127,10 @@ passport.deserializeUser(async (id, done) => {
 
 /* Routes */
 router.use(express.json());
+
+/* Health Check */
+router.get('/ping', (req, res) => res.send('pong'));
+
 /* GET Request Routing */
 router.get('/forbidden', (req, res) => {
 	res.status(403).sendFile(path.join(__dirname, "public", "forbidden.html"));
@@ -593,6 +597,13 @@ router.get('/api/reviews', requireAuthentication(async (req, res) => {
 		res.status(500).json({ error: 'Failed to fetch reviews' });
 	}
 }));
+
+router.get('/analyticsDashboard', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+	res.sendFile(path.join(__dirname, "public", "analyticsDashboard.html"));
+});
 
 /* POST Request Routing */
 router.post('/create/project', requireAuthentication(async (req, res) => {
