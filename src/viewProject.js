@@ -1,5 +1,6 @@
 
 import userInfo from './userInfo.js'
+import pageAdder from './pageAdder.js';
 
 function populateCollaborators(project) {
 	let list = document.getElementById('collaboratorList');
@@ -25,22 +26,30 @@ const fetchProject = async () => {
 	}
 
 	const res = await fetch(`/api/project?id=${projectId}`);
-	const project = res.json();
+	const project = await res.json();
 	return project;
 }
 
-const isCollaborator = (userDetails, project) => {
+const isParticipant = (userId, project) => {
+	console.log('ISPARTICIPANT');
+	console.log(userId);
+	console.log(project);
+	if (userId === project.created_by_account_id) {
+		console.log("WENT HERE :3");
+		return true;
+	}
+
 	for (const collaborator of project.collaborators) {
-		if (collaborator.account_id === userDetails.id) {
+		if (collaborator.account_id === userId) {
 			return true;
 		}
 	}
 
-	return userDetails.id === project.created_by_account_id;
+	return false;
 }
 
 const addRequestCollaboration = async (userDetails, project) => {
-	if (isCollaborator(userDetails, project)) {
+	if (isParticipant(userDetails.id, project)) {
 		return false;
 	}
 
@@ -82,13 +91,18 @@ const createUserList = () => {
 }
 
 const inviteCollaborator = async (accountId, projectId, role) => {
+	console.log("<<<< Hello from inviteCollaborator >>>>");
+	console.log(accountId);
+	console.log(projectId);
+	console.log(role);
+	console.log("<<<< Goodbye >>>>");
 	try {
 		const response = await fetch('/api/collaboration/invite', {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json'
 			},
-			body: JSON.stringify({ "projectId": projectId, "accountId": accountId, "role": role })
+			body: JSON.stringify({ "accountId": accountId, "projectId": projectId, "role": role })
 		});
 
 		if (response.ok) {
@@ -105,7 +119,11 @@ const inviteCollaborator = async (accountId, projectId, role) => {
 
 var inviteFormCreated = false;
 var count = 0;
-const createInviteForm = (projectId) => {
+const createInviteForm = (project) => {
+	const projectId = project.id;
+	console.log("#### Hello from createInviteForm ####");
+	console.log(projectId);
+	console.log("#### Goodbye ####");
 	if (inviteFormCreated) {
 		if (count > 5) {
 			alert("Fine. You win.");
@@ -134,36 +152,48 @@ const createInviteForm = (projectId) => {
 	form.appendChild(input);
 	form.appendChild(button);
 
-	form.addEventListener('submit', async (e) => {
+	form.addEventListener('input', async (e) => {
 		e.preventDefault();
-		var name = input.innerText;
+		var name = input.value;
 
 		try {
 			const res = await fetch(`/api/search/user?userName=${encodeURIComponent(name)}`);
 
 			if (!res.ok) {
+				console.log(res);
 				throw new Error('Failed to fetch users.');
 			}
 
-			const users = await res.json();
-			console.log(users);
-			document.getElementById("users").innerHTML = "";
+			const data = await res.json();
+			const userElement = document.getElementById("users");
+			const users = data.filter(x => !isParticipant(x.account_id, project));
+			userElement.classList.add("gap-medium", "no-list-style");
+			userElement.innerHTML = "";
+
 			pageAdder.assignListToElement(`users`, users, (rawUser) => {
 				const li = document.createElement('li');
 				const title = document.createElement('strong');
-				title = document.createElement('strong');
 				title.textContent = rawUser.name;
 				const description = document.createElement("p");
 				description.textContent = rawUser.bio;
-				const id = rawUser.id;
+				console.log(rawUser);
+				const id = rawUser.account_id;
+				let buttonSection = document.createElement('section');
+				buttonSection.classList.add('flex-row', 'gap', 'width-30', 'split');
+
 				const buttonAddAsResearcher = document.createElement('button');
 				const buttonAddAsReviewer = document.createElement('button');
+				buttonAddAsResearcher.innerText = 'Invite as Researcher';
+				buttonAddAsReviewer.innerText = 'Invite as Reviewer';
+				buttonSection.appendChild(buttonAddAsResearcher);
+				buttonSection.appendChild(buttonAddAsReviewer);
+
 				li.dataset.accountId = id;
-				li.appendChild(buttonAddAsReviewer);
-				li.appendChild(buttonAddAsResearcher);
 
 				li.appendChild(title);
 				li.appendChild(description);
+				li.appendChild(buttonSection);
+
 				li.classList.add('highlight-hover');
 
 				buttonAddAsResearcher.addEventListener('click', async (e) => {
@@ -175,6 +205,8 @@ const createInviteForm = (projectId) => {
 					e.preventDefault();
 					await inviteCollaborator(li.dataset.accountId, projectId, "Reviewer");
 				});
+
+				return li;
 			});
 		} catch (error) {
 			console.error(`Error fetching users: ${error}`);
@@ -191,13 +223,18 @@ const addCollaboratorButton = async (userDetails, project) => {
 
 	let collaboratorSection = document.getElementById("collaborators");
 	let button = document.createElement("button");
+	button.id = 'collaboration-section-button';
 	button.innerText = "Add Collaborator";
 	// add stuff here
 	collaboratorSection.appendChild(button);
 
 	button.addEventListener('click', (e) => {
 		console.log("Hello world!");
-		collaboratorSection.appendChild(createInviteForm(project.id));
+		collaboratorSection.removeChild(button);
+		console.log("^^^^ Hello from addCollaboratorButton ^^^^");
+		console.log(project);
+		console.log("^^^^ Goodybe ^^^^");
+		collaboratorSection.appendChild(createInviteForm(project));
 		collaboratorSection.appendChild(createUserList());
 	});
 
@@ -244,9 +281,6 @@ const fetchReviews = async (projectId, page = 1, limit = 10) => {
 			throw new Error('Failed to fetch reviews');
 		}
 		const result = await res.json();
-		console.log("=================================================&&&&&");
-		console.log(result);
-		console.log("=================================================&&&&&");
 		return result;
 	} catch (error) {
 		console.error('Error fetching reviews:', error);
@@ -325,9 +359,6 @@ const loadProjectReviews = async (project) => {
 	let currentPage = 1;
 
 	const { reviews, totalCount } = await fetchReviews(project.id);
-	console.log("-==================================-");
-	console.log(reviews);
-	console.log("-==================================-");
 	displayReviews(reviews);
 
 	if (totalCount > 10) {

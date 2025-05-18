@@ -312,7 +312,7 @@ select {
 	margin-bottom: 0.7rem;
 }
 
-#inputs  p {
+#inputs p {
 	display: inline;
 	/* keeps elements inline unless you want them on separate lines */
 	margin: 0;
@@ -666,20 +666,27 @@ select {
 	width: 15%;
 }
 
+.width-30 {
+	width: 25%;
+}
+
 /* Dropdown menu */
 .dropdown {
 	position: relative;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
+	color: var(--color-text);
 }
 
 .dropdown-menu {
+	color: var(--color-text);
 	position: absolute;
 	top: 100%;
 	right: 0;
-	background: white;
+	background: var(--color-bg);
 	border: 1px solid #ccc;
+	border-color: var(--color-muted-light);
 	box-shadow: var(--shadow);
 	border-radius: var(--radius);
 	list-style: none;
@@ -701,6 +708,7 @@ select {
 
 .dropdown:hover button i.bx-chevron-right {
 	transform: rotate(90deg);
+	color: white;
 }
 
 .dropdown:hover .dropdown-menu {
@@ -708,6 +716,7 @@ select {
 	opacity: 1;
 	transform: translateY(0);
 	pointer-events: auto;
+	color: var(--color-text);
 }
 
 .dropdown:hover>button {
@@ -718,15 +727,17 @@ select {
 
 .dropdown-menu li {
 	padding: 10px;
+	color: var(--color-text);
 }
 
 .dropdown-menu li:hover {
 	background-color: var(--color-muted-light);
+	color: var(--color-text);
 }
 
 .dropdown-menu li a {
 	text-decoration: none;
-	color: black;
+	color: var(--color-text);
 	display: block;
 }
 
@@ -761,13 +772,17 @@ select {
 
 
 #messages {
-  flex: 1; /* or set a fixed height like height: 300px; */
-  overflow-y: auto;
-  padding-right: 0.5rem; /* optional, prevents scrollbars from overlapping content */
+	flex: 1;
+	/* or set a fixed height like height: 300px; */
+	overflow-y: auto;
+	padding-right: 0.5rem;
+	/* optional, prevents scrollbars from overlapping content */
 }
+
 #inputs {
-  flex-shrink: 0;       /* don't let it get pushed out */
-  padding: 0.75rem 1rem;
+	flex-shrink: 0;
+	/* don't let it get pushed out */
+	padding: 0.75rem 1rem;
 }
 
 .reviews-wrapper {
@@ -810,6 +825,63 @@ select {
 .reviewer-info {
 	color: #777;
 	font-size: 0.9rem;
+}
+
+/* Container styling */
+.toggle-container {
+	padding: 1rem;
+	background-color: var(--color-secondary);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	margin-bottom: 1rem;
+}
+
+/* Fieldset reset and layout */
+.toggle-container fieldset {
+	border: 1px solid var(--color-muted-light);
+	padding: 1rem;
+	border-radius: var(--radius);
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1rem;
+	align-items: center;
+	margin: 0;
+}
+
+/* Legend styling */
+.toggle-container legend {
+	font-weight: 600;
+	font-size: 1.1rem;
+	color: var(--color-text);
+	padding: 0 0.5rem;
+	margin-bottom: 0.5rem;
+}
+
+/* Label + checkbox layout */
+.toggle-container label {
+	margin-right: 0.5rem;
+	font-size: 0.95rem;
+	color: var(--color-text);
+	cursor: pointer;
+}
+
+.toggle-container input[type="checkbox"] {
+	margin-right: 1.5rem;
+	transform: scale(1.2);
+	cursor: pointer;
+	accent-color: var(--color-accent);
+}
+.radio-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-right: 1.5rem;
+  cursor: pointer;
+}
+
+.radio-label input[type="radio"] {
+  accent-color: var(--color-accent); /* Optional if you're using custom accent color */
+  cursor: pointer;
 }
 
 .no-padding {

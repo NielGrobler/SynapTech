@@ -52,14 +52,18 @@
 						placeholder="Field of Study">
 				</section>
 
-				<section class="flex-column">
-					<section class="flex-start center-content-v">
-						<label class="nowrap" for="visibility" class="flag"><strong>Make project
-								public?</strong></label>
-						<input type="checkbox" name="visibility" value="public"
-							class="flex-row fill-width flex-left">
-					</section>
+				<section class="toggle-container">
+					<strong>Project Visibility</strong><br>
 
+					<label class="radio-label">
+						<input type="radio" name="visibility" value="public" required>
+						Public
+					</label>
+
+					<label class="radio-label">
+						<input type="radio" name="visibility" value="private">
+						Private
+					</label>
 				</section>
 				<button type="submit">Create Project</button>
 			</form>

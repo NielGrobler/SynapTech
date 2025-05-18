@@ -4,13 +4,9 @@ import GoogleStrategy from 'passport-google-oauth20';
 import ORCIDStrategy from 'passport-orcid';
 import session from 'express-session';
 import path from 'path';
-import fs from 'fs';
-import https from 'https';
 import dotenv from 'dotenv';
 import url from 'url';
 import jwt from 'jsonwebtoken';
-
-import multer from 'multer';
 
 /* Database imports */
 import db from './db/db.js';
@@ -24,7 +20,6 @@ const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const router = express();
-const port = process.env.PORT || 3000;
 
 /* For HTML form */
 router.use(express.urlencoded({ extended: true }));
@@ -60,15 +55,7 @@ router.use((req, res, next) => {
 });
 
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
-// Middleware for uploading
-const upload = multer({
-	storage: multer.memoryStorage(),
-	limits: { fileSize: MAX_FILE_SIZE }
-});
-
 /* passport.js Strategies */
-
 // Specify strategy for how to handle Google Authentication
 passport.use(new GoogleStrategy({
 	clientID: process.env.GOOGLE_CLIENT_ID,
@@ -172,8 +159,6 @@ router.get('/auth/google/callback',
 export const authenticateRequest = (req) => req.isAuthenticated();
 export const isSuspended = async (req) => {
 	const result = await db.isSuspended(req.user.id);
-	console.log("HELLO???????");
-	console.log(result);
 	return result[0].is_suspended;
 };
 
@@ -266,26 +251,17 @@ router.get('/logout', (req, res, next) => {
 
 // Create project
 router.get('/create/project', requireAuthentication((req, res) => {
-	/*
-	router.get('/create/project', (req, res) => {
-		if (!authenticateRequest(req)) {
-			return res.redirect('/forbidden');
-		}
-	*/
 	res.sendFile(path.join(__dirname, "public", "addProject.html"));
 }));
 
 // Search public projects
 router.get('/view/public', requireAuthentication((req, res) => {
-	/*
-	router.get('/view/public', (req, res) => {
-		if (!authenticateRequest(req)) {
-			return res.redirect('/forbidden');
-		}
-	*/
 	res.sendFile(path.join(__dirname, "public", "searchPublicProjects.html"));
 }));
 
+router.get('/view/search', requireAuthentication((req, res) => {
+	res.sendFile(path.join(__dirname, "public", "search.html"));
+}));
 
 router.get('/view/project', requireAuthentication((req, res) => {
 	res.sendFile(path.join(__dirname, "public", "viewProject.html"));
@@ -310,7 +286,7 @@ router.get('/api/user/info', requireAuthentication((req, res) => {
 	res.json(req.user);
 }));
 
-router.post('api/collaboration/invite', requireAuthentication(async (req, res) => {
+router.post('/api/collaboration/invite', requireAuthentication(async (req, res) => {
 	try {
 		const { projectId, accountId, role } = req.body;
 		if (!projectId || !accountId || !role) {
@@ -331,13 +307,23 @@ router.post('api/collaboration/invite', requireAuthentication(async (req, res) =
 			return res.status(400).json({ error: 'accountId must be a number.' });
 		}
 
+		const canInvite = await db.canInvite(accountId, projectId);
+		if (!canInvite) {
+			return res.status(400).json({ error: 'cannot invite this user.' });
+		}
+
+		const alreadyInvited = await db.alreadyInvited(accountId, projectId);
+		if (!alreadyInvited) {
+			return res.status(400).json({ error: 'Already invited this user.' });
+		}
+
 		await db.sendCollabInvite(accountId, projectId, role);
 
 		return res.status(200).json({ message: 'Collaboration invite sent successfully' });
 	} catch (err) {
 		return res.status(500).json({ error: 'Internal Error' });
 	}
-});
+}));
 
 router.get('/api/collaboration/invites', requireAuthentication(async (req, res) => {
 	try {
@@ -345,9 +331,10 @@ router.get('/api/collaboration/invites', requireAuthentication(async (req, res) 
 		const result = await db.getPendingCollabInvites(userId);
 		return res.json(result);
 	} catch (err) {
+		console.error(err);
 		return res.status(400).json({ error: 'bad request' });
 	}
-});
+}));
 
 router.post('/api/collaboration/invite/reply', requireAuthentication(async (req, res) => {
 	try {
@@ -370,9 +357,10 @@ router.post('/api/collaboration/invite/reply', requireAuthentication(async (req,
 
 		return res.status(200).json({ message: 'Collaboration invite sent successfully' });
 	} catch (err) {
+		console.log(err);
 		return res.status(500).json({ error: 'Internal Error' });
 	}
-});
+}));
 
 router.get('/api/user/projectNames', requireAuthentication(async (req, res) => {
 	let projects = await db.fetchAssociatedProjectsByLatest(req.user);
@@ -542,8 +530,6 @@ router.get('/api/reviews', requireAuthentication(async (req, res) => {
 	try {
 		const reviews = await db.getProjectReviews(projectId, limit, offset);
 		const totalCount = await db.getReviewCount(projectId);
-		console.log("HI BABY GIRL");
-		console.log(reviews);
 
 		res.json({
 			reviews: reviews,
@@ -668,13 +654,9 @@ router.get('/messages', requireAuthentication((req, res) => {
 }));
 
 //Move to search for users page
-router.get('/view/users', (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-
+router.get('/view/users', requireAuthentication((req, res) => {
 	res.sendFile(path.join(__dirname, "public", "searchUsers.html"));
-});
+}));
 
 //Searching for users 
 router.get('/api/search/user', async (req, res) => {
@@ -750,7 +732,6 @@ router.get('/isSuspended', requireAuthentication(async (req, res) => {
 	try {
 		const { id } = req.query
 		const result = await db.isSuspended(id);
-		console.log(result);
 		return res.json(result[0].is_suspended);
 	} catch (err) {
 		console.error('Error checking if user suspended:', err);

@@ -14,52 +14,38 @@
 	<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 
 
-	<title>Unilink | Dashboard</title>
+	<title>Unilink | Invites</title>
 	<script src="https://accounts.google.com/gsi/client" async defer></script>
 
 </head>
 
 <body>
+	<nav class="inset secondary fill accent-underline">
+		<button class="nav-item flex-row center-content-v gap-small" onclick="history.back()">
+			<i class='bx bx-chevron-left'></i>
+			Back
+		</button>
+	</nav>
 
-	<h1>Invite Collaborators</h1>
-	<input type="text" id="search-input" placeholder="Search by name or email..." />
+	<section class="border-solid-thin shadow">
+		<h1>Invite Collaborators</h1>
+		<ul id="invite-list"></ul>
+	</section>
 
-	<ul id="search-results"></ul>
-
-	<script>
-		const projectId = new URLSearchParams(window.location.search).get('project_id');
-
-		const dummyAccounts = [
-			{account_id: 201, name: "Alice Johnson"},
-			{account_id: 202, name: "Bob Smith"},
-			{account_id: 203, name: "Carla Nguyen"}
-		];
-
-		const input = document.getElementById("search-input");
-		const results = document.getElementById("search-results");
-
-		input.addEventListener("input", () => {
-			const query = input.value.toLowerCase();
-			results.innerHTML = "";
-			dummyAccounts
-				.filter(a => a.name.toLowerCase().includes(query))
-				.forEach(account => {
-					const li = document.createElement("li");
-					li.innerHTML = `
-            <span>${account.name}</span>
-            <button onclick="invite(${account.account_id})">Invite</button>
-          `;
-					results.appendChild(li);
-				});
-		});
-
-		function invite(accountId) {
-			// You would make a POST request to your backend here
-			alert(`Invited account ID ${accountId} to project ${projectId}`);
-		}
+	<script type="module" src="/savedTheme.js"></script>
+	<script type="module" src="/invite.js"></script>
+	<script type="module">
+		import {fetchInvites} from './invite.js';
+		(async function () {
+			await fetchInvites();
+		})();
 	</script>
+
+	<footer class="inset">
+		<p>&copy; 2025 Unilink. All rights reserved.</p>
+	</footer>
 </body>
-<script type="module" src="/savedTheme.js"></script>
+
 
 
 </html>
