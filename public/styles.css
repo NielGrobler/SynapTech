@@ -787,9 +787,7 @@ select {
 
 .reviews-wrapper {
 	margin-left: -24px;
-	/* Adjust this value to match your page's inset padding */
 	width: calc(100% + 48px);
-	/* Compensate for the negative margin */
 }
 
 #reviewsList {
@@ -801,7 +799,6 @@ select {
 .review-item {
 	margin-bottom: 32px;
 	padding-left: 24px;
-	/* Same as the negative margin value above */
 }
 
 .star-rating {
@@ -887,4 +884,29 @@ select {
   cursor: pointer;
 }
 
+.no-padding {
+	padding: 0;
+}
 
+.no-margin {
+	margin: 0;
+}
+
+.recent-reports {
+	margin-top: 0;
+}
+
+.recent-reports li {
+	padding-top: 0.5rem;
+}
+
+@media (max-width: 768px) {
+	.flex-row.gap-large {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.flex-row.gap-large>li {
+		margin-bottom: 1rem;
+	}
+}

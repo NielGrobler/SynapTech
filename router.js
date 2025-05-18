@@ -541,6 +541,13 @@ router.get('/api/reviews', requireAuthentication(async (req, res) => {
 	}
 }));
 
+router.get('/analyticsDashboard', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+	res.sendFile(path.join(__dirname, "public", "analyticsDashboard.html"));
+});
+
 /* POST Request Routing */
 router.post('/create/project', requireAuthentication(async (req, res) => {
 	const { projectName, description, field, visibility } = req.body;

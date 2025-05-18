@@ -18,85 +18,71 @@
 </head>
 
 <body>
-    <section id="navigation" class="flex-row fill-width secondary center-content accent-underline">
-        <nav class="fill-width">
-            <ul class="no-list-style flex-row gap-large center-content">
-                <li>
-                    <button class="nav-item flex-row gap-small center-content-v"
-                        onclick="window.location.href='/dashboard'">
-                        <i class='bx bxs-dashboard'></i>
-                        Dashboard
-                    </button>
-                </li>
-                <li>
-                    <button class="nav-item flex-row gap-small center-content-v"
-                        onclick="window.location.href='/analyticsDashboard.html'">
-                        <i class='bx bxs-analyse'></i>
-                        Analytics
-                    </button>
-                </li>
-                <li>
-                    <button class="nav-item flex-row gap-small center-content-v"
-                        onclick="window.location.href='/view/public'">
-                        <i class='bx bx-globe'></i>
-                        View Public Projects
-                    </button>
-                </li>
-                <li>
-                    <button class="nav-item flex-row gap-small center-content-v"
-                        onclick="window.location.href='/create/project'">
-                        <i class='bx bx-book-content'></i>
-                        Create Project
-                    </button>
-                </li>
-                <li>
-                    <button class="nav-item flex-row gap-small center-content-v"
-                        onclick="window.location.href='/collaboration'">
-                        <i class='bx bx-user-voice'></i>
-                        Collaboration Requests
-                    </button>
-                </li>
-            </ul>
-        </nav>
-
-        <span class="dropdown pad-right hover-rotate">
-            <button id="userButton" class="flex-row gap-small padding-vert-small center-content-v">
-                <i class='bx bx-chevron-right'></i>
-                <span id="username">Ellie</span>
-            </button>
-
-            <ul class="dropdown-menu">
-                <li><a href="/settings"><i class='bx bx-cog'></i>Settings</a></li>
-                <li><a href="/logout"><i class='bx bx-run'></i>Logout</a></li>
-            </ul>
-        </span>
-    </section>
+    <nav class="inset">
+        <a href="javascript:history.back()">&larr; Back</a>
+    </nav>
 
     <main>
-        <header class="accent-underline">
+        <header>
             <section class="inset">
                 <h1 class="large-text">Report Dashboard</h1>
                 <p>Select a report to view detailed analytics</p>
             </section>
         </header>
 
-        <section class="inset accent-underline">
-            <section class="split">
-                <h2 class="large-text">Available Reports</h2>
-                <button class="very-round pad-small-h no-pad-v" id="refreshReports">
-                    <i class="bx bx-refresh"></i>
-                </button>
-            </section>
+        <section id="availableReports" class="inset">
+            <h1 class="accent-underline">Available Reports</h1>
+            <ul class="flex-row gap-large no-list-style center-content-v">
+
+                <!-- Funding Used vs. Available Report -->
+                <li class="border-solid-thin shadow secondary" onclick="window.location.href='/reports/resource-usage'"
+                    style="flex: 1; min-width: 200px; max-width: 300px; cursor: pointer;">
+                    <header>
+                        <h3>Funding Used vs. Available</h3>
+                    </header>
+                    <figure class="center-content pad-top">
+                        <i class="bx bx-pie-chart-alt-2" style="font-size: 3rem;"></i>
+                    </figure>
+                    <footer class="inset">
+                        <p>Track resource utilization across projects</p>
+                    </footer>
+                </li>
+
+                <!-- Project Completion Status Report -->
+                <li class="border-solid-thin shadow secondary"
+                    onclick="window.location.href='/reports/completion-status'"
+                    style="flex: 1; min-width: 200px; max-width: 300px; cursor: pointer; text-emphasis: center;">
+                    <header>
+                        <h3>Project Completion Status</h3>
+                    </header>
+                    <figure class="center-content pad-top">
+                        <i class="bx bx-bar-chart-alt-2" style="font-size: 3rem;"></i>
+                    </figure>
+                    <footer class="inset">
+                        <p>Monitor progress per project</p>
+                    </footer>
+                </li>
+
+                <!-- Customizable View Report -->
+                <li class="border-solid-thin shadow secondary" onclick="window.location.href='/reports/custom'"
+                    style="flex: 1; min-width: 200px; max-width: 300px; cursor: pointer;">
+                    <header>
+                        <h3>Customizable Report</h3>
+                    </header>
+                    <figure class="center-content pad-top">
+                        <i class="bx bx-customize" style="font-size: 3rem;"></i>
+                    </figure>
+                    <footer class="inset">
+                        <p>Create and customize your own reports</p>
+                    </footer>
+                </li>
+            </ul>
         </section>
 
-        <section class="report-selection inset" id="reportCardsContainer">
-            <!-- Report cards will be dynamically inserted here -->
-        </section>
-
-        <section class="inset accent-underline">
-            <h2 class="large-text">Recently Viewed Reports</h2>
-            <ul class="recent-reports no-list-style">
-                <li class="recent-report-item accent-underline">
+        <section id="recentlyViewReporst" class="inset">
+            <h1 class="accent-underline">Recently Viewed Reports</h1>
+            <ul class="recent-reports no-list-style no-padding">
+                <li class="no-margin">
                     <a href="/reports/completion-status" class="flex-row gap-small center-content-v">
                         <i class="bx bx-bar-chart-alt-2"></i>
                         Completion Status Report
@@ -110,10 +96,7 @@
     <footer class="inset">
         <p>&copy; 2025 Unilink. All rights reserved.</p>
     </footer>
-
-    <!-- Make sure the scripts are loaded in the correct order -->
-    <script src="/fetchUsername.js"></script>
-    <script src="/analyticsDashboard.js"></script>
+    <script type="module" src="/savedTheme.js"></script>
 </body>
 
 </html>
