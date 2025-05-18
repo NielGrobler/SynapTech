@@ -85,6 +85,6 @@ document.addEventListener("DOMContentLoaded", () => {
 		projects = await res.json();
 		pageAdder.addProjectsToPage('projectCardList', projects);
 	} catch (err) {
-		console.error('Error loading Projects:', err);
+		console.error('Error', err);
 	}
 })();

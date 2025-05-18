@@ -334,7 +334,7 @@ const isSuspended = async (userId) => {
 
 const suspendUser = async (userId) => {
 	const result = await isSuspended(userId);
-	negation = result[0].is_suspended == 0 ? 1 : 0;
+	const negation = result[0].is_suspended == 0 ? 1 : 0;
 	sender.send(new DatabaseQueryBuilder()
 		.input('id', userId)
 		.input('negation', negation)
