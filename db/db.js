@@ -319,7 +319,7 @@ const deleteUser = async (userId) => {
 };
 
 const isSuspended = async (userId) => {
-	const result = await sender.getResult(new DatabaseQueryBuilder()
+  const result = await sender.getResult(new DatabaseQueryBuilder() 
 		.input('id', userId)
 		.query(`
 			SELECT is_suspended
