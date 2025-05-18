@@ -20,7 +20,7 @@
 <body>
 	<nav class="inset secondary fill accent-underline">
 		<button class="nav-item flex-row center-content-v gap-small"
-			onclick="window.location.href=history.back()">
+			onclick="history.back()">
 			<i class='bx bx-chevron-left'></i>
 			Back
 		</button>
@@ -48,11 +48,17 @@
 				<ul id="collaboratorList">
 				</ul>
 			</section>
-		</section>
-		<section>
-			<button type="button" class="primary-button" onclick="reviewProject()">
-				Review Project
-			</button>
+
+			<section id="reviews" class="inset">
+				<h1 class="accent-underline">Reviews</h1>
+				<ul id="reviewsList">
+					<li>Loading reviews...</li>
+				</ul>
+				<nav id="reviewsPagination" class="flex-row gap-medium" style="display: none;">
+					<button id="loadMoreReviews" class="secondary">Load More Reviews</button>
+				</nav>
+				<button type="button" class="primary-button" onclick="reviewProject()">Review Project</button>
+			</section>
 
 		</section>
 	</main>
@@ -62,7 +68,7 @@
 
 	<script type="module" src="/viewProject.js"></script>
 	<script type="module">
-		import {initPage} from '/viewProject.js';
+		import { initPage } from '/viewProject.js';
 		await initPage();
 	</script>
 

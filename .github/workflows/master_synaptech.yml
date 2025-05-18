@@ -18,6 +18,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set environment variable to production #included so that only production branch runs certain code from app.js for the azure web app.
+        run: echo "NODE_ENV=production" >> $GITHUB_ENV
+
       - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:

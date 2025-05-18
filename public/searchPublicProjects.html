@@ -19,8 +19,7 @@
 
 <body>
 	<nav class="inset secondary fill accent-underline">
-		<button class="nav-item flex-row center-content-v gap-small"
-			onclick="window.location.href=history.back()">
+		<button class="nav-item flex-row center-content-v gap-small" onclick="history.back()">
 			<i class='bx bx-chevron-left'></i>
 			Back
 		</button>
@@ -37,7 +36,7 @@
 				<button type="submit">Submit</button>
 			</form>
 
-			<ul id="projects">
+			<ul id="projects" class="no-list-style">
 			</ul>
 		</section>
 	</main>
@@ -45,8 +44,8 @@
 	<script type="module" src="/searchPublicProjects.js"></script>
 
 	<script type="module">
-		import { setupSearchForm } from '/searchPublicProjects.js';
-		
+		import {setupSearchForm} from '/searchPublicProjects.js';
+
 		setupSearchForm();
 	</script>
 
@@ -57,7 +56,7 @@
 
 
 </body>
-			<script type="module" src="/savedTheme.js"></script>
+<script type="module" src="/savedTheme.js"></script>
 
 
 </html>

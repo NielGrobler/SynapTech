@@ -3,56 +3,58 @@
 
 <head>
 
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" href="/styles.css">
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="icon" href="logo.png" type="image/png">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
-            rel="stylesheet">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-        <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="stylesheet" href="/styles.css">
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="icon" href="logo.png" type="image/png">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+			rel="stylesheet">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+		<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 
 
-        <title>Unilink | Create Project</title>
-        <script src="https://accounts.google.com/gsi/client" async defer></script>
-    </head>
+		<title>Unilink | Review Project</title>
+		<script src="https://accounts.google.com/gsi/client" async defer></script>
+	</head>
 
 <body>
+	<nav class="inset secondary fill accent-underline">
+		<button class="nav-item flex-row center-content-v gap-small" onclick="history.back()">
+			<i class='bx bx-chevron-left'></i>
+			Back
+		</button>
+	</nav>
 
-    <nav class="inset secondary fill accent-underline">
-        <a href="javascript:history.back()">&larr; Back</a>
-    </nav>
+	<main class="inset">
+		<h1>Write a Review</h1>
 
-    <main class="inset">
-        <h1>Write a Review</h1>
+		<form form id="reviewForm" class="inset">
+			<section>
+				<label for="rating"><strong>Rating</strong></label><br>
+				<select id="rating" class="no-padding-v" name="rating" required>
+					<option value="">Select a rating</option>
+					<option value="5">★★★★★ - Excellent</option>
+					<option value="4">★★★★☆ - Good</option>
+					<option value="3">★★★☆☆ - Average</option>
+					<option value="2">★★☆☆☆ - Poor</option>
+					<option value="1">★☆☆☆☆ - Very Poor</option>
+				</select><br> <br>
+			</section>
 
-        <form form id="reviewForm" class="inset">
-            <section>
-                <label for="rating"><strong>Rating</strong></label><br>
-                <select id="rating" class="no-padding-v" name="rating" required>
-                    <option value="">Select a rating</option>
-                    <option value="5">★★★★★ - Excellent</option>
-                    <option value="4">★★★★☆ - Good</option>
-                    <option value="3">★★★☆☆ - Average</option>
-                    <option value="2">★★☆☆☆ - Poor</option>
-                    <option value="1">★☆☆☆☆ - Very Poor</option>
-                </select><br> <br>
-            </section>
+			<section>
+				<label for="comment"><strong>Comment</strong></label><br>
+				<textarea id="comment" class="no-padding-v" name="comment" rows="5" required
+					placeholder="Share your thoughts..."></textarea>
+			</section>
 
-            <section>
-                <label for="comment"><strong>Comment</strong></label><br>
-                <textarea id="comment" class="no-padding-v" name="comment" rows="5" required
-                    placeholder="Share your thoughts..."></textarea>
-            </section>
-
-            <section>
-                <button type="button" id="submitReviewBtn">Submit Review</button>
-            </section>
-        </form>
-    </main>
+			<section>
+				<button type="button" id="submitReviewBtn">Submit Review</button>
+			</section>
+		</form>
+	</main>
 
 </body>
 <script type="module" src="/reviewProject.js"></script>
