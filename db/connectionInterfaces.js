@@ -33,7 +33,6 @@ function decodeBase64(val) { //okay so this is for multiple different objects ??
 		const decoded = Buffer.from(val, 'base64').toString('utf-8');
 		// Try to parse as JSON, fallback to string if fails
 		try {
-			console.log("JSON PARISING");
 			return JSON.parse(decoded);
 		} catch {
 			return decoded;
