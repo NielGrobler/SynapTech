@@ -13,12 +13,15 @@ const sendReply = (isAccept, projectId, role) => {
 			if (!res.ok) {
 				throw new Error(`Request failed with status: ${res.status}`);
 			}
+			alert('Success!');
 			return res.json();
 		})
 		.catch(err => {
 			console.error('Error:', err);
-			alert('Failed to submit review. Please try again.');
+			alert('Failed to accepting/rejecting invite. Please try again.');
 		});
+
+
 };
 
 const genInviteReqHTML = (invite) => {
