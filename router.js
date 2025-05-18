@@ -160,36 +160,24 @@ router.get('/auth/google/callback',
 	}
 );
 
-export const authenticateRequest = (req) => req.isAuthenticated();
+export const authenticateRequest = (req) => {
+	return typeof req.isAuthenticated === 'function' ? req.isAuthenticated() : false;
+};
 export const isSuspended = async (req) => {
 	const result = await db.isSuspended(req.user.id);
 	return result[0].is_suspended;
 };
 
-const requireAuthentication = (callback) => {
+const requireAuthentication = (callback, opts = {}) => {
 	return async (req, res) => {
 		if (!authenticateRequest(req)) {
+			if (opts.statusCode) { //should allow custom status codes, hopefully
+				return res.sendStatus(opts.statusCode);
+			}
 			return res.redirect('/forbidden');
 		}
 
 		await callback(req, res);
-		/* Normal Routes */
-		/*
-		router.get('/home', async(req, res) => {
-			if (!authenticateRequest(req)) {
-				return res.redirect('/forbidden');
-			}
-			const result = await isSuspended(req);
-			if(result){
-				return res.redirect('/suspended');
-			}
-			res.redirect('/dashboard');
-		});
-		
-		router.get('/dashboard', (req, res) => {
-			if (!authenticateRequest(req)) {
-				return res.redirect('/forbidden');
-		*/
 	}
 }
 
@@ -268,27 +256,48 @@ router.get('/view/search', requireAuthentication((req, res) => {
 }));
 
 router.get('/view/project', requireAuthentication((req, res) => {
+	
 	res.sendFile(path.join(__dirname, "public", "viewProject.html"));
 }));
 
 // Settings Page
 router.get('/settings', requireAuthentication((req, res) => {
+	if (!authenticateRequest(req)) {
+		res.status(401).json({ error: 'Not authenticated' });
+		return;
+	}
+
 	res.sendFile(path.join(__dirname, "public", "settings.html"));
-}));
+}, { statusCode: 401 }));
 
 // Invite Collaborator Page
 router.get('/invite', requireAuthentication((req, res) => {
+	if (!authenticateRequest(req)) {
+		res.status(401).json({ error: 'Not authenticated' });
+		return;
+	}
+
 	res.sendFile(path.join(__dirname, "public", "invite.html"));
-}));
+}, { statusCode: 401 }));
 
 router.get('/message', requireAuthentication((req, res) => {
+	if (!authenticateRequest(req)) {
+		res.status(401).json({ error: 'Not authenticated' });
+		return;
+	}
+
 	res.sendFile(path.join(__dirname, "public", "messages.html"));
 }));
 
 /* API Routing */
 router.get('/api/user/info', requireAuthentication((req, res) => {
+	if (!authenticateRequest(req)) {
+		res.status(401).json({ error: 'Not authenticated' });
+		return;
+	}
+
 	res.json(req.user);
-}));
+}, { statusCode: 401 }));
 
 router.post('/api/collaboration/invite', requireAuthentication(async (req, res) => {
 	try {
@@ -422,6 +431,11 @@ router.delete('/api/reject/collaborator', requireAuthentication(async (req, res)
 
 // Route for when users want to fetch a specific project (based on id)
 router.get('/api/project', requireAuthentication(async (req, res) => {
+	if (!authenticateRequest(req)) {
+		res.status(401).json({ error: 'Not authenticated' });
+		return;
+	}
+	
 	const { id } = req.query;
 	if (!id) {
 		res.status(400).json({ error: "Bad Request." });
@@ -441,7 +455,7 @@ router.get('/api/project', requireAuthentication(async (req, res) => {
 	}
 
 	res.json(project);
-}));
+}, { statusCode: 401 }));
 
 /*
 // Route for when users want to view a specific user (based on site id)
@@ -618,11 +632,6 @@ router.post('/remove/user', requireAuthentication(async (req, res) => {
 	}
 }));
 
-
-router.post('suspend/user', requireAuthentication(async (req, res) => {
-
-}));
-
 //Reviews Page
 router.post('/api/review', requireAuthentication(async (req, res) => {
 	if (!req.body || !req.body.projectId || !req.body.rating || !req.body.comment) {
@@ -647,7 +656,7 @@ router.post('/api/review', requireAuthentication(async (req, res) => {
 		console.error('Error creating review:', err);
 		res.status(500).json({ error: 'Failed to submit review', details: err.message });
 	}
-}));
+})); 
 
 router.get('/successfulReviewPost', requireAuthentication((req, res) => {
 	res.sendFile(path.join(__dirname, "public", "successfulReviewPost.html"));
