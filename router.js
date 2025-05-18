@@ -14,6 +14,9 @@ import db from './db/db.js';
 
 // Configure .env
 dotenv.config();
+if (!process.env.SESSION_SECRET) {
+  throw new Error('SESSION_SECRET is not set. Check your .env or CI environment variables.');
+}
 
 // For convenience, as these don't exist in ES modules.
 const __filename = url.fileURLToPath(import.meta.url);
@@ -767,5 +770,10 @@ router.put('/update/profile', async (req, res) => {
 router.put('user/details', requireAuthentication(async (req, res) => {
 	const { name, bio } = req.body;
 }));
+
+router.use((err, req, res, next) => {
+  console.error('Express error:', err);
+  res.status(500).send('Internal Server Error');
+});
 
 export default router;
