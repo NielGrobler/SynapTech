@@ -1,7 +1,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import https from 'https';
+import { Agent } from 'https';
 import axios from 'axios';
 import { fileTypeFromBuffer } from 'file-type';
 import FormData from 'form-data';
@@ -49,7 +49,7 @@ class QuerySender {
 	constructor() {
 		//const ca = fs.readFileSync(path.join(__dirname, 'server.crt'));
 
-		this.agent = new https.Agent({
+		this.agent = new Agent({
 			//	ca: ca,
 			rejectUnauthorized: false
 		});
@@ -85,7 +85,7 @@ class FileStorageClient {
 		this.apiKey = process.env.FILE_STORAGE_API_KEY;
 
 		//const ca = fs.readFileSync(path.join(__dirname, 'server.crt'));
-		this.agent = new https.Agent({
+		this.agent = new Agent({
 			//ca: ca,
 			rejectUnauthorized: false
 		});
