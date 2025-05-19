@@ -22,7 +22,7 @@ try{
 	__dirname = path.resolve();
 }
 
-const ca = fs.readFileSync(path.join(__dirname, 'server.crt'));
+const ca = fs.readFileSync(path.join(__dirname, 'db/server.crt'));
 
 const sender = new QuerySender();
 const fileClient = new FileStorageClient();
