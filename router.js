@@ -24,15 +24,17 @@ if (!process.env.SESSION_SECRET) {
 }
 
 // For convenience, as these don't exist in ES modules.
-let __dirname;
-try {
-	__dirname = getDirname(import.meta);
-} catch (e) {
-	__dirname = '/';
-	//throw new Error ("Failed to determine __dirname or __filename in ESM: " + e.message);
+try{
+	const __filename = url.fileURLToPath(import.meta.url);
+	const __dirname = path.dirname(__filename);
+	__dirname = (typeof __dirname !== undefined) ? __dirname : getDirname(import.meta);
+}catch (err) {
+	console.error("Error getting __dirname:", err);
+	__dirname = path.resolve();
 }
 
 const router = express();
+const port = process.env.PORT || 3000;
 
 /* For HTML form */
 router.use(express.urlencoded({ extended: true }));

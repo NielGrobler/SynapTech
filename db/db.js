@@ -12,12 +12,14 @@ import { DatabaseQueryBuilder } from './query.js';
 
 dotenv.config();
 
-let __dirname;
-try {
-	__dirname = getDirname(import.meta);
-} catch (e) {
-	__dirname = '/';
-	//throw new Error ("Failed to determine __dirname or __filename in ESM: " + e.message);
+// For convenience, as these don't exist in ES modules.
+try{
+	const __filename = url.fileURLToPath(import.meta.url);
+	const __dirname = path.dirname(__filename);
+	__dirname = (typeof __dirname !== undefined) ? __dirname : getDirname(import.meta);
+}catch (err) {
+	console.error("Error getting __dirname:", err);
+	__dirname = path.resolve();
 }
 
 const ca = fs.readFileSync(path.join(__dirname, 'server.crt'));
