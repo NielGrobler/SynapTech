@@ -3,7 +3,7 @@ import passport from 'passport';
 import GoogleStrategy from 'passport-google-oauth20';
 import ORCIDStrategy from 'passport-orcid';
 import session from 'express-session';
-import path from 'path';
+import * as path from 'path';
 import dotenv from 'dotenv';
 
 import { fileURLToPath } from 'url';
