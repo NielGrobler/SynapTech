@@ -12,9 +12,12 @@ dotenv.config();
 
 let __filename = '';
 let __dirname = '';
-if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+try {
   __filename = fileURLToPath(import.meta.url);
   __dirname = path.dirname(__filename);
+} catch (e) {
+  __filename = '';
+  __dirname = '';
 }
 
 const ca = fs.readFileSync(path.join(__dirname, 'server.crt'));

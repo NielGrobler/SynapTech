@@ -24,9 +24,12 @@ if (!process.env.SESSION_SECRET) {
 // For convenience, as these don't exist in ES modules.
 let __filename = '';
 let __dirname = '';
-if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+try {
   __filename = fileURLToPath(import.meta.url);
   __dirname = path.dirname(__filename);
+} catch (e) {
+  __filename = '';
+  __dirname = '';
 }
 
 const router = express();
