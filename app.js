@@ -8,11 +8,12 @@ import router from './router.js';
 
 const port = process.env.PORT || 3000;
 
-if (process.env.NODE_ENV === 'production') {
+if (process.env.ENVIRONMENT === 'prod') {
 	router.listen(port, () => {
 		console.log(`HTTPS server running in production mode`);
 	});
   
+  /*
   const server = router;
   const io = new Server(server);
   
@@ -124,6 +125,7 @@ if (process.env.NODE_ENV === 'production') {
     });
     
   });
+  */
 } else { //only other option is running locally if it's not set, or rather when it is unspecified.
 
   const sslOptions = {
