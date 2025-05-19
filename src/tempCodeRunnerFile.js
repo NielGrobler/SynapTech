@@ -110,4 +110,11 @@ const loadProjectReviews = async (project) => {
 	}
 };
 
+export {
+	fetchReviews,
+	formatDate,
+	createStarRating,
+	displayReviews,
+	loadProjectReviews
+  };
 
