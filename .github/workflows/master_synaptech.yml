@@ -27,7 +27,7 @@ jobs:
       FILE_STORAGE_HOST: ${{ secrets.FILE_STORAGE_HOST }}
       FILE_STORAGE_PORT: ${{ secrets.FILE_STORAGE_PORT }}
       FILE_STORAGE_API_KEY: ${{ secrets.FILE_STORAGE_API_KEY }}
-      #NODE_ENV: production # Set the environment variable to production for the build job
+      ENVIRONMENT: prod # Set the environment variable to production for the build job
 
     permissions:
       contents: read #This is required for actions/checkout
