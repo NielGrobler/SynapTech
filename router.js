@@ -5,13 +5,15 @@ import ORCIDStrategy from 'passport-orcid';
 import session from 'express-session';
 import path from 'path';
 import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
+//import { fileURLToPath } from 'url';
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
 
 /* Database imports */
 import db from './db/db.js';
 import { FileStorageClient } from './db/connectionInterfaces.js';
+
+const { fileURLToPath } = require('url');
 
 // Configure .env
 dotenv.config();
