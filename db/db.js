@@ -16,7 +16,7 @@ try {
 	__dirname = path.dirname(__filename);
 } catch (e) {
 	__dirname = process.cwd();
-	throw new Error("Failed to determine __dirname or __filename in ESM: " + e.message);
+	console.log("Failed to determine __dirname or __filename in ESM: " + e.message);
 }
 
 const ca = fs.readFileSync(path.join(__dirname, 'server.crt'));
