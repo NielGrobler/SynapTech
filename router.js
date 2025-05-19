@@ -8,6 +8,8 @@ import dotenv from 'dotenv';
 
 import { fileURLToPath } from 'url';
 
+import { getDirname } from './dirname.js';
+
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
 
@@ -22,13 +24,11 @@ if (!process.env.SESSION_SECRET) {
 }
 
 // For convenience, as these don't exist in ES modules.
-let __filename, __dirname;
+let __dirname;
 try {
-	__filename = fileURLToPath(import.meta.url);
-	__dirname = path.dirname(__filename);
+	__dirname = getDirname(import.meta);
 } catch (e) {
-	__dirname = process.cwd();
-	console.log("Failed to determine __dirname or __filename in ESM: " + e.message);
+	throw new Error ("Failed to determine __dirname or __filename in ESM: " + e.message);
 }
 
 const router = express();

@@ -5,18 +5,18 @@ import path from 'path';
 
 import { fileURLToPath } from 'url';
 
+import { getDirname } from './../dirname.js';
+
 import { QuerySender, FileStorageClient } from './connectionInterfaces.js';
 import { DatabaseQueryBuilder } from './query.js';
 
 dotenv.config();
 
-let __filename, __dirname;
+let __dirname;
 try {
-	__filename = fileURLToPath(import.meta.url);
-	__dirname = path.dirname(__filename);
+	__dirname = getDirname(import.meta);
 } catch (e) {
-	__dirname = process.cwd();
-	console.log("Failed to determine __dirname or __filename in ESM: " + e.message);
+	throw new Error ("Failed to determine __dirname or __filename in ESM: " + e.message);
 }
 
 const ca = fs.readFileSync(path.join(__dirname, 'server.crt'));
