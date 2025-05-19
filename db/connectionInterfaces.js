@@ -6,10 +6,8 @@ import path from 'path';
 import axios from 'axios';
 import { fileTypeFromBuffer } from 'file-type';
 import FormData from 'form-data';
-
+import { Agent } from 'https';
 import { QueryResult } from './query.js';
-
-const { Agent } = require('https');
 
 function decodeBase64(val) { //okay so this is for multiple different objects ???
 	// Handle primitives
