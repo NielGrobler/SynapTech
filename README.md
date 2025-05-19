@@ -15,9 +15,9 @@ https://synaptech-fbc2huaabab8g6e0.southafricanorth-01.azurewebsites.net
 
 ## Deployment
 1. Clone the repository
-2. (npm init, install needed dependencies)
+2. Run 'npm install' in terminal to.
 3. Set up an .env file to connect Google, ORCID and Database.
-4. Run 'npm run start' to run a local copy of the website. 
+4. Run 'npm start' to run a local copy of the website. 
 ---
 ## Overview 
 ### Signup/Login
