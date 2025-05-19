@@ -27,6 +27,7 @@ jobs:
       FILE_STORAGE_HOST: ${{ secrets.FILE_STORAGE_HOST }}
       FILE_STORAGE_PORT: ${{ secrets.FILE_STORAGE_PORT }}
       FILE_STORAGE_API_KEY: ${{ secrets.FILE_STORAGE_API_KEY }}
+      NODE_ENV: production # Set the environment variable to production for the build job
 
     permissions:
       contents: read #This is required for actions/checkout
@@ -37,16 +38,13 @@ jobs:
       - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:
-          node-version: '22.x'
+          node-version: '22.x'  
 
       - name: npm install, build, and test
         run: |
           npm install
           npm run test --if-present
-
-      - name: Set environment variable to production #included so that only production branch runs certain code from app.js for the azure web app.
-        run: echo "NODE_ENV=production" >> $GITHUB_ENV    
-
+      
       - name: Zip artifact for deployment
         run: zip release.zip ./* -r
 
