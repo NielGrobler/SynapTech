@@ -42,7 +42,7 @@ jobs:
 
       - name: npm install, build, and test
         run: |
-          npm install --include-dev
+          npm install --include=dev
           npm run build --if-present
           npm run test --if-present
       
