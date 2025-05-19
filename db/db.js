@@ -3,21 +3,14 @@ import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
+import { fileURLToPath } from 'url';
 
 import { QuerySender, FileStorageClient } from './connectionInterfaces.js';
 import { DatabaseQueryBuilder } from './query.js';
 
 dotenv.config();
 
-let fileURLToPath_;
-try {
-	fileURLToPath_ = (await import('url')).fileURLToPath;
-} catch {
-	fileURLToPath_ = require('url').fileURLToPath;
-}
-const __filename = fileURLToPath_(import.meta.url);
+const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const ca = fs.readFileSync(path.join(__dirname, 'server.crt'));
