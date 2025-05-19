@@ -28,7 +28,8 @@ let __dirname;
 try {
 	__dirname = getDirname(import.meta);
 } catch (e) {
-	throw new Error ("Failed to determine __dirname or __filename in ESM: " + e.message);
+	__dirname = '/';
+	//throw new Error ("Failed to determine __dirname or __filename in ESM: " + e.message);
 }
 
 const router = express();
