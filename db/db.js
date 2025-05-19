@@ -13,16 +13,19 @@ import { DatabaseQueryBuilder } from './query.js';
 dotenv.config();
 
 // For convenience, as these don't exist in ES modules.
-try{
-	const __filename = url.fileURLToPath(import.meta.url);
-	const __dirname = path.dirname(__filename);
-	__dirname = (typeof __dirname !== undefined) ? __dirname : getDirname(import.meta);
-}catch (err) {
-	console.error("Error getting __dirname:", err);
-	__dirname = path.resolve();
+let __dirname;
+try {
+  const __filename = fileURLToPath(import.meta.url);
+  __dirname = path.dirname(__filename);
+} catch (err) {
+  try {
+    __dirname = getDirname(import.meta);
+  } catch (e) {
+    __dirname = '/'; // fallback for test/browser envs
+  }
 }
 
-const ca = fs.readFileSync(path.join(__dirname, 'db/server.crt'));
+const ca = fs.readFileSync(path.join(__dirname, 'server.crt'));
 
 const sender = new QuerySender();
 const fileClient = new FileStorageClient();
