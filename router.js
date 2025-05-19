@@ -5,7 +5,8 @@ import ORCIDStrategy from 'passport-orcid';
 import session from 'express-session';
 import path from 'path';
 import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
 
@@ -20,7 +21,13 @@ if (!process.env.SESSION_SECRET) {
 }
 
 // For convenience, as these don't exist in ES modules.
-const __filename = fileURLToPath(import.meta.url);
+let fileURLToPath_;
+try {
+	fileURLToPath_ = (await import('url')).fileURLToPath;
+} catch {
+	fileURLToPath_ = require('url').fileURLToPath;
+}
+const __filename = fileURLToPath_(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const router = express();
