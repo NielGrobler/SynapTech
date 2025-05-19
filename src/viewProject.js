@@ -382,10 +382,11 @@ const populateElements = async () => {
 	addCollaboratorButton(info, project);
 	addRequestCollaboration(info, project)
 	addUploadButton(info, project);
+	loadProjectReviews(project);
+	loadProjectFiles(project);
 
 	document.addEventListener('DOMContentLoaded', () => {
-		loadProjectReviews(project);
-    loadProjectFiles(project);
+		console.log("dwqiudhwqiudhwqdihwqHELLO?");
 	});
 }
 
@@ -442,71 +443,66 @@ const createStarRating = (rating) => {
 	return figure;
 };
 
-// Display reviews in the reviews section
-document.addEventListener('DOMContentLoaded', () => { //avoids this being run before loaded
-	const displayReviews = (reviews, append = false) => {
-		const reviewsList = document.getElementById('reviewsList');
+const displayReviews = (reviews, append = false) => {
+	const reviewsList = document.getElementById('reviewsList');
 
+	if (!append) {
+		reviewsList.innerHTML = '';
+	}
+
+	if (reviews.length === 0) {
 		if (!append) {
-			reviewsList.innerHTML = '';
+			const emptyItem = document.createElement('li');
+			emptyItem.textContent = 'No reviews yet for this project.';
+			reviewsList.appendChild(emptyItem);
 		}
+		return;
+	}
 
-		if (reviews.length === 0) {
-			if (!append) {
-				const emptyItem = document.createElement('li');
-				emptyItem.textContent = 'No reviews yet for this project.';
-				reviewsList.appendChild(emptyItem);
+	reviews.forEach(review => {
+		const reviewItem = document.createElement('li');
+		reviewItem.className = 'review-item';
+
+		const ratingFigure = createStarRating(review.rating);
+
+		const commentParagraph = document.createElement('p');
+		commentParagraph.textContent = review.comment;
+
+		const reviewerInfo = document.createElement('p');
+		reviewerInfo.className = 'reviewer-info';
+		reviewerInfo.textContent = `${review.reviewer_name}, ${formatDate(review.created_at)}`;
+
+		reviewItem.appendChild(ratingFigure);
+		reviewItem.appendChild(commentParagraph);
+		reviewItem.appendChild(reviewerInfo);
+		reviewsList.appendChild(reviewItem);
+	});
+};
+
+// Load and display project reviews
+const loadProjectReviews = async (project) => {
+	const reviewsSection = document.getElementById('reviews');
+	const paginationNav = document.getElementById('reviewsPagination');
+	let currentPage = 1;
+
+	const { reviews, totalCount } = await fetchReviews(project.id);
+	displayReviews(reviews);
+
+	if (totalCount > 10) {
+		paginationNav.style.display = 'flex';
+
+		const loadMoreBtn = document.getElementById('loadMoreReviews');
+		loadMoreBtn.addEventListener('click', async () => {
+			currentPage++;
+			const moreReviews = await fetchReviews(project.id, currentPage);
+			displayReviews(moreReviews.reviews, true);
+
+			if (currentPage * 10 >= totalCount) {
+				loadMoreBtn.style.display = 'none';
 			}
-			return;
-		}
-
-		reviews.forEach(review => {
-			const reviewItem = document.createElement('li');
-			reviewItem.className = 'review-item';
-
-			const ratingFigure = createStarRating(review.rating);
-
-			const commentParagraph = document.createElement('p');
-			commentParagraph.textContent = review.comment;
-
-			const reviewerInfo = document.createElement('p');
-			reviewerInfo.className = 'reviewer-info';
-			reviewerInfo.textContent = `${review.reviewer_name}, ${formatDate(review.created_at)}`;
-
-			reviewItem.appendChild(ratingFigure);
-			reviewItem.appendChild(commentParagraph);
-			reviewItem.appendChild(reviewerInfo);
-			reviewsList.appendChild(reviewItem);
 		});
-	};
-
-	// Load and display project reviews
-	const loadProjectReviews = async (project) => {
-		const reviewsSection = document.getElementById('reviews');
-		const paginationNav = document.getElementById('reviewsPagination');
-		let currentPage = 1;
-
-		const { reviews, totalCount } = await fetchReviews(project.id);
-		displayReviews(reviews);
-
-		if (totalCount > 10) {
-			paginationNav.style.display = 'flex';
-
-			const loadMoreBtn = document.getElementById('loadMoreReviews');
-			loadMoreBtn.addEventListener('click', async () => {
-				currentPage++;
-				const moreReviews = await fetchReviews(project.id, currentPage);
-				displayReviews(moreReviews.reviews, true);
-
-				if (currentPage * 10 >= totalCount) {
-					loadMoreBtn.style.display = 'none';
-				}
-			});
-		}
-	};
-});
-
-
+	}
+};
 
 
 
