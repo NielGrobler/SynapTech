@@ -1,19 +1,31 @@
-import { describe, it, expect, vi } from 'vitest';
-import search from './search.js';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import search, { queryListener } from './search.js';
 import pageAdder from './pageAdder.js';
 import stringSearch from './stringSearch.js';
 
 // Mocking the pageAdder methods to avoid DOM manipulation in tests
-vi.mock('./pageAdder.js', () => ({
-	assignListToElement: vi.fn(),
-	userToElement: vi.fn(),
-	projectToElement: vi.fn(),
-}));
+vi.mock('./pageAdder.js', () => {
+	const mock = {
+		assignListToElement: vi.fn(),
+		userToElement: vi.fn(),
+		projectToElement: vi.fn(),
+	};
+	return {
+		...mock,
+		default: mock, // <-- Add this line
+	};
+});
 
 // Mocking stringSearch methods
-vi.mock('./stringSearch.js', () => ({
-	getComparator: vi.fn(() => (a, b) => a.name.localeCompare(b.name)),
-}));
+vi.mock('./stringSearch.js', () => {
+	const mock = {
+		getComparator: vi.fn(() => (a, b) => a.name.localeCompare(b.name)),
+	};
+	return {
+		...mock,
+		default: mock, // <-- Add this line
+	};
+});
 
 // Mocking fetch to avoid network calls
 global.fetch = vi.fn();
@@ -99,42 +111,65 @@ describe('search.js functions', () => {
 
 			const input = document.createElement('input');
 			input.value = 'A';
+			input.id = 'search-bar'
 			document.body.appendChild(input);
 
 			const userToggle = document.createElement('input');
 			userToggle.checked = true;
+			userToggle.id = 'user-toggle'; // <-- Add this line
+			document.body.appendChild(userToggle);
+
 			const projectToggle = document.createElement('input');
 			projectToggle.checked = true;
+			projectToggle.id = 'project-toggle'; // <-- Add this line
+			document.body.appendChild(projectToggle);
+
+			const resultsDiv = document.createElement('div');
+			resultsDiv.id = 'search-results'; // <-- Add this line
+			document.body.appendChild(resultsDiv);
 
 			await queryListener({ target: input });
 
 			// Make sure the results were merged, sorted, and assigned to the element
 			expect(pageAdder.assignListToElement).toHaveBeenCalledWith(
 				'search-results',
-				[{ name: 'Project A' }, { name: 'User A' }],
+				[
+					{ name: 'Project A', type: "project" },
+					//{ name: 'Project B', type: "project" }
+					{ name: 'User A', type: "user" },
+					//{ name: 'User B', type: "user" },
+				],
 				expect.any(Function)
 			);
 		});
 	});
 
 	describe('setupForm', () => {
+		beforeEach(() => {
+			document.body.innerHTML = '';
+		});
+
 		it('sets up event listeners correctly', () => {
-			const form = document.createElement('form');
+			const input = document.createElement('input');
 			const userToggle = document.createElement('input');
 			const projectToggle = document.createElement('input');
 
-			form.id = 'search-bar';
+			input.id = 'search-bar';
 			userToggle.id = 'user-toggle';
 			projectToggle.id = 'project-toggle';
 
-			document.body.appendChild(form);
+			document.body.appendChild(input);
 			document.body.appendChild(userToggle);
 			document.body.appendChild(projectToggle);
 
+			// Mock addEventListener as a spy
+			input.addEventListener = vi.fn();
+			userToggle.addEventListener = vi.fn();
+			projectToggle.addEventListener = vi.fn();
+
 			search.setupForm();
 
-			// Check that event listeners are added correctly
-			expect(form.addEventListener).toHaveBeenCalledWith('input', expect.any(Function));
+			expect(input.addEventListener).toHaveBeenCalledWith('input', expect.any(Function));
 			expect(userToggle.addEventListener).toHaveBeenCalledWith('change', expect.any(Function));
 			expect(projectToggle.addEventListener).toHaveBeenCalledWith('change', expect.any(Function));
 		});
