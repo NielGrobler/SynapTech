@@ -10,8 +10,12 @@ import { DatabaseQueryBuilder } from './query.js';
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+let __filename = '';
+let __dirname = '';
+if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+  __filename = fileURLToPath(import.meta.url);
+  __dirname = path.dirname(__filename);
+}
 
 const ca = fs.readFileSync(path.join(__dirname, 'server.crt'));
 
