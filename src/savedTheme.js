@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-	console.log("HELLO????");
 	const root = document.documentElement;
 
 	const saved = localStorage.getItem('theme');

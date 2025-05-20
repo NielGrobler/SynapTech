@@ -592,7 +592,7 @@ router.get('/api/project', requireAuthentication(async (req, res) => {
 	res.json(project);
 }, { statusCode: 401 }));
 
-/*
+
 // Route for when users want to view a specific user (based on site id)
 router.get('/api/user', async (req, res) => {
 	if (!authenticateRequest(req)) {
@@ -615,7 +615,7 @@ router.get('/api/user', async (req, res) => {
 
 	res.json(user);
 });
-*/
+
 
 router.get('/api/search/project', requireAuthentication(async (req, res) => {
 	const { projectName } = req.query;
@@ -627,15 +627,6 @@ router.get('/api/search/project', requireAuthentication(async (req, res) => {
 	res.json(await db.searchProjects(projectName));
 
 }));
-/*
-});
-
-//fetch current user project
-router.get('/api/user/project', async (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-*/
 
 router.get('/api/user/project', requireAuthentication(async (req, res) => {
 	let projects = await db.fetchAssociatedProjects(req.user);

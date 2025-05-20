@@ -1,4 +1,7 @@
 import pageAdder from './pageAdder.js';
+
+//would need major refactoring to use viewProfile.js's script instead of duplicate code
+
 let projects = [];
 
 let suspend;

@@ -1,5 +1,5 @@
 
-const fetchFromApi = async () => {
+const fetchFromApi = async () => { //might generalise this to all ids to reduce code space
 	const res = await fetch('/api/user/info', { credentials: 'include' });
 
 	if (!res.ok) {
