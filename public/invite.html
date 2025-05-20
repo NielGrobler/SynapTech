@@ -27,13 +27,18 @@
 			Back
 		</button>
 	</nav>
+	<main>
+		<section class="border-solid-thin shadow">
+			<h1>Invite Collaborators</h1>
+			<ul id="invite-list"></ul>
+		</section>
+	</main>
+	<footer class="inset">
+		<p>&copy; 2025 Unilink. All rights reserved.</p>
+	</footer>
+</body>
 
-	<section class="border-solid-thin shadow">
-		<h1>Invite Collaborators</h1>
-		<ul id="invite-list"></ul>
-	</section>
-
-	<script type="module" src="/savedTheme.js"></script>
+<script type="module" src="/savedTheme.js"></script>
 	<script type="module" src="/invite.js"></script>
 	<script type="module">
 		import {fetchInvites} from './invite.js';
@@ -41,12 +46,5 @@
 			await fetchInvites();
 		})();
 	</script>
-
-	<footer class="inset">
-		<p>&copy; 2025 Unilink. All rights reserved.</p>
-	</footer>
-</body>
-
-
 
 </html>
