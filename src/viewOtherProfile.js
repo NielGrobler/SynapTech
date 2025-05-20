@@ -52,6 +52,8 @@ const checkAdmin = async () => {
 };
 
 const populateElements = async () => {
+	await checkAdmin();
+
 	const username = document.getElementById("userName");
 	const bio = document.getElementById("userBio");
 	const university = document.getElementById("userUni");
@@ -79,7 +81,7 @@ const populateElements = async () => {
 		department.innerHTML = "Unknown";
 	}
 
-	await checkAdmin();
+	
 };
 
 document.addEventListener("DOMContentLoaded", () => {
