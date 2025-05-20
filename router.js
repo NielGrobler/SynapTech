@@ -20,7 +20,7 @@ import { FileStorageClient } from './db/connectionInterfaces.js';
 // Configure .env
 dotenv.config();
 if (!process.env.SESSION_SECRET) {
-  throw new Error('SESSION_SECRET is not set. Check your .env or CI environment variables.');
+	throw new Error('SESSION_SECRET is not set. Check your .env or CI environment variables.');
 }
 
 // For convenience, as these don't exist in ES modules.
@@ -274,7 +274,7 @@ router.get('/view/search', requireAuthentication((req, res) => {
 }));
 
 router.get('/view/project', requireAuthentication((req, res) => {
-	
+
 	res.sendFile(path.join(__dirname, "public", "viewProject.html"));
 }));
 
@@ -354,7 +354,7 @@ router.get('/api/project/:projectId/file/:fileId/:ext', requireAuthentication(as
 		if (!mayAccess) {
 			return res.status(403).json({ error: "cannot access project" });
 		}
-	
+
 		const result = await db.downloadFile(fileId, ext);
 		res.send(result.buffer);
 	} catch (err) {
@@ -522,7 +522,7 @@ router.get('/api/project', requireAuthentication(async (req, res) => {
 		res.status(401).json({ error: 'Not authenticated' });
 		return;
 	}
-	
+
 	const { id } = req.query;
 	if (!id) {
 		res.status(400).json({ error: "Bad Request." });
@@ -743,7 +743,7 @@ router.post('/api/review', requireAuthentication(async (req, res) => {
 		console.error('Error creating review:', err);
 		res.status(500).json({ error: 'Failed to submit review', details: err.message });
 	}
-})); 
+}));
 
 router.get('/successfulReviewPost', requireAuthentication((req, res) => {
 	res.sendFile(path.join(__dirname, "public", "successfulReviewPost.html"));
