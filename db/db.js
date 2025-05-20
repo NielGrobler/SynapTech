@@ -2,7 +2,6 @@ import Joi from 'joi';
 import dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
-
 import { fileURLToPath } from 'url';
 
 import { getDirname } from './../dirname.js';
@@ -346,7 +345,7 @@ const fetchAssociatedProjectsByLatest = async (user) => {
 };
 
 const fetchPublicAssociatedProjects = async (user) => {
-	const result = await new DatabaseQueryBuilder()
+	const result = await sender.getResult(new DatabaseQueryBuilder()
 		.input('id', user.id)
 		.query(`
 			SELECT DISTINCT 
@@ -359,10 +358,11 @@ const fetchPublicAssociatedProjects = async (user) => {
 			FROM Project
 			LEFT JOIN Collaborator ON Collaborator.project_id = Project.project_id
 			LEFT JOIN Account ON Account.account_id = Collaborator.account_id
-			WHERE Project.created_by_account_id = {{id}} AND Project.isPublic = 1
+			WHERE Project.created_by_account_id = {{id}} AND Project.is_public = 1
 			OR (Collaborator.account_id = {{id}} AND Collaborator.is_pending = 0);
 		`)
-		.getResultUsing(agent);
+		.build()
+	);
 
 	return result.recordSet;
 };

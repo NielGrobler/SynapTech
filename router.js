@@ -635,8 +635,6 @@ router.get('/api/user/project', requireAuthentication(async (req, res) => {
 	res.json(projects);
 }));
 
-/*
-//fetch other user project
 router.get('/api/other/project', async (req, res) => {
 	if (!authenticateRequest(req)) {
 		return res.status(401).json({ error: 'Not authenticated' });
@@ -651,7 +649,6 @@ router.get('/api/other/project', async (req, res) => {
 
 	res.json(projects);
 });
-*/
 
 router.get('/api/collaborator', requireAuthentication(async (req, res) => {
 	let pending_collaborators = await db.fetchPendingCollaborators(req.user);
