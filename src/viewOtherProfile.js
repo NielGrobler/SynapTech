@@ -1,4 +1,5 @@
 import pageAdder from './pageAdder.js';
+import userInfo from './userInfo.js';
 
 //would need major refactoring to use viewProfile.js's script instead of duplicate code
 
@@ -51,24 +52,34 @@ const checkAdmin = async () => {
 };
 
 const populateElements = async () => {
+	const username = document.getElementById("userName");
+	const bio = document.getElementById("userBio");
+	const university = document.getElementById("userUni");
+	const department = document.getElementById("userDepartment");
+
+	try {
+		const params = new URLSearchParams(window.location.search);
+		const userId = params.get('id');
+		if (!userId) {
+			return null;
+		}
+		
+		const user = await userInfo.fetchOtherUserFromApi(userId);
+
+		username.innerHTML = user.name ? user.name : "No name available";
+		bio.innerHTML = user.bio ? user.bio : "No bio available";
+		university.innerHTML = user.university ? user.university : "Unknown";
+		department.innerHTML = user.department ? user.department : "Unknown";
+
+	} catch (error) {
+		console.error("User not authenticated:", error);
+		username.innerHTML = "Could not display user.";
+		bio.innerHTML = "No bio available";
+		university.innerHTML = "Unknown";
+		department.innerHTML = "Unknown";
+	}
+
 	await checkAdmin();
-
-	const params = new URLSearchParams(window.location.search);
-	const userId = params.get('id');
-	if (!userId) {
-		return null;
-	}
-	const res = await fetch(`/api/user?id=${encodeURIComponent(userId)}`);
-	const user = await res.json();
-	if (!user) {
-		document.getElementById('userName').innerText = "Could not display user.";
-		return;
-	}
-
-	document.getElementById('userName').innerText = user[0].name;
-	document.getElementById('userUni').innerHTML = user[0].university;
-	document.getElementById('userDepartment').innerHTML = user[0].department;
-	document.getElementById('userBio').innerHTML = user[0].bio;
 };
 
 document.addEventListener("DOMContentLoaded", () => {
