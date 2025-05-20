@@ -1,16 +1,29 @@
 import Joi from 'joi';
 import dotenv from 'dotenv';
-import fs from 'fs';
-import path from 'path';
+import * as fs from 'fs';
+import * as path from 'path';
+
 import { fileURLToPath } from 'url';
+
+import { getDirname } from './../dirname.js';
 
 import { QuerySender, FileStorageClient } from './connectionInterfaces.js';
 import { DatabaseQueryBuilder } from './query.js';
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// For convenience, as these don't exist in ES modules.
+let __dirname;
+try {
+  const __filename = fileURLToPath(import.meta.url);
+  __dirname = path.dirname(__filename);
+} catch (err) {
+  try {
+    __dirname = getDirname(import.meta);
+  } catch (e) {
+    __dirname = '/'; // fallback for test/browser envs
+  }
+}
 
 const ca = fs.readFileSync(path.join(__dirname, 'server.crt'));
 

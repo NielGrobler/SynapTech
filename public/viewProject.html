@@ -25,7 +25,6 @@
 			Back
 		</button>
 	</nav>
-
 	<main class="inset flex-col gap-medium">
 		<section class="border-solid-thin shadow">
 			<section id="projectCard" class="inset">
@@ -78,22 +77,18 @@
 	<footer class="inset">
 		<p>&copy; 2025 Unilink. All rights reserved.</p>
 	</footer>
-
-	<script type="module" src="/viewProject.js"></script>
-	<script type="module">
-		import {initPage} from '/viewProject.js';
-		await initPage();
-	</script>
-
-	<script>
-		function reviewProject() {
-			const projectId = new URLSearchParams(window.location.search).get('id');
-			window.location.href = `/reviewProject?id=${projectId}`;
-		}
-	</script>
-
 </body>
 
-
+<script type="module" src="/viewProject.js"></script>
+<script type="module">
+	import {initPage} from '/viewProject.js';
+	await initPage();
+</script>
+<script>
+	function reviewProject() {
+		const projectId = new URLSearchParams(window.location.search).get('id');
+		window.location.href = `/reviewProject?id=${projectId}`;
+	}
+</script>
 
 </html>

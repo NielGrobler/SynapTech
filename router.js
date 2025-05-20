@@ -3,9 +3,13 @@ import passport from 'passport';
 import GoogleStrategy from 'passport-google-oauth20';
 import ORCIDStrategy from 'passport-orcid';
 import session from 'express-session';
-import path from 'path';
+import * as path from 'path';
 import dotenv from 'dotenv';
-import url from 'url';
+
+import { fileURLToPath } from 'url';
+
+import { getDirname } from './dirname.js';
+
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
 
@@ -20,10 +24,20 @@ if (!process.env.SESSION_SECRET) {
 }
 
 // For convenience, as these don't exist in ES modules.
-const __filename = url.fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+let __dirname;
+try {
+  const __filename = fileURLToPath(import.meta.url);
+  __dirname = path.dirname(__filename);
+} catch (err) {
+  try {
+	__dirname = getDirname(import.meta);
+  } catch (e) {
+	__dirname = '/'; // fallback for test/browser envs
+  }
+}
 
 const router = express();
+const port = process.env.PORT || 3000;
 
 /* For HTML form */
 router.use(express.urlencoded({ extended: true }));

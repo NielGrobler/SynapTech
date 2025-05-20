@@ -20,33 +20,27 @@
 
 </head>
 
-
 <body>
-	<header>
-		<nav class="inset secondary fill accent-underline">
-			<button class="nav-item flex-row center-content-v gap-small" onclick="history.back()">
-				<i class='bx bx-chevron-left'></i>
-				Back
-			</button>
-		</nav>
-
-		<h1>Search for users or projects...</h1>
-	</header>
-
+	<nav class="inset secondary fill accent-underline">
+		<button class="nav-item flex-row center-content-v gap-small" onclick="history.back()">
+			<i class='bx bx-chevron-left'></i>
+			Back
+		</button>
+	</nav>
 	<main>
+		<h1>Search for users or projects...</h1>
 		<section class="toggle-container">
-			<fieldset>
-				<legend>Search For:</legend>
-				<div class="toggle-option">
-					<label for="user-toggle">Users</label>
-					<input type="checkbox" id="user-toggle" checked />
-				</div>
+			<strong>Search for:</strong><br>
 
-				<div class="toggle-option">
-					<label for="project-toggle">Projects</label>
-					<input type="checkbox" id="project-toggle" checked />
-				</div>
-			</fieldset>
+			<label class="radio-label">
+				<input type="radio" name="visibility" value="Projects" checked="checked">
+				Projects
+			</label>
+
+			<label class="radio-label">
+				<input type="radio" name="visibility" value="User">
+				User
+			</label>
 		</section>
 
 		<section>
@@ -58,18 +52,16 @@
 			</ul>
 		</section>
 	</main>
-
 	<footer>
 		<p>&copy; 2025 Unilink. All rights reserved.</p>
 	</footer>
-
-	<script type="module" src="/search.js"></script>
-	<script type="module">
-		import search from '/search.js';
-
-		search.setupForm();
-	</script>
-	
 </body>
+
+<script type="module" src="/search.js"></script>
+<script type="module">
+	import search from '/search.js';
+
+	search.setupForm();
+</script>
 
 </html>

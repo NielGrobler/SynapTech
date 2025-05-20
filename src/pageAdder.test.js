@@ -47,6 +47,6 @@ describe('pageAdder.js', () => {
       return li;
     });
 
-    expect(container.innerHTML).toContain("Nothing to display.");
+    expect(container.innerHTML).toContain("No results.");
   });
 });

@@ -25,9 +25,6 @@
 			Back
 		</button>
 	</nav>
-
-
-
 	<main class="inset flex-col gap-medium">
 		<section class="border-solid-thin shadow">
 			<h1 class="accent-underline">Search for public projects</h1>
@@ -41,23 +38,15 @@
 			</ul>
 		</section>
 	</main>
-
-	<script type="module" src="/searchPublicProjects.js"></script>
-
-	<script type="module">
-		import {setupSearchForm} from '/searchPublicProjects.js';
-
-		setupSearchForm();
-	</script>
-
 	<footer class="inset">
 		<p>&copy; 2025 Unilink. All rights reserved.</p>
 	</footer>
-
-
-
 </body>
 
-
+<script type="module" src="/searchPublicProjects.js"></script>
+<script type="module">
+	import {setupSearchForm} from '/searchPublicProjects.js';
+	setupSearchForm();
+</script>
 
 </html>
