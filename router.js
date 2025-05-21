@@ -199,6 +199,7 @@ const requireAuthentication = (callback, opts = {}) => {
 
 /* Normal Routes */
 router.get('/dashboard', requireAuthentication((req, res) => {
+	console.log("Redirecting to /dashboard");
 	res.sendFile(path.join(__dirname, "public", "dashboard.html"));
 }));
 
@@ -230,8 +231,6 @@ router.get('/', (req, res) => {
 	if (!authenticateRequest(req)) {
 		return res.redirect('login');
 	}
-
-	console.log("Redirecting to /dashboard");
 	res.redirect('/dashboard');
 });
 
