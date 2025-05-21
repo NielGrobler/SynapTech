@@ -702,7 +702,7 @@ router.post('/api/collaboration/request', requireAuthentication(async (req, res)
 
 	try {
 		await db.insertPendingCollaborator(req.user.id, projectId);
-		res.send('Successfully sent collobaroration request.');
+		res.send('Successfully sent collaboration request.');
 	} catch (err) {
 		res.status(400).json({ error: 'Failed' });
 	}
@@ -804,11 +804,11 @@ router.put('/suspend/user', async (req, res) => {
 });
 
 //Checks if user is an administrator
-router.get('/admin', async (req, res) => {
+router.get('/admin', requireAuthentication(async (req, res) => {
 	let user = req.user.id;
 	let admin = await db.is_Admin(user);
 	return res.json(admin);
-});
+}, { statusCode: 401 }));
 
 router.get('/isSuspended', requireAuthentication(async (req, res) => {
 	try {

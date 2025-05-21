@@ -1,4 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import express from 'express';
+import request from 'supertest';
+import router, { authenticateRequest } from './router.js';
+import db from './db/db.js';
+import path from 'path';
 
 // Mock db default export
 vi.mock('./db/db.js', () => ({
@@ -6,30 +11,47 @@ vi.mock('./db/db.js', () => ({
 	default: {
 		getUserByGUID: vi.fn(),
 		createUser: vi.fn(),
-		storeMessage: vi.fn(),
-		retrieveMessagedUsers: vi.fn(),
-		retrieveMessages: vi.fn(),
-		permittedToAcceptCollaborator: vi.fn(),
-		acceptCollaborator: vi.fn(),
-		permittedToRejectCollaborator: vi.fn(),
-		removeCollaborator: vi.fn(),
-		fetchProjectById: vi.fn(),
-		searchProjects: vi.fn(),
+		createProject: vi.fn(),
 		fetchAssociatedProjects: vi.fn(),
 		appendCollaborators: vi.fn(),
-		fetchPendingCollaborators: vi.fn(),
-		createProject: vi.fn(),
-		insertPendingCollaborator: vi.fn(),
 		deleteUser: vi.fn(),
+		isSuspended: vi.fn(),
+		suspendUser: vi.fn(),
+		addCollaborator: vi.fn(),
+		acceptCollaborator: vi.fn(),
+		searchProjects: vi.fn(),
+		fetchProjectById: vi.fn(),
+		fetchCollaborators: vi.fn(),
+		fetchPendingCollaborators: vi.fn(),
+		insertPendingCollaborator: vi.fn(),
+		searchUsers: vi.fn(),
+		fetchPublicAssociatedProjects: vi.fn(),
+		fetchUserById: vi.fn(),
+		updateProfile: vi.fn(),
+		permittedToAcceptCollaborator: vi.fn(),
+		permittedToRejectCollaborator: vi.fn(),
+		removeCollaborator: vi.fn(),
+		storeMessage: vi.fn(),
+		getRoleInProject: vi.fn(),
+		storeMessageWithAttachment: vi.fn(),
+		downloadFile: vi.fn(),
+		retrieveLatestMessages: vi.fn(),
+		fetchAssociatedProjectsByLatest: vi.fn(),
+		getProjectReviews: vi.fn(),
+		getReviewCount: vi.fn(),
 		createReview: vi.fn(),
+		is_Admin: vi.fn(),
+		getPendingCollabInvites: vi.fn(),
+		replyToCollabInvite: vi.fn(),
+		sendCollabInvite: vi.fn(),
+		canInvite: vi.fn(),
+		alreadyInvited: vi.fn(),
+		getProjectFiles: vi.fn(),
+		mayAccessProject: vi.fn(),
+		mayUploadToProject: vi.fn(),
+		uploadToProject: vi.fn(),
 	},
 }));
-
-import express from 'express';
-import request from 'supertest';
-import router, { authenticateRequest } from './router.js';
-import db from './db/db.js';
-import path from 'path';
 
 // Helper to setup app with auth simulation
 const setupApp = () => {
@@ -318,35 +340,53 @@ describe('Router Module Tests', () => {
 			});
 		});
 
-		/*describe('Reviews', () => {
+		describe('Reviews', () => {
 			describe('POST /api/review', () => {
 				it('should create a review for authenticated users with valid data', async () => {
 					let res = await request(app).post('/api/review')
-					.set('authenticated', 'false');
-				expect(res.status).toBe(401);
-				
-				// Missing required fields
-				res = await request(app).post('/api/review')
-					.set('authenticated', 'true')
-					.send({});
-				expect(res.status).toBe(400);
-				
-				const reviewData = {
-					projectId: 1,
-					rating: 5,
-					comment: 'Great project!'
-				};
-				
-				db.createReview.mockResolvedValue({});
-				res = await request(app).post('/api/review')
-					.set('authenticated', 'true')
-					.send(reviewData);
-				expect(res.status).toBe(201);
-				expect(res.body.redirect).toBe('/successfulReviewPost');
+						.set('authenticated', 'false');
+					expect(res.status).toBe(401);
+					
+					res = await request(app).post('/api/review')
+						.set('authenticated', 'true')
+						.send({});
+					expect(res.status).toBe(400);
+					
+					const reviewData = {
+						projectId: 1,
+						rating: 5,
+						comment: 'Great project!'
+					};
+					
+					db.createReview.mockImplementation(async (review) => {
+						return {
+							project_id: review.project_id,
+							reviewer_id: review.reviewer_id,
+							rating: review.rating,
+							comment: review.comment
+						};
+					});
+					
+					const mockUser = { id: 123 };
+					
+					res = await request(app).post('/api/review')
+						.set('authenticated', 'true')
+						.set('user', JSON.stringify(mockUser)) //bizarre issue, switched over to manual mockUser
+						.send(reviewData);
+					
+					expect(res.status).toBe(201);
+					expect(res.body.redirect).toBe('/successfulReviewPost');
+					
+					expect(db.createReview).toHaveBeenCalledWith({
+						project_id: parseInt(reviewData.projectId),
+						reviewer_id: mockUser.id,
+						rating: parseInt(reviewData.rating),
+						comment: reviewData.comment
+					});
 				});
 			});
 		});
-		*/
+		
 
 		describe('Users', () => {
 			describe('GET /api/user/info', () => {
@@ -360,7 +400,7 @@ describe('Router Module Tests', () => {
 				});
 			});
 
-			/*
+			
 			describe('GET /api/user', () => {
 				it('should fetch user data by ID for authenticated users', async () => {
 					let res = await request(app).get('/api/user')
@@ -400,7 +440,7 @@ describe('Router Module Tests', () => {
 					expect(res.body).toEqual(profileData);
 				});
 			});
-			*/
+			
 
 			describe('POST /remove/user', () => {
 				it('should handle user deletion for self or admin requests', async () => {
@@ -434,7 +474,7 @@ describe('Router Module Tests', () => {
 				});
 			});
 
-			/*
+		
 			describe('PUT /suspend/user', () => {
 				it('should suspend users when requested by admin', async () => {
 					let res = await request(app).put('/suspend/user')
@@ -453,7 +493,7 @@ describe('Router Module Tests', () => {
 				it('should check admin status for authenticated users', async () => {
 					let res = await request(app).get('/admin')
 						.set('authenticated', 'false');
-					expect(res.status).toBe(302);
+					expect(res.status).toBe(401);
 					
 					db.is_Admin.mockResolvedValue(true);
 					res = await request(app).get('/admin')
@@ -475,7 +515,7 @@ describe('Router Module Tests', () => {
 					expect(res.body).toBe(false);
 				});
 			});
-			*/
+		
 		});
 
 		describe('Collaborations', () => {
@@ -515,7 +555,6 @@ describe('Router Module Tests', () => {
 				});
 			});
 
-			/*
 			describe('POST /api/collaboration/invite', () => {
 				it('should send collaboration invites with valid permissions', async () => {
 					let res = await request(app).post('/api/collaboration/invite')
@@ -556,13 +595,17 @@ describe('Router Module Tests', () => {
 					
 					res = await request(app).get('/api/collaboration/invites')
 						.set('authenticated', 'true')
-						.set('user', JSON.stringify({ id: 1 }));
+						.set('user', JSON.stringify({ id: 1 })); //userid needs to be set?
 					expect(res.body).toEqual(invites);
 				});
 			});
 
+			/*
 			describe('POST /api/collaboration/invite/reply', () => {
 				it('should handle replies to collaboration invites', async () => {
+
+					const mockUser = { id: 123 }; //
+
 					let res = await request(app).post('/api/collaboration/invite/reply')
 						.set('authenticated', 'false');
 					expect(res.status).toBe(401);
@@ -603,7 +646,7 @@ describe('Router Module Tests', () => {
 					res = await request(app).post('/api/collaboration/request')
 						.set('authenticated', 'true')
 						.send({ projectId: 1 });
-					expect(res.text).toBe('Successfully sent collobaroration request.');
+					expect(res.text).toBe('Successfully sent collaboration request.');
 				});
 			});
 			*/
@@ -669,7 +712,7 @@ describe('Router Module Tests', () => {
 				});
 			});
 
-			/*describe('GET /api/search/user', () => {
+			describe('GET /api/search/user', () => {
 				it('should search users based on query parameters', async () => {
 					let res = await request(app).get('/api/search/user')
 						.set('authenticated', 'false');
@@ -687,11 +730,12 @@ describe('Router Module Tests', () => {
 					expect(res.body).toEqual(users);
 				});
 			});
-			*/
+			
 		});
 		
 		
-		/*describe('Files', () => {
+		/*
+		describe('Files', () => {
 			describe('POST /api/project/:projectId/upload', () => {
 				it('should handle file uploads to projects with valid permissions', async () => {
 					let res = await request(app).post('/api/project/1/upload')
@@ -759,6 +803,7 @@ describe('Router Module Tests', () => {
 			
 		});
 		*/
+		
 	});
 
 	//unsorted, get back to this later
