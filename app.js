@@ -13,118 +13,122 @@ if (process.env.ENVIRONMENT === 'prod') {
 		console.log(`HTTPS server running in production mode`);
 	});
   
-  const server = router;
-  const io = new Server(server);
-  
-  io.use((socket, next) => {
-    const token = socket.handshake.auth.token;
+  try {
+    const server = router;
+    const io = new Server(server);
+    
+    io.use((socket, next) => {
+      const token = socket.handshake.auth.token;
 
-    if (!token) {
-      return next(new Error('Authentication error'));
-    }
-
-    jwt.verify(token, process.env.SESSION_SECRET, async (err, decoded) => {
-      if (err) {
+      if (!token) {
         return next(new Error('Authentication error'));
       }
 
-      const user = await db.getUserByGUID(decoded.id);
-
-      socket.user = user;
-      next();
-    });
-  });
-
-  io.on('connection', (socket) => {
-    console.log('User connected');
-
-    socket.on('download-request', async ({ attachmentUuid, ext }) => {
-      try {
-        const result = await db.downloadFile(attachmentUuid, ext);
-        socket.emit('download-response', result);
-      } catch (err) {
-        socket.emit('error', { message: 'Failed downloading file.' });
-      }
-    });
-
-    socket.on('join-room', async ({ roomId }) => {
-      const projectId = roomId;
-
-      try {
-        const role = await db.getRoleInProject(socket.user.id, projectId);
-        if (!role) {
-          socket.emit('error', { message: 'Failed joining specified room.' });
-          return;
+      jwt.verify(token, process.env.SESSION_SECRET, async (err, decoded) => {
+        if (err) {
+          return next(new Error('Authentication error'));
         }
 
-        socket.join(roomId);
-        socket.joinedRooms = socket.joinedRooms || new Set();
-        socket.user.role = role;
-        socket.joinedRooms.add(roomId);
-        socket.currentRoom = roomId;
-        console.log("Changed room to ", socket.currentRoom);
+        const user = await db.getUserByGUID(decoded.id);
 
-        const latestMessages = await db.retrieveLatestMessages(projectId);
-
-        socket.emit('joined-room', { roomId, latestMessages: latestMessages.recordSet });
-
-      } catch (err) {
-        console.log("encoutered error in join-room");
-        console.error(err);
-        socket.emit('error', { message: 'Failed joining room.' });
-      }
-    });
-
-    socket.on('message', async ({ roomId, content }) => {
-      if (!socket.joinedRooms?.has(roomId)) {
-        socket.emit('error', { message: 'You must join the room before sending messages.' });
-        return;
-      }
-
-      if (!content || typeof content !== 'string' || content.length === 0) {
-        socket.emit('error', { message: 'invalid message content' });
-        return;
-      }
-
-      const projectId = socket.currentRoom;
-      await db.storeMessage(socket.user.id, projectId, content);
-      console.log("LOGGING");
-
-      io.to(roomId).emit('message', {
-        user: socket.user.name,
-        role: socket.role,
-        text: content
+        socket.user = user;
+        next();
       });
     });
 
-    socket.on('message-with-attachment', async ({ roomId, text, attachment }) => {
-      if (!socket.joinedRooms?.has(roomId)) {
-        socket.emit('error', { message: 'You must join the room before sending messages.' });
-        return;
-      }
+    io.on('connection', (socket) => {
+      console.log('User connected');
 
-      if (!attachment?.name || !attachment?.buffer) {
-        socket.emit('error', { message: 'Attachment is missing required fields.' });
-        return;
-      }
+      socket.on('download-request', async ({ attachmentUuid, ext }) => {
+        try {
+          const result = await db.downloadFile(attachmentUuid, ext);
+          socket.emit('download-response', result);
+        } catch (err) {
+          socket.emit('error', { message: 'Failed downloading file.' });
+        }
+      });
 
-      try {
-        const result = await db.storeMessageWithAttachment(socket.user.id, socket.currentRoom, text, attachment);
-        result.user = socket.user.name;
-        result.role = socket.role;
-        io.to(roomId).emit('message', result);
-      } catch (error) {
-        console.log(error);
-        socket.emit('error', { message: 'Failed sending message.' });
-      }
+      socket.on('join-room', async ({ roomId }) => {
+        const projectId = roomId;
+
+        try {
+          const role = await db.getRoleInProject(socket.user.id, projectId);
+          if (!role) {
+            socket.emit('error', { message: 'Failed joining specified room.' });
+            return;
+          }
+
+          socket.join(roomId);
+          socket.joinedRooms = socket.joinedRooms || new Set();
+          socket.user.role = role;
+          socket.joinedRooms.add(roomId);
+          socket.currentRoom = roomId;
+          console.log("Changed room to ", socket.currentRoom);
+
+          const latestMessages = await db.retrieveLatestMessages(projectId);
+
+          socket.emit('joined-room', { roomId, latestMessages: latestMessages.recordSet });
+
+        } catch (err) {
+          console.log("encoutered error in join-room");
+          console.error(err);
+          socket.emit('error', { message: 'Failed joining room.' });
+        }
+      });
+
+      socket.on('message', async ({ roomId, content }) => {
+        if (!socket.joinedRooms?.has(roomId)) {
+          socket.emit('error', { message: 'You must join the room before sending messages.' });
+          return;
+        }
+
+        if (!content || typeof content !== 'string' || content.length === 0) {
+          socket.emit('error', { message: 'invalid message content' });
+          return;
+        }
+
+        const projectId = socket.currentRoom;
+        await db.storeMessage(socket.user.id, projectId, content);
+        console.log("LOGGING");
+
+        io.to(roomId).emit('message', {
+          user: socket.user.name,
+          role: socket.role,
+          text: content
+        });
+      });
+
+      socket.on('message-with-attachment', async ({ roomId, text, attachment }) => {
+        if (!socket.joinedRooms?.has(roomId)) {
+          socket.emit('error', { message: 'You must join the room before sending messages.' });
+          return;
+        }
+
+        if (!attachment?.name || !attachment?.buffer) {
+          socket.emit('error', { message: 'Attachment is missing required fields.' });
+          return;
+        }
+
+        try {
+          const result = await db.storeMessageWithAttachment(socket.user.id, socket.currentRoom, text, attachment);
+          result.user = socket.user.name;
+          result.role = socket.role;
+          io.to(roomId).emit('message', result);
+        } catch (error) {
+          console.log(error);
+          socket.emit('error', { message: 'Failed sending message.' });
+        }
+      });
+
+      socket.on('disconnect', () => {
+        console.log('User disconnected');
+      });
+      
     });
+  } catch (error) {
+    console.error("Error starting sockets:", error);
+  }
 
-    socket.on('disconnect', () => {
-      console.log('User disconnected');
-    });
-    
-  });
-  
 } else { //only other option is running locally if it's not set, or rather when it is unspecified.
 
   const sslOptions = {
