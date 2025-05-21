@@ -858,6 +858,7 @@ export default {
 	acceptCollaborator,
 	searchProjects,
 	fetchProjectById,
+	fetchCollaborators,
 	fetchPendingCollaborators,
 	insertPendingCollaborator,
 	searchUsers,
