@@ -13,7 +13,6 @@ if (process.env.ENVIRONMENT === 'prod') {
 		console.log(`HTTPS server running in production mode`);
 	});
   
-  /*
   const server = router;
   const io = new Server(server);
   
@@ -125,7 +124,7 @@ if (process.env.ENVIRONMENT === 'prod') {
     });
     
   });
-  */
+  
 } else { //only other option is running locally if it's not set, or rather when it is unspecified.
 
   const sslOptions = {
