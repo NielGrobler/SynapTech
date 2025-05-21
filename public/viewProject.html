@@ -39,6 +39,34 @@
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 	<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 	<script type="module" src="/savedTheme.js"></script>
+	
+	<script>
+	//fallback for styles loading,
+	setTimeout(function() {
+		var antiFouc = document.getElementById('anti-fouc');
+		if (antiFouc) antiFouc.remove();
+		
+		document.body.style.opacity = '1';
+		document.body.style.visibility = 'visible';
+		
+		var structuralElements = document.querySelectorAll('nav, main, footer');
+		structuralElements.forEach(function(el) {
+		el.style.display = '';
+		});
+	}, 3000); //3 second timeout to force load, but by that time it MUST have loaded
+
+	if (document.readyState === 'complete') {
+		document.getElementById('anti-fouc').remove();
+		document.body.style.opacity = '1';
+		document.body.style.visibility = 'visible';
+	} else {
+		window.addEventListener('load', function() {
+		document.getElementById('anti-fouc').remove();
+		document.body.style.opacity = '1';
+		document.body.style.visibility = 'visible';
+		});
+	}
+	</script>
 </head>
 
 <body>
