@@ -10,10 +10,12 @@ const port = process.env.PORT || 3000;
 
 if (process.env.ENVIRONMENT === 'prod') {
   try {
-    let server = router
     try {
-      server = createServer(router);
-      const io = new Server(server);
+      const routerInstance = router.listen(port, () => {
+        console.log(`HTTPS server running in production mode`);
+      });
+
+      const io = new Server(routerInstance);
       
       io.use((socket, next) => {
         const token = socket.handshake.auth.token;
@@ -124,19 +126,18 @@ if (process.env.ENVIRONMENT === 'prod') {
         
       });
 
-      server.listen(port, () => {
-        console.log(`HTTPS server running in production mode`);
-      });
     } catch (error) {
       console.error("Error starting sockets:", error);
+
       router.listen(port, () => { //revert back to old object just in case
         console.log(`HTTPS server running in production mode (no sockets)`);
       });
+
+      
     }
   } catch (error) {
     console.error("Failed to start server:", error);
   }
-
 } else { //only other option is running locally if it's not set, or rather when it is unspecified.
 
   const sslOptions = {
