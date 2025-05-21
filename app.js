@@ -1,4 +1,4 @@
-import https from 'https';
+import { createServer } from 'https';
 import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import fs from 'fs';
@@ -9,13 +9,10 @@ import router from './router.js';
 const port = process.env.PORT || 3000;
 
 if (process.env.ENVIRONMENT === 'prod') {
-	router.listen(port, () => {
-		console.log(`HTTPS server running in production mode`);
-	});
-  
   try {
-    const server = router;
+    const server = createServer(router);
     const io = new Server(server);
+    //could server just be directly imported here?
     
     io.use((socket, next) => {
       const token = socket.handshake.auth.token;
@@ -129,6 +126,11 @@ if (process.env.ENVIRONMENT === 'prod') {
     console.error("Error starting sockets:", error);
   }
 
+  //router here does not get messaging stuff attached?
+  router.listen(port, () => {
+		console.log(`HTTPS server running in production mode`);
+	});
+
 } else { //only other option is running locally if it's not set, or rather when it is unspecified.
 
   const sslOptions = {
@@ -136,7 +138,7 @@ if (process.env.ENVIRONMENT === 'prod') {
     cert: fs.readFileSync('server.cert')
   };
 
-	const server = https.createServer(sslOptions, router)
+	const server = createServer(sslOptions, router)
   const io = new Server(server);
 
   io.use((socket, next) => {
