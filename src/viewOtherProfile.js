@@ -17,7 +17,7 @@ const checkAdmin = async () => {
 		const userId = params.get('id');
 		const status = await fetch(`/isSuspended?id=${encodeURIComponent(userId)}`);
 		const isSus = await status.json();
-		console.log(isSus);
+		//console.log(isSus);
 
 		if (isSus) {
 			suspend.innerText = 'Unsuspend User';

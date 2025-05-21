@@ -103,7 +103,7 @@ try {
 
 			const projectId = socket.currentRoom;
 			await db.storeMessage(socket.user.id, projectId, content);
-			console.log("LOGGING");
+			console.log("Message sent");
 
 			io.to(roomId).emit('message', {
 			user: socket.user.name,

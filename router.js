@@ -369,7 +369,7 @@ router.post('/api/project/:projectId/upload', upload.single('file'), requireAuth
 	}
 
 	try {
-		console.log(req.file);
+		//console.log(req.file);
 		const maxSize = 10 * 1024 * 1024;
 		if (req.file.size > maxSize) {
 			return res.status(400).json({ error: 'File size exceeds the 10MB limit.' });

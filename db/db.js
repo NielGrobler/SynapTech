@@ -227,8 +227,8 @@ const replyToCollabInvite = async (isAccept, accountId, projectId, role) => {
 		.build()
 	);
 
-	console.log(isAccept);
-	console.log(result);
+	//console.log(isAccept);
+	//console.log(result);
 
 	if (isNaN(result.rowsAffected) || result.rowsAffected == 0) {
 		throw new Error("cannot reject a nonexistent invite");

@@ -62,7 +62,7 @@ const setupDOM = async (urlParams = {}) => {
                 })
                     .then(res => res.json())
                     .then(data => {
-                        console.log('Server response:', data);
+                        //console.log('Server response:', data);
                         if (data.message === 'Review submitted!') {
                             window.location.href = data.redirect || '/successfulReviewPost';
                         } else if (data.error) {

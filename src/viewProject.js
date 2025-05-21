@@ -82,7 +82,7 @@ const projectFileToHTML = (projectFile) => {
 	const li = document.createElement('li');
 	const link = document.createElement('a');
 	link.href = '#';
-	console.log(projectFile);
+	//console.log(projectFile);
 	link.textContent = `${projectFile.original_filename}`;
 	link.dataset.projectId = projectFile.project_id;
 	link.dataset.ext = getFileExt(projectFile.original_filename);
@@ -105,7 +105,6 @@ const projectFileToHTML = (projectFile) => {
 
 const isParticipant = (userId, project) => {
 	if (userId === project.created_by_account_id) {
-		console.log("WENT HERE");
 		return true;
 	}
 
@@ -385,9 +384,9 @@ const populateElements = async () => {
 	loadProjectReviews(project);
 	loadProjectFiles(project);
 
-	document.addEventListener('DOMContentLoaded', () => {
+	/*document.addEventListener('DOMContentLoaded', () => {
 		console.log("dwqiudhwqiudhwqdihwqHELLO?");
-	});
+	});*/
 }
 
 export async function initPage() {
