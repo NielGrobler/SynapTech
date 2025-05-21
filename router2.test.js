@@ -61,9 +61,7 @@ describe('Router Module Tests', () => {
 			req.isAuthenticated = () => false;
 			expect(authenticateRequest(req)).toBe(false);
 		});
-	});
 
-	describe('Normal Routes', () => {
 		it('redirects .html to /forbidden and serves .js from src', async () => {
 			let res = await request(app).get('/file.html');
 			expect(res.status).toBe(302);
@@ -74,144 +72,696 @@ describe('Router Module Tests', () => {
 		});
 
 		it('GET /forbidden', async () => {
-			const res = await request(app).get('/forbidden');
+			let res = await request(app).get('/forbidden');
 			expect(res.status).toBe(403);
 			expect(res.text).toBe('served forbidden.html');
 		});
 
-		it('GET /dashboard and /login/signup', async () => {
-			let res = await request(app).get('/dashboard').set('authenticated', 'false');
-			expect(res.status).toBe(302);
-			expect(res.headers.location).toBe('/forbidden');
-			res = await request(app).get('/dashboard').set('authenticated', 'true');
-			expect(res.text).toBe('served dashboard.html');
-			res = await request(app).get('/login');
-			expect(res.text).toBe('served login.html');
-			res = await request(app).get('/signup');
-			expect(res.text).toBe('served signup.html');
+	});
+
+	describe('Normal Routes', () => {
+		describe('GET /', () => {
+			it('should serve dashboard for authenticated users and redirect unauthenticated users to login', async () => {
+				let res = await request(app).get('/');
+				expect(res.status).toBe(302);
+				expect(res.headers.location).toBe('/login');
+				res = await request(app).get('/')
+					.set('authenticated', 'true');
+				expect(res.status).toBe(302);
+				expect(res.headers.location).toBe('/dashboard');
+			});
 		});
 
-		it('GET /settings and /invite status codes', async () => {
-			let res = await request(app).get('/settings').set('authenticated', 'false');
-			expect(res.status).toBe(401);
-			res = await request(app).get('/settings').set('authenticated', 'true');
-			expect(res.text).toBe('served settings.html');
-			res = await request(app).get('/invite').set('authenticated', 'false');
-			expect(res.status).toBe(401);
-			res = await request(app).get('/invite').set('authenticated', 'true');
-			expect(res.text).toBe('served invite.html');
+		describe('GET /dashboard', () => {
+			it('should serve page for authenticated users and redirect unauthenticated users', async () => {
+				let res = await request(app).get('/dashboard').set('authenticated', 'false');
+				expect(res.status).toBe(302);
+				expect(res.headers.location).toBe('/forbidden');
+				res = await request(app).get('/dashboard').set('authenticated', 'true');
+				expect(res.text).toBe('served dashboard.html');
+			});
 		});
 
-		it('GET /message unauthorized and authorized', async () => {
-			let res = await request(app).get('/message');
-			expect(res.status).toBe(302);
-			expect(res.headers.location).toBe('/forbidden');
-			res = await request(app).get('/message').set('authenticated', 'true');
-			expect(res.text).toBe('served messages.html');
+		describe('GET /login', () => {
+			it('should serve page to all users', async () => {
+				let res = await request(app).get('/login');
+				expect(res.text).toBe('served login.html');
+			});
+		});
+
+		describe('GET /signup', () => {
+			it('should serve page to all users', async () => {
+				let res = await request(app).get('/signup');
+				expect(res.text).toBe('served signup.html');
+			});
+		});
+
+		describe('GET /logout', () => {
+			it('should logout for all authenticated users', async () => {
+				let res = await request(app).get('/logout')
+					.set('authenticated', 'true');
+				expect(res.status).toBe(302);
+				expect(res.headers.location).toBe('/');
+			});
+		});
+
+		describe('GET /create/project', () => {
+			it('should serve page for authenticated users and redirect unauthenticated users', async () => {
+				let res = await request(app).get('/create/project');
+				expect(res.status).toBe(302);
+				expect(res.headers.location).toBe('/forbidden');
+				res = await request(app).get('/create/project')
+					.set('authenticated', 'true');
+				expect(res.text).toBe('served addProject.html');
+			});
+		});
+
+		describe('GET /view/search', () => {
+			it('should serve page for authenticated users and redirect unauthenticated users', async () => {
+				let res = await request(app).get('/view/search');
+				expect(res.status).toBe(302);
+				expect(res.headers.location).toBe('/forbidden');
+				res = await request(app).get('/view/search')
+					.set('authenticated', 'true');
+				expect(res.text).toBe('served search.html');
+			});
+		});
+
+		describe('GET /view/project', () => {
+			it('should serve page for authenticated users and redirect unauthenticated users', async () => {
+				let res = await request(app).get('/view/project');
+				expect(res.status).toBe(302);
+				expect(res.headers.location).toBe('/forbidden');
+				res = await request(app).get('/view/project')
+					.set('authenticated', 'true');
+				expect(res.text).toBe('served viewProject.html');
+			});
+		});
+
+		describe('GET /settings', () => {
+			it('should serve page for authenticated users and redirect unauthenticated users', async () => {
+				let res = await request(app).get('/settings').set('authenticated', 'false');
+				expect(res.status).toBe(401);
+				res = await request(app).get('/settings').set('authenticated', 'true');
+				expect(res.text).toBe('served settings.html');
+			});
+		});
+
+		describe('GET /invite', () => {
+			it('should serve page for authenticated users and redirect unauthenticated users', async () => {
+				let res = await request(app).get('/invite').set('authenticated', 'false');
+				expect(res.status).toBe(401);
+				res = await request(app).get('/invite').set('authenticated', 'true');
+				expect(res.text).toBe('served invite.html');
+			});
+		});
+
+		describe('GET /messages', () => {
+			it('should serve page for authenticated users and redirect unauthenticated users', async () => {
+				let res = await request(app).get('/message');
+				expect(res.status).toBe(302);
+				expect(res.headers.location).toBe('/forbidden');
+				res = await request(app).get('/message').set('authenticated', 'true');
+				expect(res.text).toBe('served messages.html');
+			});
+		});
+
+		describe('GET /reviewProject', () => {
+			it('should serve page for authenticated users and redirect unauthenticated users', async () => {
+				let res = await request(app).get('/reviewProject');
+				expect(res.status).toBe(302);
+				expect(res.headers.location).toBe('/forbidden');
+				res = await request(app).get('/reviewProject')
+					.set('authenticated', 'true');
+				expect(res.text).toBe('served reviewProject.html');
+			});
+		});
+
+		describe('GET /analyticsDashboard', () => {
+			it('should serve page for authenticated users and redirect unauthenticated users', async () => {
+				let res = await request(app).get('/analyticsDashboard');
+				expect(res.status).toBe(302);
+				expect(res.headers.location).toBe('/forbidden');
+				res = await request(app).get('/analyticsDashboard')
+					.set('authenticated', 'true');
+				expect(res.text).toBe('served analyticsDashboard.html');
+			});
+		});
+
+		describe('GET /successfulReviewPost', () => {
+			it('should serve page for authenticated users and redirect unauthenticated users', async () => {
+				let res = await request(app).get('/successfulReviewPost');
+				expect(res.status).toBe(302);
+				expect(res.headers.location).toBe('/forbidden');
+				res = await request(app).get('/successfulReviewPost')
+					.set('authenticated', 'true');
+				expect(res.text).toBe('served successfulReviewPost.html');
+			});
+		});
+
+		describe('GET /view/users', () => {
+			it('should serve page for authenticated users and redirect unauthenticated users', async () => {
+				let res = await request(app).get('/view/users');
+				expect(res.status).toBe(302);
+				expect(res.headers.location).toBe('/forbidden');
+				res = await request(app).get('/view/users')
+					.set('authenticated', 'true');
+				expect(res.text).toBe('served searchUsers.html');
+			});
+		});
+
+		describe('GET /view/other/profile', () => {
+			it('should serve page for authenticated users and redirect unauthenticated users', async () => {
+				let res = await request(app).get('/view/other/profile');
+				expect(res.status).toBe(302);
+				expect(res.headers.location).toBe('/forbidden');
+				res = await request(app).get('/view/other/profile')
+					.set('authenticated', 'true');
+				expect(res.text).toBe('served viewOtherProfile.html');
+			});
+		});
+
+		describe('GET /view/curr/profile', () => {
+			it('should serve page for authenticated users and redirect unauthenticated users', async () => {
+				let res = await request(app).get('/view/curr/profile');
+				expect(res.status).toBe(302);
+				expect(res.headers.location).toBe('/forbidden');
+				res = await request(app).get('/view/curr/profile')
+					.set('authenticated', 'true');
+				expect(res.text).toBe('served viewCurrProfile.html');
+			});
+		});
+
+		describe('GET /suspended', () => {
+			it('should serve page for authenticated users and redirect unauthenticated users', async () => {
+				let res = await request(app).get('/suspended');
+				expect(res.status).toBe(302);
+				expect(res.headers.location).toBe('/forbidden');
+				res = await request(app).get('/suspended')
+					.set('authenticated', 'true');
+				expect(res.text).toBe('served suspended.html');
+			});
 		});
 	});
 
 	describe('API Routes', () => {
-		it('API: /api/user/info', async () => {
-			let res = await request(app).get('/api/user/info').set('authenticated', 'false');
-			expect(res.status).toBe(401);
-			const user = { id: 1, name: 'A' };
-			res = await request(app).get('/api/user/info')
-				.set('authenticated', 'true').set('user', JSON.stringify(user));
-			expect(res.body).toEqual(user);
+		describe('Projects', () => {
+			describe('GET /api/project', () => {
+				it('should return project data for authenticated users with valid permissions', async () => {
+					let res = await request(app).get('/api/project').set('authenticated', 'false');
+					expect(res.status).toBe(401);
+					res = await request(app).get('/api/project')
+						.set('authenticated', 'true');
+					expect(res.status).toBe(400);
+					db.fetchProjectById.mockResolvedValue(null);
+					res = await request(app).get('/api/project?id=5')
+						.set('authenticated', 'true');
+					expect(res.body).toBeNull();
+					const proj = { is_public: false, created_by_account_id: 2, collaborators: [] };
+					db.fetchProjectById.mockResolvedValue(proj);
+					res = await request(app).get('/api/project?id=5')
+						.set('authenticated', 'true').set('user', JSON.stringify({ id: 3 }));
+					expect(res.status).toBe(400);
+					proj.is_public = true;
+					res = await request(app).get('/api/project?id=5')
+						.set('authenticated', 'true');
+					expect(res.body).toEqual(proj);
+				});
+			});
+
+			describe('POST /create/project', () => {
+				it('should create a project for authenticated users and handle success/failure responses', async () => {
+					let res = await request(app).post('/create/project')
+						.set('authenticated', 'false');
+					expect(res.status).toBe(302);
+					
+					const projectData = {
+						projectName: 'Test Project',
+						description: 'Test Description',
+						field: 'Test Field',
+						visibility: 'public'
+					};
+					
+					db.createProject.mockResolvedValue(true);
+					res = await request(app).post('/create/project')
+						.set('authenticated', 'true')
+						.send(projectData);
+					expect(res.status).toBe(200);
+					expect(res.text).toBe('served successfulProjectPost.html');
+					
+					db.createProject.mockRejectedValue(new Error('DB Error'));
+					res = await request(app).post('/create/project')
+						.set('authenticated', 'true')
+						.send(projectData);
+					expect(res.text).toBe('served failureProjectPost.html');
+				});
+			});
 		});
 
-		it('PUT /api/accept/collaborator', async () => {
-			let res = await request(app).put('/api/accept/collaborator').send({});
-			expect(res.status).toBe(302);
-			res = await request(app).put('/api/accept/collaborator')
-				.set('authenticated', 'true').send({});
-			expect(res.status).toBe(400);
-			db.permittedToAcceptCollaborator.mockResolvedValue(false);
-			res = await request(app).put('/api/accept/collaborator')
-				.set('authenticated', 'true').send({ userId: 1, projectId: 1 });
-			expect(res.status).toBe(400);
-			db.permittedToAcceptCollaborator.mockResolvedValue(true);
-			res = await request(app).put('/api/accept/collaborator')
-				.set('authenticated', 'true').send({ userId: 1, projectId: 1 });
-			expect(res.text).toBe('Successful');
+		/*describe('Reviews', () => {
+			describe('POST /api/review', () => {
+				it('should create a review for authenticated users with valid data', async () => {
+					let res = await request(app).post('/api/review')
+					.set('authenticated', 'false');
+				expect(res.status).toBe(401);
+				
+				// Missing required fields
+				res = await request(app).post('/api/review')
+					.set('authenticated', 'true')
+					.send({});
+				expect(res.status).toBe(400);
+				
+				const reviewData = {
+					projectId: 1,
+					rating: 5,
+					comment: 'Great project!'
+				};
+				
+				db.createReview.mockResolvedValue({});
+				res = await request(app).post('/api/review')
+					.set('authenticated', 'true')
+					.send(reviewData);
+				expect(res.status).toBe(201);
+				expect(res.body.redirect).toBe('/successfulReviewPost');
+				});
+			});
+		});
+		*/
+
+		describe('Users', () => {
+			describe('GET /api/user/info', () => {
+				it('should return user info for authenticated users', async () => {
+					let res = await request(app).get('/api/user/info').set('authenticated', 'false');
+					expect(res.status).toBe(401);
+					const user = { id: 1, name: 'Test User' };
+					res = await request(app).get('/api/user/info')
+						.set('authenticated', 'true').set('user', JSON.stringify(user));
+					expect(res.body).toEqual(user);
+				});
+			});
+
+			/*
+			describe('GET /api/user', () => {
+				it('should fetch user data by ID for authenticated users', async () => {
+					let res = await request(app).get('/api/user')
+						.set('authenticated', 'false');
+					expect(res.status).toBe(401);
+					
+					// Missing id parameter
+					res = await request(app).get('/api/user')
+						.set('authenticated', 'true');
+					expect(res.status).toBe(400);
+					
+					const testUser = { id: 1, name: 'Test User' };
+					db.fetchUserById.mockResolvedValue(testUser);
+					res = await request(app).get('/api/user?id=1')
+						.set('authenticated', 'true');
+					expect(res.body).toEqual(testUser);
+					
+					db.fetchUserById.mockResolvedValue(null);
+					res = await request(app).get('/api/user?id=999')
+						.set('authenticated', 'true');
+					expect(res.body).toBeNull();
+
+				});
+			});
+
+			describe('PUT /update/profile', () => {
+				it('should update profile for authenticated users', async () => {
+					let res = await request(app).put('/update/profile')
+						.set('authenticated', 'false');
+					expect(res.status).toBe(401);
+					
+					const profileData = { name: 'New Name', bio: 'New Bio' };
+					db.updateProfile.mockResolvedValue(profileData);
+					res = await request(app).put('/update/profile')
+						.set('authenticated', 'true')
+						.send(profileData);
+					expect(res.body).toEqual(profileData);
+				});
+			});
+			*/
+
+			describe('POST /remove/user', () => {
+				it('should handle user deletion for self or admin requests', async () => {
+					let res = await request(app).post('/remove/user')
+						.set('authenticated', 'false');
+					expect(res.status).toBe(401);
+					
+					// Test self-deletion
+					const user = { id: 1, is_admin: false };
+					db.deleteUser.mockResolvedValue(true);
+					res = await request(app).post('/remove/user')
+						.set('authenticated', 'true')
+						.set('user', JSON.stringify(user))
+						.send({ reqToDeleteId: 1 });
+					expect(res.text).toBe('Account deletion succesful');
+					
+					// Test admin deletion
+					user.is_admin = true;
+					res = await request(app).post('/remove/user')
+						.set('authenticated', 'true')
+						.set('user', JSON.stringify(user))
+						.send({ reqToDeleteId: 2 });
+					expect(res.text).toBe('Account deletion succesful');
+					
+					// Test unauthorized deletion
+					res = await request(app).post('/remove/user')
+						.set('authenticated', 'true')
+						.set('user', JSON.stringify({ id: 1, is_admin: false }))
+						.send({ reqToDeleteId: 2 });
+					expect(res.status).toBe(400);
+				});
+			});
+
+			/*
+			describe('PUT /suspend/user', () => {
+				it('should suspend users when requested by admin', async () => {
+					let res = await request(app).put('/suspend/user')
+						.set('authenticated', 'false');
+					expect(res.status).toBe(302);
+					
+					db.suspendUser.mockResolvedValue(true);
+					res = await request(app).put('/suspend/user')
+						.set('authenticated', 'true')
+						.send({ id: 1 });
+					expect(res.status).toBe(201);
+				});
+			});
+
+			describe('GET /admin', () => {
+				it('should check admin status for authenticated users', async () => {
+					let res = await request(app).get('/admin')
+						.set('authenticated', 'false');
+					expect(res.status).toBe(302);
+					
+					db.is_Admin.mockResolvedValue(true);
+					res = await request(app).get('/admin')
+						.set('authenticated', 'true')
+						.set('user', JSON.stringify({ id: 1 }));
+					expect(res.body).toBe(true);
+				});
+			});
+
+			describe('GET /isSuspended', () => {
+				it('should check suspension status for users', async () => {
+					let res = await request(app).get('/isSuspended')
+						.set('authenticated', 'false');
+					expect(res.status).toBe(401);
+					
+					db.isSuspended.mockResolvedValue([{ is_suspended: false }]);
+					res = await request(app).get('/isSuspended?id=1')
+						.set('authenticated', 'true');
+					expect(res.body).toBe(false);
+				});
+			});
+			*/
 		});
 
-		it('DELETE /api/reject/collaborator', async () => {
-			let res = await request(app).delete('/api/reject/collaborator').send({});
-			expect(res.status).toBe(302);
-			res = await request(app).delete('/api/reject/collaborator')
-				.set('authenticated', 'true').send({});
-			expect(res.status).toBe(400);
-			db.permittedToRejectCollaborator.mockResolvedValue(false);
-			res = await request(app).delete('/api/reject/collaborator')
-				.set('authenticated', 'true').send({ userId: 1, projectId: 2 });
-			expect(res.status).toBe(400);
-			db.permittedToRejectCollaborator.mockResolvedValue(true);
-			res = await request(app).delete('/api/reject/collaborator')
-				.set('authenticated', 'true').send({ userId: 1, projectId: 2 });
-			expect(res.text).toBe('Successful');
-		});
+		describe('Collaborations', () => {
+			describe('PUT /api/accept/collaborator', () => {
+				it('should accept collaborators when permitted', async () => {
+					let res = await request(app).put('/api/accept/collaborator').send({});
+					expect(res.status).toBe(302);
+					res = await request(app).put('/api/accept/collaborator')
+						.set('authenticated', 'true').send({});
+					expect(res.status).toBe(400);
+					db.permittedToAcceptCollaborator.mockResolvedValue(false);
+					res = await request(app).put('/api/accept/collaborator')
+						.set('authenticated', 'true').send({ userId: 1, projectId: 1 });
+					expect(res.status).toBe(400);
+					db.permittedToAcceptCollaborator.mockResolvedValue(true);
+					res = await request(app).put('/api/accept/collaborator')
+						.set('authenticated', 'true').send({ userId: 1, projectId: 1 });
+					expect(res.text).toBe('Successful');
+				});
+			});
 
-		it('GET /api/project', async () => {
-			let res = await request(app).get('/api/project').set('authenticated', 'false');
-			expect(res.status).toBe(401);
-			res = await request(app).get('/api/project')
-				.set('authenticated', 'true');
-			expect(res.status).toBe(400);
-			db.fetchProjectById.mockResolvedValue(null);
-			res = await request(app).get('/api/project?id=5')
-				.set('authenticated', 'true');
-			expect(res.body).toBeNull();
-			const proj = { is_public: false, created_by_account_id: 2, collaborators: [] };
-			db.fetchProjectById.mockResolvedValue(proj);
-			res = await request(app).get('/api/project?id=5')
-				.set('authenticated', 'true').set('user', JSON.stringify({ id: 3 }));
-			expect(res.status).toBe(400);
-			proj.is_public = true;
-			res = await request(app).get('/api/project?id=5')
-				.set('authenticated', 'true');
-			expect(res.body).toEqual(proj);
+			describe('DELETE /api/reject/collaborator', () => {
+				it('should reject collaborators when permitted', async () => {
+					let res = await request(app).delete('/api/reject/collaborator').send({});
+					expect(res.status).toBe(302);
+					res = await request(app).delete('/api/reject/collaborator')
+						.set('authenticated', 'true').send({});
+					expect(res.status).toBe(400);
+					db.permittedToRejectCollaborator.mockResolvedValue(false);
+					res = await request(app).delete('/api/reject/collaborator')
+						.set('authenticated', 'true').send({ userId: 1, projectId: 2 });
+					expect(res.status).toBe(400);
+					db.permittedToRejectCollaborator.mockResolvedValue(true);
+					res = await request(app).delete('/api/reject/collaborator')
+						.set('authenticated', 'true').send({ userId: 1, projectId: 2 });
+					expect(res.text).toBe('Successful');
+				});
+			});
+
+			/*
+			describe('POST /api/collaboration/invite', () => {
+				it('should send collaboration invites with valid permissions', async () => {
+					let res = await request(app).post('/api/collaboration/invite')
+						.set('authenticated', 'false');
+					expect(res.status).toBe(401);
+					
+					// Missing required fields
+					res = await request(app).post('/api/collaboration/invite')
+						.set('authenticated', 'true')
+						.send({});
+					expect(res.status).toBe(400);
+					
+					const inviteData = {
+						projectId: 1,
+						accountId: 2,
+						role: 'Reviewer'
+					};
+					
+					db.canInvite.mockResolvedValue(true);
+					db.alreadyInvited.mockResolvedValue(true);
+					db.sendCollabInvite.mockResolvedValue(true);
+					
+					res = await request(app).post('/api/collaboration/invite')
+						.set('authenticated', 'true')
+						.send(inviteData);
+					expect(res.status).toBe(200);
+				});
+			});
+
+			describe('GET /api/collaboration/invites', () => {
+				it('should fetch pending collaboration invites for authenticated users', async () => {
+					let res = await request(app).get('/api/collaboration/invites')
+						.set('authenticated', 'false');
+					expect(res.status).toBe(401);
+					
+					const invites = [{ id: 1, projectId: 1 }];
+					db.getPendingCollabInvites.mockResolvedValue(invites);
+					
+					res = await request(app).get('/api/collaboration/invites')
+						.set('authenticated', 'true')
+						.set('user', JSON.stringify({ id: 1 }));
+					expect(res.body).toEqual(invites);
+				});
+			});
+
+			describe('POST /api/collaboration/invite/reply', () => {
+				it('should handle replies to collaboration invites', async () => {
+					let res = await request(app).post('/api/collaboration/invite/reply')
+						.set('authenticated', 'false');
+					expect(res.status).toBe(401);
+					
+					// Missing required fields
+					res = await request(app).post('/api/collaboration/invite/reply')
+						.set('authenticated', 'true')
+						.send({});
+					expect(res.status).toBe(400);
+					
+					const replyData = {
+						projectId: 1,
+						role: 'Reviewer',
+						isAccept: true
+					};
+					
+					db.replyToCollabInvite.mockResolvedValue(true);
+					res = await request(app).post('/api/collaboration/invite/reply')
+						.set('authenticated', 'true')
+						.send(replyData);
+					expect(res.status).toBe(200);
+				});
+			});
+
+			describe('POST /api/collaboration/request', () => {
+				it('should handle collaboration requests', async () => {
+					let res = await request(app).post('/api/collaboration/request')
+						.set('authenticated', 'false');
+					expect(res.status).toBe(401);
+					
+					// Invalid projectId
+					res = await request(app).post('/api/collaboration/request')
+						.set('authenticated', 'true')
+						.send({ projectId: 'invalid' });
+					expect(res.status).toBe(400);
+					
+					db.insertPendingCollaborator.mockResolvedValue(true);
+					res = await request(app).post('/api/collaboration/request')
+						.set('authenticated', 'true')
+						.send({ projectId: 1 });
+					expect(res.text).toBe('Successfully sent collobaroration request.');
+				});
+			});
+			*/
 		});
 
 		/*
-		it('POST /api/message/send', async () => {
-			let res = await request(app).post('/api/message/send').send({});
-			expect(res.status).toBe(302);
-			res = await request(app).post('/api/message/send')
-				.set('authenticated', 'true').send({});
-			expect(res.status).toBe(400);
-			db.storeMessage.mockResolvedValue();
-			res = await request(app).post('/api/message/send')
-				.set('authenticated', 'true').set('user', JSON.stringify({ id: 5 }))
-				.send({ messageBody: 'Hi', receivedRecipientId: '10' });
-			expect(db.storeMessage).toHaveBeenCalledWith(5, 10, 'Hi');
-			expect(res.status).toBe(200);
+		describe('Messaging', () => {
+			it('POST /api/message/send', async () => {
+				let res = await request(app).post('/api/message/send').send({});
+				expect(res.status).toBe(302);
+				res = await request(app).post('/api/message/send')
+					.set('authenticated', 'true').send({});
+				expect(res.status).toBe(400);
+				db.storeMessage.mockResolvedValue();
+				res = await request(app).post('/api/message/send')
+					.set('authenticated', 'true').set('user', JSON.stringify({ id: 5 }))
+					.send({ messageBody: 'Hi', receivedRecipientId: '10' });
+				expect(db.storeMessage).toHaveBeenCalledWith(5, 10, 'Hi');
+				expect(res.status).toBe(200);
+			});
+			
+
+			it('GET /api/message/allMessagedUsers', async () => {
+				let res = await request(app).get('/api/message/allMessagedUsers');
+				expect(res.status).toBe(302);
+				db.retrieveMessagedUsers.mockResolvedValue([{ id: 2 }]);
+				res = await request(app).get('/api/message/allMessagedUsers')
+					.set('authenticated', 'true').set('user', JSON.stringify({ id: 3 }));
+				expect(res.body).toEqual([{ id: 2 }]);
+			});
+			
+
+			it('GET /api/message/:id', async () => {
+				let res = await request(app).get('/api/message/junk')
+					.set('authenticated', 'true').set('user', JSON.stringify({ id: 4 }));
+				expect(res.status).toBe(400);
+				db.retrieveMessages.mockResolvedValue(['m']);
+				res = await request(app).get('/api/message/7')
+					.set('authenticated', 'true').set('user', JSON.stringify({ id: 4 }));
+				expect(res.body).toEqual(['m']);
+			});
+	
+		});
+		*/
+
+		describe('Search', () => {
+			describe('GET /api/search/project', () => {
+				it('should search projects based on query parameters', async () => {
+					let res = await request(app).get('/api/search/project')
+						.set('authenticated', 'false');
+					expect(res.status).toBe(401);
+					
+					// Missing projectName
+					res = await request(app).get('/api/search/project')
+						.set('authenticated', 'true');
+					expect(res.status).toBe(400);
+					
+					const projects = [{ id: 1, name: 'Test Project' }];
+					db.searchProjects.mockResolvedValue(projects);
+					res = await request(app).get('/api/search/project?projectName=test')
+						.set('authenticated', 'true');
+					expect(res.body).toEqual(projects);
+				});
+			});
+
+			/*describe('GET /api/search/user', () => {
+				it('should search users based on query parameters', async () => {
+					let res = await request(app).get('/api/search/user')
+						.set('authenticated', 'false');
+					expect(res.status).toBe(401);
+					
+					// Missing userName
+					res = await request(app).get('/api/search/user')
+						.set('authenticated', 'true');
+					expect(res.status).toBe(400);
+					
+					const users = [{ id: 1, name: 'Test User' }];
+					db.searchUsers.mockResolvedValue(users);
+					res = await request(app).get('/api/search/user?userName=test')
+						.set('authenticated', 'true');
+					expect(res.body).toEqual(users);
+				});
+			});
+			*/
 		});
 		
-
-		it('GET /api/message/allMessagedUsers', async () => {
-			let res = await request(app).get('/api/message/allMessagedUsers');
-			expect(res.status).toBe(302);
-			db.retrieveMessagedUsers.mockResolvedValue([{ id: 2 }]);
-			res = await request(app).get('/api/message/allMessagedUsers')
-				.set('authenticated', 'true').set('user', JSON.stringify({ id: 3 }));
-			expect(res.body).toEqual([{ id: 2 }]);
-		});
 		
+		/*describe('Files', () => {
+			describe('POST /api/project/:projectId/upload', () => {
+				it('should handle file uploads to projects with valid permissions', async () => {
+					let res = await request(app).post('/api/project/1/upload')
+						.set('authenticated', 'false');
+					expect(res.status).toBe(401);
+					
+					//for no files
+					res = await request(app).post('/api/project/1/upload')
+						.set('authenticated', 'true');
+					expect(res.status).toBe(400);
+					
+					//for a file
+					const mockFile = {
+						fieldname: 'file',
+						originalname: 'test.txt',
+						encoding: '7bit',
+						mimetype: 'text/plain',
+						buffer: Buffer.from('test content'),
+						size: 1024
+					};
+					
+					db.mayUploadToProject.mockResolvedValue(true);
+					db.uploadToProject.mockResolvedValue(true);
+					
+					res = await request(app).post('/api/project/1/upload')
+						.set('authenticated', 'true')
+						.attach('file', mockFile.buffer, { filename: mockFile.originalname });
+					expect(res.status).toBe(200);
+				});
+			});
 
-		it('GET /api/message/:id', async () => {
-			let res = await request(app).get('/api/message/junk')
-				.set('authenticated', 'true').set('user', JSON.stringify({ id: 4 }));
-			expect(res.status).toBe(400);
-			db.retrieveMessages.mockResolvedValue(['m']);
-			res = await request(app).get('/api/message/7')
-				.set('authenticated', 'true').set('user', JSON.stringify({ id: 4 }));
-			expect(res.body).toEqual(['m']);
+			
+			describe('GET /api/project/:projectId/files', () => {
+				it('should fetch project files for users with access', async () => {
+					let res = await request(app).get('/api/project/1/files')
+						.set('authenticated', 'false');
+					expect(res.status).toBe(401);
+					
+					db.mayAccessProject.mockResolvedValue(true);
+					const files = [{ id: 1, name: 'test.txt' }];
+					db.getProjectFiles.mockResolvedValue(files);
+					
+					res = await request(app).get('/api/project/1/files')
+						.set('authenticated', 'true');
+					expect(res.body).toEqual(files);
+				});
+			});
+
+
+			describe('GET /api/project/:projectId/file/:fileId/:ext', () => {
+				it('should download project files for users with access', async () => {
+					let res = await request(app).get('/api/project/1/file/1/txt')
+						.set('authenticated', 'false');
+					expect(res.status).toBe(401);
+					
+					db.mayAccessProject.mockResolvedValue(true);
+					const fileContent = { buffer: Buffer.from('test content') };
+					db.downloadFile.mockResolvedValue(fileContent);
+					
+					res = await request(app).get('/api/project/1/file/1/txt')
+						.set('authenticated', 'true');
+					expect(res.body).toEqual(fileContent.buffer);
+				});
+			});
+			
 		});
-	*/
+		*/
 	});
 
+	//unsorted, get back to this later
 	describe('Misc GET flows: search, user/project, collaborator', () => {
 		it('Misc GET flows: search, user/project, collaborator', async () => {
 			let res = await request(app).get('/api/search/project')
@@ -231,26 +781,6 @@ describe('Router Module Tests', () => {
 				.set('authenticated', 'true');
 			expect(res.body).toEqual(['c']);
 		});
-
-		/*
-		it('POST /submit/review and GET /successfulReviewPost', async () => {
-			let res = await request(app).post('/submit/review').send({});
-			expect(res.status).toBe(403);
-			res = await request(app).post('/submit/review')
-				.set('authenticated', 'true').set('user', JSON.stringify({ id: 1 }))
-				.send({ projectId: 1 });
-			expect(res.status).toBe(400);
-			db.createReview.mockResolvedValue({});
-			res = await request(app).post('/submit/review')
-				.set('authenticated', 'true').set('user', JSON.stringify({ id: 1 }))
-				.send({ projectId: 1, rating: 5, comment: 'c' });
-			expect(res.status).toBe(201);
-			expect(res.body.redirect).toBe('/successfulReviewPost');
-			res = await request(app).get('/successfulReviewPost')
-				.set('authenticated', 'true');
-			expect(res.text).toBe('served successfulReviewPost.html');
-		});
-		*/
 	});
 });
 

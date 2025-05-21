@@ -198,10 +198,13 @@ const requireAuthentication = (callback, opts = {}) => {
 }
 
 /* Normal Routes */
-router.get('/dashboard', requireAuthentication((req, res) => {
-	console.log("Redirecting to /dashboard");
-	res.sendFile(path.join(__dirname, "public", "dashboard.html"));
-}));
+router.get('/', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/login');
+	}
+	res.redirect('/dashboard');
+});
+
 
 router.get('/styles.css', (req, res) => {
 	res.sendFile(path.join(__dirname, 'public', 'styles.css'));
@@ -227,12 +230,10 @@ router.get('/auth/orcid/callback',
 	}
 );
 
-router.get('/', (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('login');
-	}
-	res.redirect('/dashboard');
-});
+router.get('/dashboard', requireAuthentication((req, res) => {
+	console.log("Redirecting to /dashboard");
+	res.sendFile(path.join(__dirname, "public", "dashboard.html"));
+}));
 
 router.get('/login', (req, res) => {
 	console.log("Redirecting to /login");
@@ -390,7 +391,7 @@ router.post('/api/project/:projectId/upload', upload.single('file'), requireAuth
 		console.error('Error uploading file:', error);
 		return res.status(500).json({ error: error.message });
 	}
-}));
+}, { statusCode: 401 }));
 
 router.get('/api/project/:projectId/file/:fileId/:ext', requireAuthentication(async (req, res) => {
 	try {
@@ -407,7 +408,7 @@ router.get('/api/project/:projectId/file/:fileId/:ext', requireAuthentication(as
 	} catch (err) {
 		res.json({ error: err.message || err.toString() });
 	}
-}));
+}, { statusCode: 401 }));
 
 router.get('/api/project/:projectId/files', requireAuthentication(async (req, res) => {
 	try {
@@ -422,7 +423,7 @@ router.get('/api/project/:projectId/files', requireAuthentication(async (req, re
 	} catch (err) {
 		res.json({ error: err.message || err.toString() });
 	}
-}));
+}, { statusCode: 401 }));
 
 router.get('/api/user/info', requireAuthentication((req, res) => {
 	if (!authenticateRequest(req)) {
@@ -470,7 +471,7 @@ router.post('/api/collaboration/invite', requireAuthentication(async (req, res) 
 	} catch (err) {
 		return res.status(500).json({ error: 'Internal Error' });
 	}
-}));
+}, { statusCode: 401 }));
 
 router.get('/api/collaboration/invites', requireAuthentication(async (req, res) => {
 	try {
@@ -481,7 +482,7 @@ router.get('/api/collaboration/invites', requireAuthentication(async (req, res) 
 		console.error(err);
 		return res.status(400).json({ error: 'bad request' });
 	}
-}));
+}, { statusCode: 401 }));
 
 router.post('/api/collaboration/invite/reply', requireAuthentication(async (req, res) => {
 	try {
@@ -507,7 +508,7 @@ router.post('/api/collaboration/invite/reply', requireAuthentication(async (req,
 		console.log(err);
 		return res.status(500).json({ error: 'Internal Error' });
 	}
-}));
+}, { statusCode: 401 }));
 
 router.get('/api/user/projectNames', requireAuthentication(async (req, res) => {
 	let projects = await db.fetchAssociatedProjectsByLatest(req.user);
@@ -625,7 +626,7 @@ router.get('/api/search/project', requireAuthentication(async (req, res) => {
 
 	res.json(await db.searchProjects(projectName));
 
-}));
+}, { statusCode: 401 }));
 
 router.get('/api/user/project', requireAuthentication(async (req, res) => {
 	let projects = await db.fetchAssociatedProjects(req.user);
@@ -705,7 +706,7 @@ router.post('/api/collaboration/request', requireAuthentication(async (req, res)
 	} catch (err) {
 		res.status(400).json({ error: 'Failed' });
 	}
-}));
+}, { statusCode: 401 }));
 
 router.post('/remove/user', requireAuthentication(async (req, res) => {
 	if (!req.body) {
@@ -738,7 +739,7 @@ router.post('/remove/user', requireAuthentication(async (req, res) => {
 	} catch (err) {
 		res.status(400).json({ error: err });
 	}
-}));
+}, { statusCode: 401 }));
 
 //Reviews Page
 router.post('/api/review', requireAuthentication(async (req, res) => {
@@ -764,7 +765,7 @@ router.post('/api/review', requireAuthentication(async (req, res) => {
 		console.error('Error creating review:', err);
 		res.status(500).json({ error: 'Failed to submit review', details: err.message });
 	}
-}));
+}, { statusCode: 401 }));
 
 //Searching for users 
 router.get('/api/search/user', async (req, res) => {
@@ -817,7 +818,7 @@ router.get('/isSuspended', requireAuthentication(async (req, res) => {
 	} catch (err) {
 		console.error('Error checking if user suspended:', err);
 	}
-}));
+}, { statusCode: 401 }));
 
 //Put request to update profile
 router.put('/update/profile', async (req, res) => {
