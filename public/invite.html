@@ -4,7 +4,30 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<link rel="stylesheet" href="/styles.css">
+	
+	<style id="anti-fouc">
+	body {
+		opacity: 0;
+		visibility: hidden;
+		transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+	}
+
+	nav, main, footer {
+		display: none;
+	}
+	</style>
+	<link rel="preload" href="/styles.css" as="style" onload="this.onload=null;this.rel='stylesheet';document.getElementById('anti-fouc').remove();">
+	<noscript><link rel="stylesheet" href="/styles.css"></noscript>
+	<script>
+    
+    (function() {
+      const root = document.documentElement;
+      const saved = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      root.setAttribute('data-theme', saved || (prefersDark ? 'dark' : 'light'));
+    })();
+  	</script>
+
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="icon" href="logo.png" type="image/png">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

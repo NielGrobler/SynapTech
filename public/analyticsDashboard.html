@@ -4,7 +4,30 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="/styles.css" />
+	
+	<style id="anti-fouc">
+	body {
+		opacity: 0;
+		visibility: hidden;
+		transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+	}
+
+	nav, main, footer {
+		display: none;
+	}
+	</style>
+	<link rel="preload" href="/styles.css" as="style" onload="this.onload=null;this.rel='stylesheet';document.getElementById('anti-fouc').remove();">
+	<noscript><link rel="stylesheet" href="/styles.css"></noscript>
+	<script>
+    
+    (function() {
+      const root = document.documentElement;
+      const saved = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      root.setAttribute('data-theme', saved || (prefersDark ? 'dark' : 'light'));
+    })();
+  	</script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="icon" href="logo.png" type="image/png" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -16,6 +39,34 @@
     <title>Unilink | Report Dashboard</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script type="module" src="/savedTheme.js"></script>
+	
+	<script>
+	//fallback for styles loading,
+	setTimeout(function() {
+		var antiFouc = document.getElementById('anti-fouc');
+		if (antiFouc) antiFouc.remove();
+		
+		document.body.style.opacity = '1';
+		document.body.style.visibility = 'visible';
+		
+		var structuralElements = document.querySelectorAll('nav, main, footer');
+		structuralElements.forEach(function(el) {
+		el.style.display = '';
+		});
+	}, 3000); //3 second timeout to force load, but by that time it MUST have loaded
+
+	if (document.readyState === 'complete') {
+		document.getElementById('anti-fouc').remove();
+		document.body.style.opacity = '1';
+		document.body.style.visibility = 'visible';
+	} else {
+		window.addEventListener('load', function() {
+		document.getElementById('anti-fouc').remove();
+		document.body.style.opacity = '1';
+		document.body.style.visibility = 'visible';
+		});
+	}
+	</script>
 </head>
 
 <body>
