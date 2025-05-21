@@ -1,6 +1,7 @@
 
 import userInfo from './userInfo.js'
-import pageAdder from './pageAdder.js';
+import pageAdder from './pageAdder.js'
+import milestone from './milestones.js'
 
 function populateCollaborators(project) {
 	let list = document.getElementById('collaboratorList');
@@ -365,12 +366,31 @@ const addUploadButton = (userDetails, project) => {
 	return true;
 }
 
+const addFundingButton = async (userDetails, project) => {
+	// Check ownership
+	if (!project || project.created_by_account_id !== userDetails.id) {
+		console.log("Not owner or project not loaded");
+	}
+	// Create button
+	const fundingSection = document.getElementById('funding');
+	const fundButton = document.createElement("button");
+	fundButton.innerText = "View Funding";
+
+	fundButton.addEventListener('click', () => {
+		window.location.href = `/redirect/view/funding?id=${encodeURIComponent(project.id)}`;
+	});
+
+	document.getElementById('funding-heading').innerText = "Funding";
+	fundingSection.appendChild(fundButton);
+}
+
 const populateElements = async () => {
 	const project = await fetchProject();
 	if (!project) {
 		document.getElementById('projectName').innerText = "Could not display project.";
 		return;
 	}
+	milestone.viewMilestones(project);
 
 	document.getElementById('projectName').innerHTML = project.name;
 	document.getElementById('projectIsPublic').innerHTML = project.is_public ? 'Public' : 'Private';
@@ -384,6 +404,7 @@ const populateElements = async () => {
 	addUploadButton(info, project);
 	loadProjectReviews(project);
 	loadProjectFiles(project);
+	addFundingButton(info, project);
 
 	document.addEventListener('DOMContentLoaded', () => {
 		console.log("dwqiudhwqiudhwqdihwqHELLO?");
