@@ -871,17 +871,19 @@ select {
 	cursor: pointer;
 	accent-color: var(--color-accent);
 }
+
 .radio-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin-right: 1.5rem;
-  cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	margin-right: 1.5rem;
+	cursor: pointer;
 }
 
 .radio-label input[type="radio"] {
-  accent-color: var(--color-accent); /* Optional if you're using custom accent color */
-  cursor: pointer;
+	accent-color: var(--color-accent);
+	/* Optional if you're using custom accent color */
+	cursor: pointer;
 }
 
 .no-padding {

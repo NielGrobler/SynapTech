@@ -47,6 +47,8 @@ const describeTable = async (name) => {
 }
 
 /* Here */
-await describeTable("Account");
+await describeTable("FundingExpenditure");
+await describeTable("Funding");
+await describeTable("FundingOpportunity");
 await showTables();
 

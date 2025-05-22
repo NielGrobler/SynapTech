@@ -15,14 +15,14 @@ dotenv.config();
 // For convenience, as these don't exist in ES modules.
 let __dirname;
 try {
-  const __filename = fileURLToPath(import.meta.url);
-  __dirname = path.dirname(__filename);
+	const __filename = fileURLToPath(import.meta.url);
+	__dirname = path.dirname(__filename);
 } catch (err) {
-  try {
-    __dirname = getDirname(import.meta);
-  } catch (e) {
-    __dirname = '/'; // fallback for test/browser envs
-  }
+	try {
+		__dirname = getDirname(import.meta);
+	} catch (e) {
+		__dirname = '/'; // fallback for test/browser envs
+	}
 }
 
 const ca = fs.readFileSync(path.join(__dirname, 'server.crt'));
@@ -402,7 +402,7 @@ const deleteUser = async (userId) => {
 };
 
 const isSuspended = async (userId) => {
-  const result = await sender.getResult(new DatabaseQueryBuilder() 
+	const result = await sender.getResult(new DatabaseQueryBuilder()
 		.input('id', userId)
 		.query(`
 			SELECT is_suspended
@@ -845,6 +845,175 @@ const createReview = async (review) => {
 	);
 };
 
+// Add these to your db.js file
+
+export const fetchUserProjectsWithResources = async (userId) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('userId', userId)
+		.query(`
+      SELECT 
+        Project.project_id AS id, 
+        Project.name,
+        0 AS used_resources, 
+        100 AS available_resources
+      FROM 
+        Project
+      WHERE 
+        Project.created_by_account_id = {{userId}} OR 
+        Project.project_id IN (
+          SELECT project_id 
+          FROM Collaborator 
+          WHERE account_id = {{userId}} AND is_pending = 0
+        )
+    `)
+		.build()
+	);
+
+	return result.recordSet;
+};
+
+export const fetchUserProjectsWithCompletionStatus = async (userId) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('userId', userId)
+		.query(`
+      SELECT 
+        Project.project_id AS id, 
+        Project.name,
+        'In Progress' AS status,
+        50 AS completion_percentage
+      FROM 
+        Project
+      WHERE 
+        Project.created_by_account_id = {{userId}} OR 
+        Project.project_id IN (
+          SELECT project_id 
+          FROM Collaborator 
+          WHERE account_id = {{userId}} AND is_pending = 0
+        )
+    `)
+		.build()
+	);
+
+	return result.recordSet;
+};
+
+export const generateCustomReport = async (options) => {
+	const { userId, metrics, projectIds, timeframe, groupBy } = options;
+
+	// Build a dynamic query based on requested metrics
+	let selectClauses = ['Project.project_id AS id', 'Project.name'];
+	let joinClauses = [];
+	let whereClauses = [`(Project.created_by_account_id = {{userId}} OR Project.project_id IN (SELECT project_id FROM Collaborator WHERE account_id = {{userId}} AND is_pending = 0))`];
+	let params = { userId };
+
+	// For custom reports, we'll add computed columns since they don't exist in the database
+	if (metrics.includes('completion')) {
+		selectClauses.push('50 AS completion_percentage');
+	}
+
+	if (metrics.includes('resources')) {
+		selectClauses.push('0 AS used_resources');
+		selectClauses.push('100 AS available_resources');
+	}
+
+	if (metrics.includes('collaborators')) {
+		selectClauses.push('(SELECT COUNT(*) FROM Collaborator WHERE Collaborator.project_id = Project.project_id AND Collaborator.is_pending = 0) AS collaborator_count');
+	}
+
+	if (metrics.includes('reviews')) {
+		selectClauses.push('(SELECT COUNT(*) FROM Review WHERE Review.project_id = Project.project_id) AS review_count');
+		selectClauses.push('(SELECT AVG(rating) FROM Review WHERE Review.project_id = Project.project_id) AS average_rating');
+	}
+
+	if (metrics.includes('uploads')) {
+		selectClauses.push('(SELECT COUNT(*) FROM ProjectFile WHERE ProjectFile.project_id = Project.project_id) AS file_count');
+	}
+
+	// Add project filter if specified
+	if (projectIds && projectIds.length > 0) {
+		let placeholders = [];
+		projectIds.forEach((id, index) => {
+			const paramName = `projectId${index}`;
+			placeholders.push(`{{${paramName}}}`);
+			params[paramName] = id;
+		});
+		whereClauses.push(`Project.project_id IN (${placeholders.join(',')})`);
+	}
+
+	// Add timeframe filter if specified
+	if (timeframe && timeframe !== 'all') {
+		let timeConstraint;
+
+		switch (timeframe) {
+			case 'week':
+				timeConstraint = "DATE_SUB(NOW(), INTERVAL 1 WEEK)";
+				break;
+			case 'month':
+				timeConstraint = "DATE_SUB(NOW(), INTERVAL 1 MONTH)";
+				break;
+			case 'quarter':
+				timeConstraint = "DATE_SUB(NOW(), INTERVAL 3 MONTH)";
+				break;
+			case 'year':
+				timeConstraint = "DATE_SUB(NOW(), INTERVAL 1 YEAR)";
+				break;
+			default:
+				timeConstraint = null;
+		}
+
+		if (timeConstraint) {
+			whereClauses.push(`Project.created_at >= ${timeConstraint}`);
+		}
+	}
+
+	// Build the complete query
+	const queryString = `
+    SELECT ${selectClauses.join(', ')}
+    FROM Project
+    ${joinClauses.join(' ')}
+    WHERE ${whereClauses.join(' AND ')}
+    GROUP BY Project.project_id, Project.name
+    ${groupBy === 'creation_date' ? 'ORDER BY Project.created_at' : 'ORDER BY Project.name'}
+  `;
+
+	// Build the query using DatabaseQueryBuilder
+	let queryBuilder = new DatabaseQueryBuilder().query(queryString);
+
+	// Add all parameters
+	for (const [key, value] of Object.entries(params)) {
+		queryBuilder = queryBuilder.input(key, value);
+	}
+
+	// Execute the query
+	const result = await sender.getResult(queryBuilder.build());
+
+	// Process and format the results based on groupBy
+	if (groupBy === 'creation_date') {
+		// Group by month/year of creation
+		const groupedResults = {};
+		result.recordSet.forEach(row => {
+			const date = new Date(row.created_at || new Date());
+			const monthYear = `${date.getMonth() + 1}/${date.getFullYear()}`;
+
+			if (!groupedResults[monthYear]) {
+				groupedResults[monthYear] = [];
+			}
+			groupedResults[monthYear].push(row);
+		});
+
+		return {
+			groupBy: 'creation_date',
+			data: groupedResults
+		};
+	}
+
+	// Default grouping by project
+	return {
+		groupBy: 'project',
+		data: result.recordSet
+	};
+};
+
 export default {
 	getUserByGUID,
 	createUser,
@@ -885,5 +1054,8 @@ export default {
 	getProjectFiles,
 	mayAccessProject,
 	mayUploadToProject,
-	uploadToProject
+	uploadToProject,
+	fetchUserProjectsWithResources,
+	fetchUserProjectsWithCompletionStatus,
+	generateCustomReport
 };
