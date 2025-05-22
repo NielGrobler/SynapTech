@@ -6,7 +6,7 @@ import session from 'express-session';
 import * as path from 'path';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
-import { getDirname } from './dirname.js';
+//import { getDirname } from './dirname.js';
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
 import db from './db/db.js';
@@ -24,11 +24,7 @@ try {
   const __filename = fileURLToPath(import.meta.url);
   __dirname = path.dirname(__filename);
 } catch (err) {
-  try {
-	__dirname = getDirname(import.meta);
-  } catch (e) {
 	__dirname = '/'; // fallback for test/browser envs
-  }
 }
 
 const router = express();
