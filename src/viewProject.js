@@ -503,5 +503,14 @@ const loadProjectReviews = async (project) => {
 	}
 };
 
-
-
+export { //for testing
+	fetchProject,
+	fetchProjectFiles,
+	downloadProjectFile,
+	isParticipant,
+	populateCollaborators,
+	initPage,
+	addCollaboratorButton,
+	loadProjectReviews,
+	getFileExt,
+};
