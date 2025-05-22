@@ -1,52 +1,75 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import pageAdder from './pageAdder.js';
 
-describe('pageAdder.js', () => {
-  let container;
+describe('pageAdder.js Module Tests', () => {
+	let container;
 
-  beforeEach(() => {
-    // Reset DOM
-    document.body.innerHTML = '<ul id="project-list"></ul>';
-    container = document.getElementById('project-list');
-  });
+	beforeEach(() => {
+		// Reset DOM
+		document.body.innerHTML = '<ul id="project-list"></ul>';
+		container = document.getElementById('project-list');
+	});
 
-  it('addProjectsToPage adds formatted projects to the DOM', () => {
-    const projects = [
-      { name: "Project A", description: "Description A", id: 1 },
-      { name: "Project B", description: "Description B", project_id: 2 } // fallback to project_id
-    ];
+	/*
+	describe('projectToElement', () =>{
 
-    pageAdder.addProjectsToPage('project-list', projects);
+	});
 
-    const items = container.querySelectorAll('li');
-    expect(items.length).toBe(2);
+	describe('userToElement', () =>{
+		
+	});
+	*/
 
-    expect(items[0].textContent).toContain("Project A");
-    expect(items[0].textContent).toContain("Description A");
+	describe('addProjectsToPage', () =>{
+		it('should adds formatted projects to the DOM', () => {
+			const projects = [
+			{ name: "Project A", description: "Description A", id: 1 },
+			{ name: "Project B", description: "Description B", project_id: 2 } // fallback to project_id
+			];
 
-    expect(items[1].textContent).toContain("Project B");
-    expect(items[1].textContent).toContain("Description B");
+			pageAdder.addProjectsToPage('project-list', projects);
 
-    // Check if highlight-hover class exists
-    expect(items[0].classList.contains("highlight-hover")).toBe(true);
-  });
+			const items = container.querySelectorAll('li');
+			expect(items.length).toBe(2);
 
-  it('clearProjects clears the DOM content', () => {
-    container.innerHTML = '<li>Dummy</li>';
-    expect(container.innerHTML).not.toBe("");
+			expect(items[0].textContent).toContain("Project A");
+			expect(items[0].textContent).toContain("Description A");
 
-    pageAdder.clearProjects('project-list');
+			expect(items[1].textContent).toContain("Project B");
+			expect(items[1].textContent).toContain("Description B");
 
-    expect(container.innerHTML).toBe("");
-  });
+			// Check if highlight-hover class exists
+			expect(items[0].classList.contains("highlight-hover")).toBe(true);
+		});
+	});
 
-  it('assignListToElement displays fallback message for empty array', () => {
-    pageAdder.assignListToElement('project-list', [], () => {
-      const li = document.createElement('li');
-      li.textContent = 'Should not appear';
-      return li;
-    });
+	describe('clearProjects', () =>{
+		it('should clear the DOM content', () => {
+			container.innerHTML = '<li>Dummy</li>';
+			expect(container.innerHTML).not.toBe("");
 
-    expect(container.innerHTML).toContain("Nothing to display.");
-  });
+			pageAdder.clearProjects('project-list');
+
+			expect(container.innerHTML).toBe("");
+		});
+	});
+
+	/*
+	describe('addUsersToPage', () =>{
+		
+	});
+	*/
+
+	describe('assignListToElement', () =>{
+		it('should display fallback message for empty array', () => {
+			pageAdder.assignListToElement('project-list', [], () => {
+			const li = document.createElement('li');
+			li.textContent = 'Should not appear';
+			return li;
+			});
+
+			expect(container.innerHTML).toContain("Nothing to display.");
+		});
+	});
+
 });
