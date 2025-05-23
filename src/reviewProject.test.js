@@ -1,5 +1,6 @@
 import { vi, test, expect, describe, beforeEach } from 'vitest';
 import { JSDOM } from 'jsdom';
+import './reviewProject.js';
 
 // Mock the fetch function
 global.fetch = vi.fn();
