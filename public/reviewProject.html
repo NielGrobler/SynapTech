@@ -48,31 +48,33 @@
 		</button>
 	</nav>
 	<main class="inset">
-		<h1>Write a Review</h1>
-
-		<form form id="reviewForm" class="inset">
-			<section>
-				<label for="rating"><strong>Rating</strong></label><br>
-				<select id="rating" class="no-padding-v" name="rating" required>
-					<option value="">Select a rating</option>
-					<option value="5">★★★★★ - Excellent</option>
-					<option value="4">★★★★☆ - Good</option>
-					<option value="3">★★★☆☆ - Average</option>
-					<option value="2">★★☆☆☆ - Poor</option>
-					<option value="1">★☆☆☆☆ - Very Poor</option>
-				</select><br> <br>
-			</section>
-
-			<section>
-				<label for="comment"><strong>Comment</strong></label><br>
-				<textarea id="comment" class="no-padding-v" name="comment" rows="5" required
-					placeholder="Share your thoughts..."></textarea>
-			</section>
-
-			<section>
+		<section class="border-solid-thin shadow">
+			<h1 class="accent-underline">Write a Review</h1>
+			<form form id="reviewForm" class="inset">
+				<fieldset>
+					<legend><strong>Review Details</strong></legend>
+					<section>
+						<label for="rating"><strong>Rating</strong></label><br>
+						<select id="rating" class="no-padding-v" name="rating" required>
+							<option value="">Select a rating</option>
+							<option value="5">★★★★★ - Excellent</option>
+							<option value="4">★★★★☆ - Good</option>
+							<option value="3">★★★☆☆ - Average</option>
+							<option value="2">★★☆☆☆ - Poor</option>
+							<option value="1">★☆☆☆☆ - Very Poor</option>
+						</select>
+						<output id="rating-error" class="error-message" for="rating"></output>
+					</section>
+					<section>
+						<label for="comment"><strong>Comment</strong></label><br>
+						<textarea id="comment" class="no-padding-v" name="comment" rows="5" required
+							placeholder="Share your thoughts..."></textarea>
+						<output id="comment-error" class="error-message" for="comment"></output>
+					</section>
+				</fieldset>
 				<button type="button" id="submitReviewBtn">Submit Review</button>
-			</section>
-		</form>
+			</form>
+		</section>
 	</main>
 	<footer class="inset">
 		<p>&copy; 2025 Unilink. All rights reserved.</p>
