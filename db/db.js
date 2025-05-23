@@ -345,17 +345,20 @@ const fetchPublicAssociatedProjects = async (user) => {
 		.input('id', user.id)
 		.query(`
 			SELECT DISTINCT 
-			    Project.project_id AS id,
-			    Project.created_by_account_id AS author_id,
-			    Project.created_at AS created_at,
-			    Project.name AS name,
-			    Project.description AS description,
-			    Project.is_public AS is_public
+				Project.project_id AS id,
+				Project.created_by_account_id AS author_id,
+				Project.created_at AS created_at,
+				Project.name AS name,
+				Project.description AS description,
+				Project.is_public AS is_public
 			FROM Project
 			LEFT JOIN Collaborator ON Collaborator.project_id = Project.project_id
 			LEFT JOIN Account ON Account.account_id = Collaborator.account_id
-			WHERE Project.created_by_account_id = {{id}} AND Project.is_public = 1
-			OR (Collaborator.account_id = {{id}} AND Collaborator.is_pending = 0);
+			WHERE (
+				(Project.created_by_account_id = {{id}} AND Project.is_public = 1)
+				OR 
+				(Collaborator.account_id = {{id}} AND Collaborator.is_pending = 0)
+			)
 		`)
 		.build()
 	);
@@ -724,20 +727,16 @@ const fetchUserById = async (id) => {
 	const result = await sender.getResult(new DatabaseQueryBuilder()
 		.input('id', id)
 		.query(`
-			SELECT	DISTINCT
-				Account.acount_id AS id,
-				Account.name AS name,
-				Account.bio AS bio,
-				Account.university AS university,
-				Account.department AS department,
-				Account.is_suspended AS is_suspended
+			SELECT *
+			FROM Account
 			WHERE Account.account_id = {{id}}
 			LIMIT 1;
 		`)
 		.build()
 	);
 
-	let user = result.recordSet[0];
+	let user = result.recordSet;
+	console.log(user)
 
 	if (!user) {
 		return null;
@@ -1010,6 +1009,179 @@ export const generateCustomReport = async (options) => {
 	};
 };
 
+const getMilestones = async(id) =>{
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('id', id)
+		.query(`
+			SELECT * 
+			FROM ProjectMilestone
+			WHERE project_id = {{id}};
+		`)
+		.build()
+	);
+
+	const milestones = result.recordSet
+
+	if(!milestones){
+		return null;
+	}
+
+	console.log(milestones);
+	return milestones;
+};
+
+const getMilestone = async(id) =>{
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('id', id)
+		.query(`
+			SELECT * 
+			FROM ProjectMilestone
+			WHERE project_milestone_id = {{id}};
+		`)
+		.build()
+	);
+
+	const milestone = result.recordSet
+
+	if(!milestone){
+		return null;
+	}
+
+	return milestone;
+};
+
+const addMilestone = async(project_id, milestoneName, description) =>{
+	console.log(milestoneName);
+	await sender.send(new DatabaseQueryBuilder()
+		.input('project_id', project_id)
+		.input('name', milestoneName)
+		.input('description', description)
+		.query(`
+			INSERT INTO ProjectMilestone(project_id, name, description)
+			VALUES({{project_id}}, {{name}}, {{description}});
+		`)
+		.build()
+	);
+};
+
+const editMilestone = async(milestoneId, milestoneName, description)=>{
+	await sender.send(new DatabaseQueryBuilder()
+		.input('milestone_id', milestoneId)
+		.input('name', milestoneName)
+		.input('description', description)
+		.query(`
+			UPDATE ProjectMilestone
+			SET name = {{name}}, description = {{description}}
+			WHERE project_milestone_id = {{milestone_id}};
+		`)
+		.build()
+	);
+};
+
+const completeMilestone = async(id)=>{
+	const date = new Date();
+	await sender.send(new DatabaseQueryBuilder()
+		.input('id', id)
+		.input('date', date)
+		.query(`
+			UPDATE ProjectMilestone
+			SET completed_at = {{date}}
+			WHERE project_milestone_id = {{id}};
+		`)
+		.build()
+	);
+};
+
+const uncompleteMilestone = async(id)=>{
+	await sender.send(new DatabaseQueryBuilder()
+		.input('id', id)
+		.query(`
+			UPDATE ProjectMilestone
+			SET completed_at = NULL
+			WHERE project_milestone_id = {{id}};
+		`)
+		.build()
+	);
+};
+
+const deleteMilestone = async(id) =>{
+	await sender.send(new DatabaseQueryBuilder()
+		.input('id', id)
+		.query(`
+			DELETE FROM ProjectMilestone
+			WHERE project_milestone_id = {{id}};
+		`)
+		.build()
+	);
+};
+
+const addFunding = async(project_id, currency, funding_type, total_funding) =>{
+		await sender.send(new DatabaseQueryBuilder()
+		.input('project_id', project_id)
+		.input('currency', currency)
+		.input('type', funding_type)
+		.input('total', total_funding)
+		.query(`
+			INSERT INTO Funding(project_id, currency_code, funding_type, total_funding)
+			VALUES({{project_id}}, {{currency}}, {{type}}, {{total}});
+		`)
+		.build()
+	);
+};
+
+const addExpenditure = async(project_id, currency, funding_type, total_funding) =>{
+		await sender.send(new DatabaseQueryBuilder()
+		.input('funding_id', project_id)
+		.input('amount', currency)
+		.input('description', funding_type)
+		.query(`
+			INSERT INTO FundingExpenditure(funding_id, name, amount)
+			VALUES({{project_id}}, {{description}}, {{amount}});
+		`)
+		.build()
+	);
+};
+
+const getFunding = async(projectId) =>{
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('id', projectId)
+		.query(`
+			SELECT * 
+			FROM Funding
+			WHERE funding_id = {{id}};
+		`)
+		.build()
+	);
+
+	const funding = result.recordSet
+
+	if(!funding){
+		return null;
+	}
+
+	return funding;
+};
+
+const getExpenditure = async(fundingId) =>{
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('id', fundingId)
+		.query(`
+			SELECT * 
+			FROM FundingExpenditure
+			WHERE funding_id = {{id}};
+		`)
+		.build()
+	);
+
+	const spending = result.recordSet
+
+	if(!spending){
+		return null;
+	}
+
+	return spending;
+};
+
 export default {
 	getUserByGUID,
 	createUser,
@@ -1054,5 +1226,16 @@ export default {
 	uploadToProject,
 	fetchUserProjectsWithResources,
 	fetchUserProjectsWithCompletionStatus,
-	generateCustomReport
+	generateCustomReport,
+	addMilestone,
+	editMilestone,
+	completeMilestone,
+	uncompleteMilestone,
+	deleteMilestone,
+	getMilestones,
+	getMilestone,
+	addFunding,
+	addExpenditure,
+	getExpenditure,
+	getFunding
 };
