@@ -54,9 +54,9 @@ class QuerySender {
 			//	ca: ca,
 			rejectUnauthorized: false
 		});
-
-		this.url = `https://${process.env.DB_HOST}:${process.env.DB_PORT}/query`;
-		this.apiKey = process.env.DB_API_KEY;
+ 
+		this.url = `https://${process.env.FILE_STORAGE_HOST}:${process.env.FILE_STORAGE_PORT}/query`; //this is identical to DB env for our implementation, are you sure this is needed?
+		this.apiKey = process.env.FILE_STORAGE_API_KEY;
 	}
 
 	async send(query) {
