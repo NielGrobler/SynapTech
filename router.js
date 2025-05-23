@@ -673,20 +673,21 @@ router.get('/api/reviews', requireAuthentication(async (req, res) => {
 
 /* POST Request Routing */
 router.post('/create/project', requireAuthentication(async (req, res) => {
-	const { projectName, description, field, visibility } = req.body;
-
-	const project = {
-		name: projectName,
-		description,
-		field,
-		isPublic: visibility === 'public',
-	};
-
 	try {
+		const { projectName, description, field, visibility } = req.body;
+
+		const project = {
+			name: projectName,
+			description: description,
+			field: field,
+			isPublic: visibility === 'true',
+		};
+
 		await db.createProject(project, req.user);
 		res.sendFile(path.join(__dirname, "public", "successfulProjectPost.html"));
 	} catch (err) {
 		res.sendFile(path.join(__dirname, "public", "failureProjectPost.html"));
+		console.error(err)
 	}
 }));
 

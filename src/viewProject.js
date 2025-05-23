@@ -509,7 +509,6 @@ export { //for testing
 	downloadProjectFile,
 	isParticipant,
 	populateCollaborators,
-	initPage,
 	addCollaboratorButton,
 	loadProjectReviews,
 	getFileExt,

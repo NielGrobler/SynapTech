@@ -82,45 +82,57 @@
 	<main class="inset">
 		<section class="border-solid-thin shadow">
 			<h1 class="accent-underline">Create a New Project</h1>
-			<form class="inset" action="/create/project" method="POST">
-				<section>
-					<label for="project-name"><strong>Project Name</strong></label><br>
-					<input type="text" id="project-name" class="no-padding-v" name="projectName"
-						required placeholder="Project name...">
-				</section>
+			<form id="project-form" class="inset" action="/create/project" method="POST" novalidate>
 
-				<section>
-					<label for="project-description"><strong>Description</strong></label><br>
-					<textarea id="project-description" class="no-padding-v" name="description"
-						required placeholder="Project description..."></textarea>
-				</section>
+				<!-- <output id="form-errors" class="error-messages" style="display: none;"></output> -->
+				<fieldset>
+					<legend><strong>Project Details</strong></legend>
+					
+					<section>
+						<label for="project-name">Project Name</label>
+						<input type="text" id="project-name" name="projectName" 
+							placeholder="Project name (3-50 characters)">
+						<output id="name-error" class="error-message" for="project-name"></output>
+					</section>
+					
+					<section>
+						<label for="project-description">Description</label>
+						<textarea id="project-description" name="description"
+								placeholder="Project description (10-500 characters)"></textarea>
+						<output id="desc-error" class="error-message" for="project-description"></output>
+					</section>
+					
+					<section>
+						<label for="project-field">Field Of Study</label>
+						<input type="text" id="project-field" name="field"
+							placeholder="Field of Study (3-30 letters)">
+						<output id="field-error" class="error-message" for="project-field"></output>
+					</section>
 
-				<section>
-					<label for="project-field"><strong>Field Of Study</strong></label><br>
-					<input type="text" id="project-field" class="no-padding-v" name="field" required
-						placeholder="Field of Study">
-				</section>
+					<section>
+						<label for="radio-label">Visibility</label>
+						<section class="toggle-container">
+							<label class="radio-label">
+								<input type="radio" name="visibility" value="true">
+								Public
+							</label>
 
-				<section class="toggle-container">
-					<strong>Project Visibility</strong><br>
-
-					<label class="radio-label">
-						<input type="radio" name="visibility" value="public" required>
-						Public
-					</label>
-
-					<label class="radio-label">
-						<input type="radio" name="visibility" value="private" checked="checked">
-						Private
-					</label>
-				</section>
-				<button type="submit">Create Project</button>
-			</form>
+							<label class="radio-label">
+								<input type="radio" name="visibility" value="false" checked>
+								Private
+							</label>
+						</section>
+					</section>
+				</fieldset>
+                <button type="submit" id="submit-btn">Create Project</button>
+            </form>
 		</section>
 	</main>
 	<footer class="inset">
 		<p>&copy; 2025 Unilink. All rights reserved.</p>
 	</footer>
 </body>
+
+<script type="module" src="/addProject.js"></script>
 
 </html>
