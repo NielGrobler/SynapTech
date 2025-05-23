@@ -13,7 +13,7 @@
 		const theme = savedTheme || (prefersDark ? 'dark' : 'light');
 		document.documentElement.setAttribute('data-theme', theme);
 		
-		const criticalCSS = `html,body{background:var(--bg-color)}[data-theme=light]{--bg-color:#fff;--text-color:#000;}[data-theme=dark]{--bg-color:#121212;--text-color:#fff;}`;
+		const criticalCss = `html,body{background:var(--bg-color)}[data-theme=light]{--bg-color:#fff;--text-color:#000;}[data-theme=dark]{--bg-color:#121212;--text-color:#fff;}`;
 		
 		const style = document.createElement('style');
 		style.id = 'anti-fouc';
@@ -67,6 +67,18 @@
 				<h1 class="accent-underline">Collaborators</h1>
 				<ul id="collaboratorList">
 				</ul>
+			</section>
+
+			<section id="milestone" class="inset">
+				<h1 class="accent-underline">Milestones</h1>
+				<ul id="milestoneList">
+					<li>Loading Milestones...</li>
+				</ul>
+			</section>
+
+
+			<section id="funding" class="inset">
+				<h1 class="accent-underline" id="funding-heading"></h1>
 			</section>
 
 			<section id="reviews" class="inset">
