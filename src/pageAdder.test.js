@@ -68,7 +68,7 @@ describe('pageAdder.js Module Tests', () => {
 			return li;
 			});
 
-			expect(container.innerHTML).toContain("Nothing to display.");
+			expect(container.innerHTML).toContain("No results.");
 		});
 	});
 

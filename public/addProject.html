@@ -2,35 +2,83 @@
 <html lang="en">
 
 <head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	
+	<style id="anti-fouc">
+	body {
+		opacity: 0;
+		visibility: hidden;
+		transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+	}
 
-	<head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<link rel="stylesheet" href="/styles.css">
-		<link rel="preconnect" href="https://fonts.googleapis.com">
-		<link rel="icon" href="logo.png" type="image/png">
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-		<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
-			rel="stylesheet">
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-		<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+	nav, main, footer {
+		display: none;
+	}
+	</style>
+	<link rel="preload" href="/styles.css" as="style" onload="this.onload=null;this.rel='stylesheet';document.getElementById('anti-fouc').remove();">
+	<noscript><link rel="stylesheet" href="/styles.css"></noscript>
+	<script>
+    
+    (function() {
+      const root = document.documentElement;
+      const saved = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      root.setAttribute('data-theme', saved || (prefersDark ? 'dark' : 'light'));
+    })();
+  	</script>
+
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="icon" href="logo.png" type="image/png">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+		rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+	<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 
 
-		<title>Unilink | Create Project</title>
-		<script src="https://accounts.google.com/gsi/client" async defer></script>
-		<script type="module" src="/savedTheme.js"></script>
+	<title>Unilink | Create Project</title>
+	<script src="https://accounts.google.com/gsi/client" async defer></script>
+	<script type="module" src="/savedTheme.js"></script>
+	
+	<script>
+	//fallback for styles loading,
+	setTimeout(function() {
+		var antiFouc = document.getElementById('anti-fouc');
+		if (antiFouc) antiFouc.remove();
+		
+		document.body.style.opacity = '1';
+		document.body.style.visibility = 'visible';
+		
+		var structuralElements = document.querySelectorAll('nav, main, footer');
+		structuralElements.forEach(function(el) {
+		el.style.display = '';
+		});
+	}, 3000); //3 second timeout to force load, but by that time it MUST have loaded
 
-	</head>
+	if (document.readyState === 'complete') {
+		document.getElementById('anti-fouc').remove();
+		document.body.style.opacity = '1';
+		document.body.style.visibility = 'visible';
+	} else {
+		window.addEventListener('load', function() {
+		document.getElementById('anti-fouc').remove();
+		document.body.style.opacity = '1';
+		document.body.style.visibility = 'visible';
+		});
+	}
+	</script>
+
+</head>
 
 <body>
 	<nav class="inset secondary fill accent-underline">
-		<button class="nav-item flex-row center-content-v gap-small" onclick="history.back()">
+		<button class="nav-item flex-row center-content-v gap-small" 
+			onclick="window.location.href='/dashboard'">
 			<i class='bx bx-chevron-left'></i>
 			Back
 		</button>
 	</nav>
-
-
 	<main class="inset">
 		<section class="border-solid-thin shadow">
 			<h1 class="accent-underline">Create a New Project</h1>
@@ -70,7 +118,9 @@
 			</form>
 		</section>
 	</main>
+	<footer class="inset">
+		<p>&copy; 2025 Unilink. All rights reserved.</p>
+	</footer>
 </body>
-
 
 </html>

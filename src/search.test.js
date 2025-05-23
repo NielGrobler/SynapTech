@@ -106,38 +106,38 @@ describe('search.js Module Tests', () => {
 			// Mocking fetch responses for users and projects
 			const mockUsers = [{ name: 'User A' }, { name: 'User B' }];
 			const mockProjects = [{ name: 'Project A' }, { name: 'Project B' }];
-			fetch.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockUsers) });
+			
+			//changed this to mock radio setup instead of toggles
+			const radioProjects = document.createElement('input');
+			radioProjects.type = 'radio';
+			radioProjects.name = 'visibility';
+			radioProjects.value = 'Projects';
+			radioProjects.checked = true;
+			document.body.appendChild(radioProjects);
+
+			const radioUser = document.createElement('input');
+			radioUser.type = 'radio';
+			radioUser.name = 'visibility';
+			radioUser.value = 'User';
+			document.body.appendChild(radioUser);
+
 			fetch.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockProjects) });
 
 			const input = document.createElement('input');
 			input.value = 'A';
-			input.id = 'search-bar'
+			input.id = 'search-bar';
 			document.body.appendChild(input);
 
-			const userToggle = document.createElement('input');
-			userToggle.checked = true;
-			userToggle.id = 'user-toggle'; // <-- Add this line
-			document.body.appendChild(userToggle);
-
-			const projectToggle = document.createElement('input');
-			projectToggle.checked = true;
-			projectToggle.id = 'project-toggle'; // <-- Add this line
-			document.body.appendChild(projectToggle);
-
 			const resultsDiv = document.createElement('div');
-			resultsDiv.id = 'search-results'; // <-- Add this line
+			resultsDiv.id = 'search-results';
 			document.body.appendChild(resultsDiv);
 
 			await queryListener({ target: input });
 
-			// Make sure the results were merged, sorted, and assigned to the element
 			expect(pageAdder.assignListToElement).toHaveBeenCalledWith(
 				'search-results',
 				[
 					{ name: 'Project A', type: "project" },
-					//{ name: 'Project B', type: "project" }
-					{ name: 'User A', type: "user" },
-					//{ name: 'User B', type: "user" },
 				],
 				expect.any(Function)
 			);
@@ -151,27 +151,30 @@ describe('search.js Module Tests', () => {
 
 		it('should set up event listeners correctly', () => {
 			const input = document.createElement('input');
-			const userToggle = document.createElement('input');
-			const projectToggle = document.createElement('input');
+			const radioProjects = document.createElement('input');
+			const radioUser = document.createElement('input');
 
 			input.id = 'search-bar';
-			userToggle.id = 'user-toggle';
-			projectToggle.id = 'project-toggle';
+			radioProjects.type = 'radio';
+			radioProjects.name = 'visibility';
+			radioProjects.value = 'Projects';
+			radioUser.type = 'radio';
+			radioUser.name = 'visibility';
+			radioUser.value = 'User';
 
 			document.body.appendChild(input);
-			document.body.appendChild(userToggle);
-			document.body.appendChild(projectToggle);
+			document.body.appendChild(radioProjects);
+			document.body.appendChild(radioUser);
 
-			// Mock addEventListener as a spy
 			input.addEventListener = vi.fn();
-			userToggle.addEventListener = vi.fn();
-			projectToggle.addEventListener = vi.fn();
+			radioProjects.addEventListener = vi.fn();
+			radioUser.addEventListener = vi.fn();
 
 			search.setupForm();
 
 			expect(input.addEventListener).toHaveBeenCalledWith('input', expect.any(Function));
-			expect(userToggle.addEventListener).toHaveBeenCalledWith('change', expect.any(Function));
-			expect(projectToggle.addEventListener).toHaveBeenCalledWith('change', expect.any(Function));
+			expect(radioProjects.addEventListener).toHaveBeenCalledWith('change', expect.any(Function));
+			expect(radioUser.addEventListener).toHaveBeenCalledWith('change', expect.any(Function));
 		});
 	});
 });

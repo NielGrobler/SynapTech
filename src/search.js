@@ -66,30 +66,29 @@ const merge = (fst, snd, getterFst, getterSnd, comparator) => {
 	return result;
 }
 
-const promiseOnToggle = (toggle, promise) => {
-	if (toggle.checked) {
-		return promise;
-	}
-
-	return Promise.resolve([]);
+const getSelectedSearchType = () => {
+	const selected = document.querySelector('input[name="visibility"]:checked');
+	return selected ? selected.value : 'Projects'; // Default to Projects if none selected
 }
 
 const queryListener = async (e) => {
 	const input = document.getElementById("search-bar");
-	const userToggle = document.getElementById("user-toggle");
-	const projectToggle = document.getElementById("project-toggle");
-
 	const query = input.value.trim();
+
 	if (!query) {
 		pageAdder.assignListToElement('search-results', [], null);
 		return;
 	}
 
-	const promises = [];
-	promises.push(promiseOnToggle(userToggle, fetchUsers(query)));
-	promises.push(promiseOnToggle(projectToggle, fetchProjects(query)));
+	const searchType = getSelectedSearchType();
+	let users = [];
+	let projects = [];
 
-	const [users, projects] = await Promise.all(promises);
+	if (searchType === 'User') {
+		users = await fetchUsers(query);
+	} else if (searchType === 'Projects') {
+		projects = await fetchProjects(query);
+	}
 
 	if (!projects || !users) {
 		return;
@@ -118,32 +117,31 @@ const queryListener = async (e) => {
 const setupForm = () => {
 	const form = document.getElementById("search-bar");
 	pageAdder.assignListToElement('search-results', [], null);
-	const userToggle = document.getElementById("user-toggle");
-	const projectToggle = document.getElementById("project-toggle");
-	form.addEventListener("input", (e) => {
-		e.preventDefault();
-		queryListener();
+
+	const radioButtons = document.querySelectorAll('input[name="visibility"]');
+
+	form.addEventListener("input", queryListener);
+	radioButtons.forEach(radio => {
+		radio.addEventListener("change", queryListener);
 	});
-	userToggle.addEventListener("change", queryListener);
-	projectToggle.addEventListener("change", queryListener);
 }
 
-export { 
+export {
 	fetchProjects,
 	fetchUsers,
 	markType,
 	merge,
-	promiseOnToggle,
+	getSelectedSearchType,
 	queryListener,
 	setupForm
 };
 
-export default { 
+export default {
 	fetchProjects,
 	fetchUsers,
 	markType,
 	merge,
-	promiseOnToggle,
+	getSelectedSearchType,
 	queryListener,
 	setupForm
 };
