@@ -70,6 +70,10 @@ describe('QuerySender', () => {
         process.env.DB_PORT = '1234';
         process.env.DB_API_KEY = 'testkey';
 
+        process.env.FILE_STORAGE_HOST = 'testhost';
+        process.env.FILE_STORAGE_PORT = '1234';
+        process.env.FILE_STORAGE_API_KEY = 'testkey';
+
         vi.spyOn(console, 'log').mockImplementation(() => {});
     });
 

@@ -25,7 +25,7 @@ const reports = [
   },
 ];
 
-describe('analyticsDashboard.js', () => {
+describe('analyticsDashboard.js Module Tests', () => {
   let container, refreshButton;
 
   beforeEach(() => {
@@ -40,7 +40,7 @@ describe('analyticsDashboard.js', () => {
     document.dispatchEvent(new Event('DOMContentLoaded'));
   });
 
-  it('renders all report cards on load', () => {
+  it('should render all report cards on load', () => {
     const cards = container.querySelectorAll('.report-card');
     expect(cards.length).toBe(reports.length);
     reports.forEach((report, i) => {
@@ -50,13 +50,13 @@ describe('analyticsDashboard.js', () => {
     });
   });
 
-  it('re-renders the cards when refresh is clicked', async () => {
+  it('should re-render the cards when refresh is clicked', async () => {
     const spy = vi.spyOn(container, 'innerHTML', 'set');
     refreshButton.click();
     expect(spy).toHaveBeenCalled();
   });
 
-  it('adds and removes rotating class on refresh button', async () => {
+  it('should add and remove rotating class on refresh button', async () => {
     refreshButton.click();
     expect(refreshButton.classList.contains('rotating')).toBe(true);
 
@@ -64,7 +64,7 @@ describe('analyticsDashboard.js', () => {
     expect(refreshButton.classList.contains('rotating')).toBe(false);
   });
 
-  it('logs error if container is missing', () => {
+  it('should logs error if container is missing', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     document.body.innerHTML = ''; // Remove all elements
     document.dispatchEvent(new Event('DOMContentLoaded'));
@@ -73,7 +73,7 @@ describe('analyticsDashboard.js', () => {
     spy.mockRestore();
   });
 
-  it('navigates to correct link when a card is clicked', () => {
+  it('should navigate to correct link when a card is clicked', () => {
     const fakeLocation = { href: '' };
     global.window = Object.create(window);
     Object.defineProperty(window, 'location', {
