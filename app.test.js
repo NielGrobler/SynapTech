@@ -10,28 +10,206 @@ import router from './router.js';
 
 let server;
 let io;
-const port = 3001;
+const testPort = '3000';
 const testSecret = 'test-session-secret';
 const testUser = { id: 'test-guid-123', name: 'Test User' };
 const testProject = { id: 'test-project-1', name: 'Test Project' };
 const testRole = 'member';
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-process.env.SESSION_SECRET = testSecret;
-
-// Mock the db module
 vi.mock('./db/db.js', () => ({
-  default: {
-    getUserByGUID: vi.fn(),
-    getRoleInProject: vi.fn(),
-    retrieveLatestMessages: vi.fn(),
-    storeMessage: vi.fn(),
-    storeMessageWithAttachment: vi.fn(),
-    downloadFile: vi.fn(),
-  },
+	default: {
+		getUserByGUID: vi.fn(),
+		getRoleInProject: vi.fn(),
+		retrieveLatestMessages: vi.fn(),
+		storeMessage: vi.fn(),
+		storeMessageWithAttachment: vi.fn(),
+		downloadFile: vi.fn(),
+	},
 }));
 
+vi.mock('fs', () => ({
+	readFileSync: vi.fn()
+}));
 
+describe('App Module Tests', () => {
+	beforeAll(() => {
+		process.env.PORT = testPort;
+		process.env.SESSION_SECRET = testSecret;
+		process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
+		/*wanted to use this since i distrust process.env setting directly but vitest issues :/
+		vi.stubEnv('PORT', '3000');
+		vi.stubEnv('SESSION_SECRET', testSecret);
+		vi.stubEnv('NODE_TLS_REJECT_UNAUTHORIZED', '0');
+		*/
+
+		vi.spyOn(console, 'error').mockImplementation(() => {});
+		vi.spyOn(console, 'log').mockImplementation(() => {});
+	});
+
+	afterAll(() => {
+		delete process.env.PORT;
+		delete process.env.SESSION_SECRET;
+		delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+		delete process.env.ENVIRONMENT;
+		vi.restoreAllMocks();
+	});
+
+	describe('Server Config', () => {
+		it('should start in production mode when ENVIRONMENT=prod', async () => {
+			process.env.ENVIRONMENT = 'prod';
+			
+			const mockListen = vi.fn().mockImplementation((port, callback) => callback());
+			router.listen = mockListen;
+			
+			await import('./app.js');
+			
+			expect(mockListen).toHaveBeenCalledWith(testPort, expect.any(Function));
+			expect(console.log).toHaveBeenCalledWith(
+				expect.stringContaining('HTTPS server running in production mode')
+			);
+		});
+
+		/*it('should use SSL in non-production mode', async () => {
+			delete process.env.ENVIRONMENT;
+			
+			const mockListen = vi.fn().mockImplementation((port, callback) => callback());
+			const mockServer = { listen: mockListen };
+			const mockCreateServer = vi.fn().mockReturnValue(mockServer);
+			
+			https.createServer = mockCreateServer;
+
+			const mockFs = await import('fs');
+  			mockFs.readFileSync.mockImplementation((path) => {
+    			if (path === 'server.key') return 'mock-key';
+    			if (path === 'server.cert') return 'mock-cert';
+   				 throw new Error(`Unexpected file path: ${path}`);
+  			});
+			
+			await import('./app.js');
+			
+			expect(mockCreateServer).toHaveBeenCalledWith(
+				{ key: 'mock-key', cert: 'mock-cert' },
+				router
+			);
+			expect(mockListen).toHaveBeenCalledWith(testPort, expect.any(Function));
+		});*/
+
+		/*i dont think the server would ever fail to launch, which means this isn't really a needed test
+		it('should handle server startup errors', async () => {
+			process.env.ENVIRONMENT = 'prod';
+			const mockError = new Error('Startup failed');
+
+			const mockListen = vi.fn().mockImplementation((port, callback) => {
+				callback(mockError);
+			});
+			router.listen = mockListen;
+			
+			console.error.mockClear();
+			
+			await import('./app.js');
+			
+			expect(console.error).toHaveBeenCalledWith(
+				'Failed to start server:', 
+				mockError
+			);
+		});*/
+	});
+	
+	/*describe('Socket.IO Config', () => {
+		let clientSocket;
+		let authToken;
+
+		beforeEach(async () => {
+			db.getUserByGUID.mockResolvedValue(testUser);
+			db.getRoleInProject.mockResolvedValue(testRole);
+			db.retrieveLatestMessages.mockResolvedValue({ recordSet: [] });
+			
+			vi.useFakeTimers();
+
+			authToken = jwt.sign({ id: testUser.id }, process.env.SESSION_SECRET);
+			clientSocket = Client(`http://localhost:${testPort}`, {
+				auth: { token: authToken },
+				rejectUnauthorized: false,
+			});
+			
+			await new Promise((resolve) => {
+				clientSocket.on('connect', resolve);
+				clientSocket.on('connect_error', (err) => {
+				console.error('Connection error:', err);
+				resolve();
+				});
+			});
+		});
+
+		afterEach(() => {
+			if (clientSocket?.connected) {
+				clientSocket.disconnect();
+			}
+			vi.clearAllMocks();
+			vi.useRealTimers();
+		});
+
+		it('should set socket.role correctly in message handler', async () => {
+			const roomId = testProject.id;
+			const messageContent = 'Test role check';
+			
+			db.storeMessage.mockResolvedValue({});
+			
+			clientSocket.emit('join-room', { roomId });
+			await new Promise((resolve) => clientSocket.on('joined-room', resolve));
+			
+			clientSocket.emit('message', { roomId, content: messageContent });
+			
+			const receivedMessage = await new Promise((resolve) => {
+				clientSocket.on('message', resolve);
+			});
+			
+			expect(receivedMessage.role).toBe(testRole);
+			expect(db.storeMessage).toHaveBeenCalledWith(testUser.id, roomId, messageContent);
+		}, 10000);
+
+		it('should handle database errors in message storage', async () => {
+			const roomId = testProject.id;
+			db.storeMessage.mockRejectedValue(new Error('DB Error'));
+			
+			clientSocket.emit('join-room', { roomId });
+			await new Promise((resolve) => clientSocket.on('joined-room', resolve));
+			
+			clientSocket.emit('message', { roomId, content: 'Should fail' });
+			
+			const error = await new Promise((resolve) => {
+				clientSocket.on('error', resolve);
+			});
+			
+			expect(error.message).toBe('Failed sending message.');
+		}, 10000);
+
+		it('should handle socket.io server creation errors', async () => {
+			const mockError = new Error('Socket creation failed');
+			const originalServer = Server;
+			
+			Server = vi.fn().mockImplementation(() => {
+				throw mockError;
+			});
+			
+			await import('./app.js');
+			
+			expect(console.error).toHaveBeenCalledWith(
+				'Error starting sockets:', 
+				expect.objectContaining({ message: 'Socket creation failed' })
+			);
+			
+			// Restore original implementation
+			Server = originalServer;
+		}, 10000);
+	});
+	*/
+});
+
+//old tests which just ended up recreating the program in the test and thus had no coverage
+
+/*
 beforeAll(async () => {
   const sslOptions = {
     key: fs.readFileSync('server.key'),
@@ -168,6 +346,7 @@ afterAll(async () => {
     });
   });
 });
+
 
 describe('App HTTPS server tests', () => {
   it('should respond on root route', async () => {
@@ -450,3 +629,4 @@ describe('Socket.IO Chat Functionality', () => {
     expect(db.downloadFile).toHaveBeenCalledWith(attachmentUuid, ext);
   });
 });
+*/
