@@ -1,32 +1,36 @@
 import userInfo from './userInfo.js';
 
+const username = document.getElementById('username');
+const bio = document.getElementById('bio');
+const university = document.getElementById('university');
+const department = document.getElementById('department');
+
 const fetchinfo = async () => {
 	try {
-		const info = await userInfo.fetchFromApi();
-
-		const res = await fetch(`/api/user?id=${encodeURIComponent(info.id)}`);
-        const newinfo = await res.json()
-        const uni = newinfo[0].university;
-        const department = newinfo[0].department;
-
-		document.getElementById('username').value = info.name;
-
-		if (!info.bio) {
-			document.getElementById('bio').value = "No bio.";
+		const user = await userInfo.fetchFromApi();
+		
+		if (!user.name) {
+			username.value = "";
 		} else {
-			document.getElementById('bio').value = info.bio;
+			username.value = user.name;
 		}
 
-		if (!uni){
-			document.getElementById('university').value = "No listed university";
-		}else{
-			document.getElementById('university').value = uni;
+		if (!user.bio) {
+			bio.value = "";
+		} else {
+			bio.value = user.bio;
 		}
 
-		if (!department){
-			document.getElementById('department').value = "No listed department";
-		}else{
-			document.getElementById('department').value = department;
+		if (!user.university) {
+			university.value = "";
+		} else {
+			university.value = user.university;
+		}
+
+		if (!user.department) {
+			department.value = "";
+		} else {
+			department.value = user.department;
 		}
 
 	} catch (err) {
@@ -41,14 +45,8 @@ document.addEventListener("DOMContentLoaded", () => {
 const changeDetails = async()=>{
 	const info = await userInfo.fetchFromApi();
 	const id = info.id;
-	const username = document.getElementById('username').value;
-	const bio = document.getElementById('bio').value;
-	const university = document.getElementById('university').value;
-	const department = document.getElementById('department').value;
-
 
 	try {
-
 		const res = await fetch('/update/profile', {
 			method: 'PUT',
 			headers: { 'Content-Type': 'application/json' },
@@ -65,7 +63,6 @@ const changeButton = document.getElementById('changeButton');
 
 changeButton.addEventListener("click", async function(event) {
 	event.preventDefault();
-
 	changeDetails();
 });
 

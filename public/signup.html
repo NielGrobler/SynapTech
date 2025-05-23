@@ -4,7 +4,28 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<link rel="stylesheet" href="/styles.css">
+	
+	<!-- code for loading in critical CSS because otherwise it keeps flashing white on dark mode -->
+	<script>
+	(function() {
+		const savedTheme = localStorage.getItem('theme');
+		const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+		const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+		document.documentElement.setAttribute('data-theme', theme);
+		
+		const criticalCSS = `html,body{background:var(--bg-color)}[data-theme=light]{--bg-color:#fff;--text-color:#000;}[data-theme=dark]{--bg-color:#121212;--text-color:#fff;}`;
+		
+		const style = document.createElement('style');
+		style.id = 'anti-fouc';
+		style.textContent = criticalCss;
+		document.head.appendChild(style);
+	})();
+	</script>
+
+	<link rel="preload" href="/styles.css" as="style" onload="this.onload=null;this.rel='stylesheet';document.getElementById('anti-fouc').remove();">
+	<noscript><link rel="stylesheet" href="/styles.css"></noscript>
+	<script src="/styleLoad.js"></script>
+
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
@@ -16,27 +37,27 @@
 </head>
 
 <body class="center-content full-vh">
-	<section id="auth" class="flex-col border-solid-thin inset-large">
-		<h1 class="accent-underline make-title"> Signup </h1>
-		<section class="flex-col gap" id="buttons">
-			<button class="auth-button" id="googleButton" onclick="window.location.href='/auth/google'">
-				<img src="https://www.gstatic.com/marketing-cms/assets/images/d5/dc/cfe9ce8b4425b410b49b7f2dd3f3/g.webp=s48-fcrop64=1,00000000ffffffff-rw"
-					alt="Google logo" class="icon-small">
-				<span>Sign up with Google</span>
-			</button>
+	<main>
+		<section id="auth" class="flex-col border-solid-thin inset-large">
+			<h1 class="accent-underline make-title"> Signup </h1>
+			<section class="flex-col gap" id="buttons">
+				<button class="auth-button" id="googleButton" onclick="window.location.href='/auth/google'">
+					<img src="https://www.gstatic.com/marketing-cms/assets/images/d5/dc/cfe9ce8b4425b410b49b7f2dd3f3/g.webp=s48-fcrop64=1,00000000ffffffff-rw"
+						alt="Google logo" class="icon-small">
+					<span>Sign up with Google</span>
+				</button>
 
-			<button class="auth-button" id="orcidButton" onclick="window.location.href='/auth/orcid'">
-				<img src="https://orcid.org/sites/default/files/images/orcid_16x16.png" alt="ORCID logo"
-					class="icon-small">
-				<span>Sign up with ORCID</span>
-			</button>
-			<a href='/login'>Already have an account?</a>
+				<button class="auth-button" id="orcidButton" onclick="window.location.href='/auth/orcid'">
+					<img src="https://orcid.org/sites/default/files/images/orcid_16x16.png" alt="ORCID logo"
+						class="icon-small">
+					<span>Sign up with ORCID</span>
+				</button>
+				<a href='/login'>Already have an account?</a>
+			</section>
+
 		</section>
-
-	</section>
+	</main>
 </body>
 				
-
-
 </html>
 

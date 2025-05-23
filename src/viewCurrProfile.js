@@ -1,30 +1,34 @@
-import userInfo from './userInfo.js'
-import fetchUsername from './fetchUsername.js'
 import pageAdder from './pageAdder.js'
-
-let projects = [];
+import userInfo from './userInfo.js';
 
 const populateElements = async () => {
-    try {
-        const user = await userInfo.fetchFromApi();
-        document.getElementById("username").innerHTML = fetchUsername.setUsername();
-        document.getElementById('userName').innerHTML = user.name;
-        document.getElementById('userBio').innerHTML = user.bio;
+	const username = document.getElementById("userName");
+	const bio = document.getElementById("userBio");
+	const university = document.getElementById("userUni");
+	const department = document.getElementById("userDepartment");
 
-        const res = await fetch(`/api/user?id=${encodeURIComponent(user.id)}`);
-        const newinfo = await res.json();
-        document.getElementById('userUni').innerHTML = newinfo[0].university;
-        document.getElementById('userDepartment').innerHTML = newinfo[0].department;
-    } catch (error) {
-        console.error("User not authenticated:", error);
-        document.getElementById('userName').innerText = "Could not display user.";
-    }
-  }
-  
+	try {
+		const user = await userInfo.fetchFromApi();
+		//console.log(user);
+		username.innerHTML = user.name ? user.name : "No name available";
+		bio.innerHTML = user.bio ? user.bio : "No bio available";
+		university.innerHTML = user.university ? user.university : "Unknown";
+		department.innerHTML = user.department ? user.department : "Unknown";
 
-  document.addEventListener("DOMContentLoaded", () => {
-    populateElements();
-  });
+	} catch (error) {
+		console.error("User not authenticated:", error);
+		username.innerHTML = "Could not display user.";
+		bio.innerHTML = "No bio available";
+		university.innerHTML = "Unknown";
+		department.innerHTML = "Unknown";
+	}
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+	populateElements();
+});
+
+let projects = [];
 
 (async () => {
 	try {

@@ -48,7 +48,7 @@ import stringSearch from './stringSearch.js';
 
 vi.useFakeTimers();
 
-describe('dashboard.js', () => {
+describe('dashboard.js Module Tests', () => {
 	let projectSearchInput, projectSearchForm;
 
 	beforeEach(() => {
@@ -71,7 +71,7 @@ describe('dashboard.js', () => {
 		vi.restoreAllMocks();
 	});
 
-	it('loads and displays projects on load', async () => {
+	it('should load and display projects on load', async () => {
 		initDashboard();
 
 		await vi.runAllTimersAsync();
@@ -84,7 +84,7 @@ describe('dashboard.js', () => {
 		]);
 	}, 10000);
 
-	it('searches and displays filtered projects on form submit', async () => {
+	it('should search and display filtered projects on form submit', async () => {
 		initDashboard();
 
 		await vi.runAllTimersAsync();

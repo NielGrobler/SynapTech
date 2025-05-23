@@ -4,7 +4,28 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<link rel="stylesheet" href="/styles.css">
+	
+	<!-- code for loading in critical CSS because otherwise it keeps flashing white on dark mode -->
+	<script>
+	(function() {
+		const savedTheme = localStorage.getItem('theme');
+		const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+		const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+		document.documentElement.setAttribute('data-theme', theme);
+		
+		const criticalCSS = `html,body{background:var(--bg-color)}[data-theme=light]{--bg-color:#fff;--text-color:#000;}[data-theme=dark]{--bg-color:#121212;--text-color:#fff;}`;
+		
+		const style = document.createElement('style');
+		style.id = 'anti-fouc';
+		style.textContent = criticalCss;
+		document.head.appendChild(style);
+	})();
+	</script>
+
+	<link rel="preload" href="/styles.css" as="style" onload="this.onload=null;this.rel='stylesheet';document.getElementById('anti-fouc').remove();">
+	<noscript><link rel="stylesheet" href="/styles.css"></noscript>
+	<script src="/styleLoad.js"></script>
+
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="icon" href="logo.png" type="image/png">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,7 +35,7 @@
 	<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 
 
-	<title>Unilink | Dashboard</title>
+	<title>Unilink | Project Submitted</title>
 	<script src="https://accounts.google.com/gsi/client" async defer></script>
 	<script type="module" src="/savedTheme.js"></script>
 
@@ -28,8 +49,6 @@
 			Back
 		</button>
 	</nav>
-
-
 	<main class="inset">
 		<header>
 		</header>
@@ -39,14 +58,12 @@
 		</section>
 
 	</main>
-
 	<footer class="inset">
 		<p>&copy; 2025 Unilink. All rights reserved.</p>
 	</footer>
 </body>
+
 <script type="module" src="/dashboard.js"></script>
 <script type="module" src="/fetchUsername.js"></script>
 				
-
-
 </html>

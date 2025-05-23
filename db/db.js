@@ -2,10 +2,9 @@ import Joi from 'joi';
 import dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
-
 import { fileURLToPath } from 'url';
 
-import { getDirname } from './../dirname.js';
+//import { getDirname } from './../dirname.js';
 
 import { QuerySender, FileStorageClient } from './connectionInterfaces.js';
 import { DatabaseQueryBuilder } from './query.js';
@@ -18,11 +17,7 @@ try {
   const __filename = fileURLToPath(import.meta.url);
   __dirname = path.dirname(__filename);
 } catch (err) {
-  try {
-    __dirname = getDirname(import.meta);
-  } catch (e) {
     __dirname = '/'; // fallback for test/browser envs
-  }
 }
 
 const ca = fs.readFileSync(path.join(__dirname, 'server.crt'));
@@ -228,8 +223,8 @@ const replyToCollabInvite = async (isAccept, accountId, projectId, role) => {
 		.build()
 	);
 
-	console.log(isAccept);
-	console.log(result);
+	//console.log(isAccept);
+	//console.log(result);
 
 	if (isNaN(result.rowsAffected) || result.rowsAffected == 0) {
 		throw new Error("cannot reject a nonexistent invite");
@@ -346,7 +341,7 @@ const fetchAssociatedProjectsByLatest = async (user) => {
 };
 
 const fetchPublicAssociatedProjects = async (user) => {
-	const result = await new DatabaseQueryBuilder()
+	const result = await sender.getResult(new DatabaseQueryBuilder()
 		.input('id', user.id)
 		.query(`
 			SELECT DISTINCT 
@@ -359,10 +354,11 @@ const fetchPublicAssociatedProjects = async (user) => {
 			FROM Project
 			LEFT JOIN Collaborator ON Collaborator.project_id = Project.project_id
 			LEFT JOIN Account ON Account.account_id = Collaborator.account_id
-			WHERE Project.created_by_account_id = {{id}} AND Project.isPublic = 1
+			WHERE Project.created_by_account_id = {{id}} AND Project.is_public = 1
 			OR (Collaborator.account_id = {{id}} AND Collaborator.is_pending = 0);
 		`)
-		.getResultUsing(agent);
+		.build()
+	);
 
 	return result.recordSet;
 };
@@ -858,6 +854,7 @@ export default {
 	acceptCollaborator,
 	searchProjects,
 	fetchProjectById,
+	fetchCollaborators,
 	fetchPendingCollaborators,
 	insertPendingCollaborator,
 	searchUsers,

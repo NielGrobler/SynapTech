@@ -22,7 +22,7 @@ const showTables = async () => {
 			httpsAgent: agent
 		});
 		const result = new QueryResult(decodeBase64(res.data));
-		console.log(result);
+		//console.log(result);
 	} catch (err) {
 		console.error(err);
 	}
@@ -40,7 +40,7 @@ const describeTable = async (name) => {
 			httpsAgent: agent
 		});
 		const result = new QueryResult(decodeBase64(res.data));
-		console.log(result);
+		//console.log(result);
 	} catch (err) {
 		console.error(err);
 	}

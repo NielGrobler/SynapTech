@@ -2,25 +2,43 @@
 <html lang="en">
 
 <head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	
+	<!-- code for loading in critical CSS because otherwise it keeps flashing white on dark mode -->
+	<script>
+	(function() {
+		const savedTheme = localStorage.getItem('theme');
+		const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+		const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+		document.documentElement.setAttribute('data-theme', theme);
+		
+		const criticalCSS = `html,body{background:var(--bg-color)}[data-theme=light]{--bg-color:#fff;--text-color:#000;}[data-theme=dark]{--bg-color:#121212;--text-color:#fff;}`;
+		
+		const style = document.createElement('style');
+		style.id = 'anti-fouc';
+		style.textContent = criticalCss;
+		document.head.appendChild(style);
+	})();
+	</script>
 
-	<head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<link rel="stylesheet" href="./styles.css">
-		<link rel="preconnect" href="https://fonts.googleapis.com">
-		<link rel="icon" href="logo.png" type="image/png">
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-		<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
-			rel="stylesheet">
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-		<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+	<link rel="preload" href="/styles.css" as="style" onload="this.onload=null;this.rel='stylesheet';document.getElementById('anti-fouc').remove();">
+	<noscript><link rel="stylesheet" href="/styles.css"></noscript>
+	<script src="/styleLoad.js"></script>
+
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="icon" href="logo.png" type="image/png">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+		rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+	<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 
 
-		<title>Unilink | Profile</title>
-		<script src="https://accounts.google.com/gsi/client" async defer></script>
-		<script type="module" src="/savedTheme.js"></script>
-
-	</head>
+	<title>Unilink | Profile</title>
+	<script src="https://accounts.google.com/gsi/client" async defer></script>
+	<script type="module" src="/savedTheme.js"></script>
+</head>
 
 <body>
 	<nav class="inset secondary fill accent-underline">
@@ -29,7 +47,6 @@
             Back
         </button>
     </nav>
-
 	<main class="inset">
 		<h1>Profile</h1>
 		<form class="inset" action="/create-project" method="POST">
@@ -41,9 +58,9 @@
 			</section>
 		</form>
 	</main>
-
-	
+	<footer class="inset">
+		<p>&copy; 2025 Unilink. All rights reserved.</p>
+	</footer>
 </body>
 					
-
 </html>
