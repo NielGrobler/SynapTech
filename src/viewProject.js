@@ -504,12 +504,24 @@ const loadProjectReviews = async (project) => {
 };
 
 export { //for testing
+	populateCollaborators,
 	fetchProject,
 	fetchProjectFiles,
 	downloadProjectFile,
-	isParticipant,
-	populateCollaborators,
-	addCollaboratorButton,
-	loadProjectReviews,
 	getFileExt,
+	projectFileToHTML,
+	isParticipant,
+	addRequestCollaboration,
+	createUserList,
+	inviteCollaborator,
+	createInviteForm,
+	addCollaboratorButton,
+	loadProjectFiles,
+	addUploadButton,
+	populateElements,
+	fetchReviews,
+	formatDate,
+	createStarRating,
+	displayReviews,
+	loadProjectReviews,
 };
