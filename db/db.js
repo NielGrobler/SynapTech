@@ -735,8 +735,8 @@ const fetchUserById = async (id) => {
 		.build()
 	);
 
-	let user = result.recordSet;
-	console.log(user)
+	let user = result.recordSet[0];
+	//console.log(user)
 
 	if (!user) {
 		return null;
