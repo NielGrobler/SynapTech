@@ -397,6 +397,33 @@ const transformOrThrow = (str, name, maxLength = 512) => {
 	return str;
 }
 
+router.post('/api/funding/:projectId/spend', makeSafeHandler(async (req, res) => {
+	const projectId = req.params.projectId;
+	expectValidNumId(projectId, "Expected valid project id.")
+	const { name, amount } = req.body;
+	expectForValid(typeof amount === 'number' && !isNaN(amount) && amount > 0);
+	const processedName = transformOrThrow(name);
+
+	const mayView = await db.mayAccessProject(projectId, req.user.id);
+	expectForAuth(mayView);
+
+	await db.deductFunding(projectId, amount, processedName);
+
+	return res.status(200).json({ message: 'Funding expenditure made succesfully' });
+}));
+
+router.get('/api/funding/:projectId', makeSafeHandler(async (req, res) => {
+	const projectId = req.params.projectId;
+	expectValidNumId(projectId, "Expected valid project id.")
+
+	const mayView = await db.mayAccessProject(projectId, req.user.id);
+	expectForAuth(mayView);
+
+	const result = await db.getProjectFunding(projectId);
+
+	return res.status(200).json(result);
+}));
+
 // File upload route
 router.post('/api/project/:projectId/upload', upload.single('file'), makeSafeHandler(async (req, res) => {
 	expectForValid(req.file, 'No file uploaded.')

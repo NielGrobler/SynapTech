@@ -197,7 +197,7 @@ const canInvite = async (accountId, projectId) => {
 		.input("account_id", accountId)
 		.input("project_id", projectId)
 		.query(`
-			SELECT *
+			SELECT Project.project_id
 			FROM Collaborator
 			RIGHT JOIN Project
 			ON Collaborator.project_id = Project.project_id
@@ -958,6 +958,14 @@ const toggleMilestone = async (milestoneId) => {
 		.build()
 	);
 }
+
+const deductFunding = async (projectId, amount, name) => {
+	await sender.send(new DatabaseQueryBuilder()
+		.input
+};
+
+const getProjectFunding = async (projectId, amount) => {
+};
 
 export default {
 	getUserByGUID,
