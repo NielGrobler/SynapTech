@@ -1,51 +1,41 @@
 import userInfo from './userInfo.js';
 
-const fetchinfo = async () => {
-	try {
-		const info = await userInfo.fetchFromApi();
+let info = {};
 
-		const res = await fetch(`/api/user?id=${encodeURIComponent(info.id)}`);
-        const newinfo = await res.json()
-        const uni = newinfo[0].university;
-        const department = newinfo[0].department;
+const setOrElse = (elementId, field, elementName) => {
+	if (!field) {
+		document.getElementById(elementId).value = `No ${elementName}`;
+	} else {
+		document.getElementById(elementId).value = field;
+	}
+}
+
+const loadInfo = async () => {
+	try {
+		const uni = info.university;
+		const department = info.department;
+		console.log(info);
 
 		document.getElementById('username').value = info.name;
-
-		if (!info.bio) {
-			document.getElementById('bio').value = "No bio.";
-		} else {
-			document.getElementById('bio').value = info.bio;
-		}
-
-		if (!uni){
-			document.getElementById('university').value = "No listed university";
-		}else{
-			document.getElementById('university').value = uni;
-		}
-
-		if (!department){
-			document.getElementById('department').value = "No listed department";
-		}else{
-			document.getElementById('department').value = department;
-		}
-
+		setOrElse('bio', info.bio, 'bio');
+		setOrElse('university', uni, 'listed university');
+		setOrElse('department', department, 'listed department');
 	} catch (err) {
 		console.error('Error loading user:', err);
 	}
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    fetchinfo();
-  });
+document.addEventListener("DOMContentLoaded", async () => {
+	info = await userInfo.fetchFromApi();
+	await loadInfo();
+});
 
-const changeDetails = async()=>{
-	const info = await userInfo.fetchFromApi();
+const changeDetails = async() => {
 	const id = info.id;
 	const username = document.getElementById('username').value;
 	const bio = document.getElementById('bio').value;
 	const university = document.getElementById('university').value;
 	const department = document.getElementById('department').value;
-
 
 	try {
 
@@ -53,12 +43,19 @@ const changeDetails = async()=>{
 			method: 'PUT',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ id, username, bio, university, department })
-		  });
-		} catch(error) {
-			console.error('Error changing data users:', error);
-		}
+		});
 
-	fetchinfo();
+		if (res.ok) {
+			alert('Succesfully changed details!');
+		} else {
+			alert('Failed updating details.');
+		}
+	} catch(error) {
+		console.error('Error changing data users:', error);
+	}
+
+	info = await userInfo.fetchFromApi();
+	await loadInfo();
 }
 
 const changeButton = document.getElementById('changeButton');
@@ -76,33 +73,33 @@ resetButton.addEventListener("submit", async function(event) {
 
 	document.addEventListener("DOMContentLoaded", () => {
 		fetchinfo();
-	  });
+	});
 });
 
 const deleteButton = document.getElementById('deleteButton');
 
 deleteButton.addEventListener('click', async function() {
 	const userConfirmed = confirm("Are you sure you want to delete your account?");
-			if (!userConfirmed) {
-				alert("Account deletion canceled.");
-				return;
-			}
+	if (!userConfirmed) {
+		alert("Account deletion canceled.");
+		return;
+	}
 
-			fetch('/remove/user', {
-				method: 'POST',
-				body: JSON.stringify({ reqToDeleteId: info.id })
-			})
-				.then(response => {
-					if (response.ok) {
-						alert('Account deleted successfully!');
-						window.location.href = '/';
-					} else {
-						alert('Error deleting account. Please try again.');
-					}
-				})
-				.catch(error => {
-					alert('An error occurred: ' + error.message);
-				});
+	fetch('/remove/user', {
+		method: 'POST',
+		body: JSON.stringify({ reqToDeleteId: info.id })
+	})
+		.then(response => {
+			if (response.ok) {
+				alert('Account deleted successfully!');
+				window.location.href = '/';
+			} else {
+				alert('Error deleting account. Please try again.');
+			}
+		})
+		.catch(error => {
+			alert('An error occurred: ' + error.message);
+		});
 });
 
 document.addEventListener;

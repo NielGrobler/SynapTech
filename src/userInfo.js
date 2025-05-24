@@ -7,6 +7,7 @@ const fetchFromApi = async () => {
 	}
 
 	const content = await res.json();
+	console.log(`[fetchFromApi] ${content}`);
 
 	return content;
 }

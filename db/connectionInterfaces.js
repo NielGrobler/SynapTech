@@ -8,6 +8,7 @@ import { fileTypeFromBuffer } from 'file-type';
 import FormData from 'form-data';
 import { Agent } from 'https';
 import { QueryResult } from './query.js';
+import { DownloadError, UploadError, BadUploadTypeError } from '../errors.js';
 
 function decodeBase64(val) { //okay so this is for multiple different objects ???
 	// Handle primitives
@@ -23,7 +24,7 @@ function decodeBase64(val) { //okay so this is for multiple different objects ??
 	if (typeof val === 'object') {
 		const result = {};
 		for (const key in val) {
-		result[key] = decodeBase64(val[key]);
+			result[key] = decodeBase64(val[key]);
 		}
 		return result;
 	}
@@ -31,20 +32,20 @@ function decodeBase64(val) { //okay so this is for multiple different objects ??
 	// Handle strings: try to decode as base64, fallback to original string if not valid JSON
 	if (typeof val === 'string') {
 		try {
-		const decoded = Buffer.from(val, 'base64').toString('utf-8');
-		// Try to parse as JSON, fallback to string if fails
-		try {
-			return JSON.parse(decoded);
+			const decoded = Buffer.from(val, 'base64').toString('utf-8');
+			// Try to parse as JSON, fallback to string if fails
+			try {
+				return JSON.parse(decoded);
+			} catch {
+				return decoded;
+			}
 		} catch {
-			return decoded;
-		}
-		} catch {
-		return val;
+			return val;
 		}
 	}
 
 	return val;
-	}
+}
 
 class QuerySender {
 	constructor() {
@@ -93,29 +94,36 @@ class FileStorageClient {
 	}
 
 	async uploadFile(fileBuffer, filename) {
-		console.log("[FileStorageClient] Uploading file...");
+		try {
+			const fileBufferHydrated = Buffer.from(fileBuffer);
+			const fileType = await fileTypeFromBuffer(fileBufferHydrated);
+			const mimeType = fileType?.mime;
 
-		const fileBufferHydrated = Buffer.from(fileBuffer);
-		const fileType = await fileTypeFromBuffer(fileBufferHydrated);
-		const mimeType = fileType?.mime;
+			const form = new FormData();
+			form.append('file', fileBufferHydrated, {
+				filename,
+				contentType: mimeType,
+			});
 
-		const form = new FormData();
-		form.append('file', fileBufferHydrated, {
-			filename,
-			contentType: mimeType,
-		});
+			const response = await axios.post(`${this.baseUrl}/upload`, form, {
+				headers: {
+					...form.getHeaders(),
+					'X-API-Key': this.apiKey,
+				},
+				maxContentLength: Infinity,
+				maxBodyLength: Infinity,
+				httpsAgent: this.agent,
+			});
 
-		const response = await axios.post(`${this.baseUrl}/upload`, form, {
-			headers: {
-				...form.getHeaders(),
-				'X-API-Key': this.apiKey,
-			},
-			maxContentLength: Infinity,
-			maxBodyLength: Infinity,
-			httpsAgent: this.agent,
-		});
+			return response.data;
+		} catch (err) {
+			const status = err.response?.status;
+			if (status === 415) {
+				throw new BadUploadTypeError(`File type of ${filename} is not permitted for upload.`);
+			}
 
-		return response.data;
+			throw new UploadError(`Failed uploading file ${filename}`, status);
+		}
 	}
 
 	extractFilename(contentDisposition) {
@@ -130,36 +138,25 @@ class FileStorageClient {
 	async downloadFile(fileUuid, ext) {
 		console.log("[Downloading file]...");
 		console.log(fileUuid);
-		const response = await axios.get(`${this.baseUrl}/download/${fileUuid}.${ext}`, {
-			responseType: 'arraybuffer',
-			headers: {
-				'X-API-Key': this.apiKey,
-			},
-			httpsAgent: this.agent,
-		});
 
-		return {
-			buffer: response.data,
-			contentType: response.headers['content-type'],
-			filename: this.extractFilename(response.headers['content-disposition']),
-		};
-	}
+		try {
+			const response = await axios.get(`${this.baseUrl}/download/${fileUuid}.${ext}`, {
+				responseType: 'arraybuffer',
+				headers: {
+					'X-API-Key': this.apiKey,
+				},
+				httpsAgent: this.agent,
+			});
 
-
-	async sendBatch(batchReq) {
-		const res = await axios.post(`${this.baseUrl}/batch/`, {
-			items: this.items
-		}, {
-			headers: {
-				'X-API-Key': this.apiKey,
-				'Content-Type': 'application/json',
-			},
-			maxContentLength: Infinity,
-			maxBodyLength: Infinity,
-			httpsAgent: this.agent,
-		});
-
-		return res.data;
+			return {
+				buffer: response.data,
+				contentType: response.headers['content-type'],
+				filename: this.extractFilename(response.headers['content-disposition']),
+			};
+		} catch (err) {
+			const status = err.response?.status;
+			throw new DownloadError(`Failed downloading file ${filename}`, status);
+		}
 	}
 }
 

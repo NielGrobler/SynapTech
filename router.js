@@ -13,6 +13,8 @@ import { getDirname } from './dirname.js';
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
 
+import { ValidationError, AuthorizationError, DownloadError, UploadError, BadUploadTypeError } from './errors.js';
+
 /* Database imports */
 import db from './db/db.js';
 import { FileStorageClient } from './db/connectionInterfaces.js';
@@ -20,24 +22,23 @@ import { FileStorageClient } from './db/connectionInterfaces.js';
 // Configure .env
 dotenv.config();
 if (!process.env.SESSION_SECRET) {
-  throw new Error('SESSION_SECRET is not set. Check your .env or CI environment variables.');
+	throw new Error('SESSION_SECRET is not set. Check your .env or CI environment variables.');
 }
 
 // For convenience, as these don't exist in ES modules.
 let __dirname;
 try {
-  const __filename = fileURLToPath(import.meta.url);
-  __dirname = path.dirname(__filename);
+	const __filename = fileURLToPath(import.meta.url);
+	__dirname = path.dirname(__filename);
 } catch (err) {
-  try {
-	__dirname = getDirname(import.meta);
-  } catch (e) {
-	__dirname = '/'; // fallback for test/browser envs
-  }
+	try {
+		__dirname = getDirname(import.meta);
+	} catch (e) {
+		__dirname = '/'; // fallback for test/browser envs
+	}
 }
 
 const router = express();
-const port = process.env.PORT || 3000;
 
 /* For HTML form */
 router.use(express.urlencoded({ extended: true }));
@@ -224,7 +225,6 @@ router.get('/auth/orcid/callback',
 		);
 
 		res.redirect(`/dashboard?token=${token}`);
-
 	}
 );
 
@@ -236,6 +236,7 @@ router.get('/', (req, res) => {
 
 	res.redirect('/dashboard');
 });
+
 
 router.get('/login', (req, res) => {
 	res.sendFile(path.join(__dirname, "public", "login.html"));
@@ -274,17 +275,11 @@ router.get('/view/search', requireAuthentication((req, res) => {
 }));
 
 router.get('/view/project', requireAuthentication((req, res) => {
-	
 	res.sendFile(path.join(__dirname, "public", "viewProject.html"));
 }));
 
 // Settings Page
 router.get('/settings', requireAuthentication((req, res) => {
-	if (!authenticateRequest(req)) {
-		res.status(401).json({ error: 'Not authenticated' });
-		return;
-	}
-
 	res.sendFile(path.join(__dirname, "public", "settings.html"));
 }, { statusCode: 401 }));
 
@@ -312,158 +307,233 @@ const upload = multer({
 	storage: multer.memoryStorage(),
 	limits: { fileSize: 10 * 1024 * 1024 } // 10MB
 });
-const fileStorageClient = new FileStorageClient();
+
+const isValidNumId = (id) => {
+	const parsedId = Number(id);
+	return Number.isInteger(parsedId) && parsedId >= 0;
+};
+
+const isValidUUID = (uuid) => {
+	const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+	return uuidRegex.test(uuid);
+}
+
+const expectValidNumId = (id, msg = 'Expected a valid numerical id.') => {
+	if (!isValidNumId(id)) {
+		throw new ValidationError(msg);
+	}
+}
+
+const expectValidUuid = (id, msg = 'Expected a valid UUID') => {
+	if (!isValidUUID(id)) {
+		throw new ValidationError(msg);
+	}
+}
+
+const makeSafeHandler = (handler) => {
+	return async (req, res) => {
+		if (!authenticateRequest(req)) {
+			return res.status(401).json({ error: 'Authentication required' });
+		}
+
+		try {
+			await handler(req, res)
+		} catch (err) {
+			if (process.env.DEBUG) {
+				console.error("Stack trace:", err.stack);
+				console.error("Error message:", err.message);
+			}
+
+			if (err instanceof ValidationError) {
+				return res.status(400).json({ error: err.message, details: err.details });
+			}
+
+			if (err instanceof AuthorizationError) {
+				return res.status(403).json({ error: err.message, details: err.details });
+			}
+
+			if (err instanceof BadUploadTypeError) {
+				return res.status(415).json({ error: err.message, details: err.details });
+			}
+
+			if (err instanceof UploadError || err instanceof DownloadError) {
+				console.error(err.statusCode);
+				return res.status(err.statusCode).json({ error: err.message, details: err.details });
+			}
+
+			return res.status(500).json({ error: "Internal server error" });
+		}
+
+	}
+}
+
+const expectForValid = (isValidCondition, msgOnFalse) => {
+	if (!isValidCondition) {
+		throw new ValidationError(msgOnFalse);
+	}
+}
+
+const expectForAuth = (isAuthCondition, msgOnFalse) => {
+	if (!isAuthCondition) {
+		throw new AuthorizationError(msgOnFalse);
+	}
+}
+
+const transformOrThrow = (str, name, maxLength = 512) => {
+	console.log(typeof str);
+	if (typeof str !== 'string') {
+		throw new ValidationError(`Expected argument ${name} to be a string.`);
+	}
+	str = str.trim();
+	if (str.length > maxLength) {
+		throw new ValidationError(`Argument ${name} is too long.`);
+
+	}
+
+	if (str.length === 0) {
+		throw new ValidationError(`Argument ${name} was blank or empty.`);
+	}
+
+	return str;
+}
 
 // File upload route
-router.post('/api/project/:projectId/upload', upload.single('file'), requireAuthentication(async (req, res) => {
-	if (!req.file) {
-		return res.status(400).json({ error: 'No file uploaded.' });
-	}
+router.post('/api/project/:projectId/upload', upload.single('file'), makeSafeHandler(async (req, res) => {
+	expectForValid(req.file, 'No file uploaded.')
+	const maxSize = 10 * 1024 * 1024;
+	expectForValid(req.file.size <= maxSize, 'File size exceeds the 10MB limit');
+	const projectId = req.params.projectId;
+	expectValidNumId(projectId);
 
-	try {
-		console.log(req.file);
-		const maxSize = 10 * 1024 * 1024;
-		if (req.file.size > maxSize) {
-			return res.status(400).json({ error: 'File size exceeds the 10MB limit.' });
-		}
+	const mayUpload = await db.mayUploadToProject(projectId, req.user.id);
+	expectForAuth(mayUpload, 'Not authorized for upload to this project.')
 
-		const projectId = req.params.projectId;
-		const mayUpload = await db.mayUploadToProject(projectId, req.user.id);
-		if (!mayUpload) {
-			return res.status(400).json({ error: 'Not authorized for upload to this project.' });
-		}
+	const fileBuffer = req.file.buffer;
+	const filename = req.file.originalname;
+	await db.uploadToProject(projectId, fileBuffer, filename);
 
-
-		const fileBuffer = req.file.buffer;
-		const filename = req.file.originalname;
-		await db.uploadToProject(projectId, fileBuffer, filename);
-
-		return res.status(200).json({ message: 'File uploaded successfully' });
-	} catch (error) {
-		console.error('Error uploading file:', error);
-		return res.status(500).json({ error: error.message });
-	}
+	return res.status(200).json({ message: 'File uploaded successfully.' });
 }));
 
-router.get('/api/project/:projectId/file/:fileId/:ext', requireAuthentication(async (req, res) => {
-	try {
-		const projectId = req.params.projectId;
-		const fileId = req.params.fileId;
-		const ext = req.params.ext;
-		const mayAccess = await db.mayAccessProject(projectId, req.user.id);
-		if (!mayAccess) {
-			return res.status(403).json({ error: "cannot access project" });
-		}
-	
-		const result = await db.downloadFile(fileId, ext);
-		res.send(result.buffer);
-	} catch (err) {
-		res.json({ error: err.message || err.toString() });
-	}
+router.post('/api/post/funding/request', makeSafeHandler(async (req, res) => {
+	const { opportunityId, projectId } = req.body;
+	expectValidNumId(opportunityId, 'Expected valid funding opportunity id.');
+	expectValidNumId(projectId, 'Expected valid project id.');
+	const mayRequest = await db.mayRequestProjectFunding(projectId, req.user.id);
+	expectForValid(mayRequest, 'Not authorized to request funding for this project.');
+	const hasRequestedAlready = await db.alreadyRequestedFunding(opportunityId, projectId);
+	expectForValid(hasRequestedAlready, 'A request for funding from this source is still pending.');
+	await db.insertFundingRequest(opportunityId, projectId);
+	return res.status(200).json({ message: 'Funding request posted successfully.' });
 }));
 
-router.get('/api/project/:projectId/files', requireAuthentication(async (req, res) => {
-	try {
-		const projectId = req.params.projectId;
-		const mayAccess = await db.mayAccessProject(projectId, req.user.id);
-		if (!mayAccess) {
-			return res.status(403).json({ error: "cannot access project" });
-		}
-
-		const result = await db.getProjectFiles(projectId);
-		res.json(result);
-	} catch (err) {
-		res.json({ error: err.message || err.toString() });
-	}
+router.get('/api/project/:projectId/milestones', makeSafeHandler(async (req, res) => {
+	const projectId = req.params.projectId;
+	expectValidNumId(projectId, 'Expected a valid project id.');
+	const mayView = await db.mayAccessProject(projectId, req.user.id);
+	expectForAuth(mayView);
+	const milestones = await db.getMilestones(projectId);
+	return res.status(200).json(milestones);
 }));
 
-router.get('/api/user/info', requireAuthentication((req, res) => {
-	if (!authenticateRequest(req)) {
-		res.status(401).json({ error: 'Not authenticated' });
-		return;
-	}
+router.post('/api/post/project/:projectId/milestone', makeSafeHandler(async (req, res) => {
+	const projectId = req.params.projectId;
+	expectValidNumId(projectId, 'Expected a valid project id.');
+	const mayView = await db.mayAccessProject(projectId, req.user.id);
+	expectForAuth(mayView);
+	var { name, description } = req.body;
+	name = transformOrThrow(name, 'name');
+	description = transformOrThrow(description, 'description', 2048);
 
+	await db.insertMilestone(projectId, name, description);
+	return res.status(200).json({ message: 'Milestone posted successfully.' });
+}));
+
+router.post('/api/toggle/project/:projectId/milestone', makeSafeHandler(async (req, res) => {
+	const projectId = req.params.projectId;
+	expectValidNumId(projectId);
+	const mayView = await db.mayAccessProject(projectId, req.user.id);
+	expectForAuth(mayView);
+	const { milestoneId } = req.body;
+	expectValidNumId(milestoneId, 'Expected a valid milestone id.');
+
+	await db.toggleMilestone(milestoneId);
+	return res.status(200).json({ message: 'Milestone toggled successfully.' });
+}));
+
+router.get('/api/funding/opportunities', makeSafeHandler(async (req, res) => {
+	const result = await db.getFundingOpportunities();
+	return res.status(200).json(result);
+}));
+
+router.get('/api/project/:projectId/file/:fileId/:ext', makeSafeHandler(async (req, res) => {
+	const projectId = req.params.projectId;
+	expectValidNumId(projectId);
+	// file id is a uuid
+	const fileId = req.params.fileId;
+	expectValidUuid(fileId)
+	const ext = req.params.ext;
+	ext = transformOrThrow(ext, 'ext');
+	const mayAccess = await db.mayAccessProject(projectId, req.user.id);
+	expectForAuth(mayAccess, 'Cannot access project.');
+	const result = await db.downloadFile(fileId, ext);
+	res.send(result.buffer);
+}));
+
+router.get('/api/project/:projectId/files', makeSafeHandler(async (req, res) => {
+	const projectId = req.params.projectId;
+	expectValidNumId(projectId);
+	const mayAccess = await db.mayAccessProject(projectId, req.user.id);
+	expectForAuth(mayAccess, "May not access project.");
+	const result = await db.getProjectFiles(projectId);
+	return res.json(result);
+}));
+
+router.get('/api/user/info', makeSafeHandler((req, res) => {
 	res.json(req.user);
-}, { statusCode: 401 }));
-
-router.post('/api/collaboration/invite', requireAuthentication(async (req, res) => {
-	try {
-		const { projectId, accountId, role } = req.body;
-		if (!projectId || !accountId || !role) {
-			return res.status(400).json({ error: 'missing required fields: projectId, accountId and role are required.' });
-		}
-
-		const validRoles = ['Reviewer', 'Researcher'];
-
-		if (!validRoles.includes(role)) {
-			return res.status(400).json({ error: `invalid role. Role must be one of the following: ${validRoles.join(', ')}.` });
-		}
-
-		if (isNaN(projectId)) {
-			return res.status(400).json({ error: 'projectId must be a number.' });
-		}
-
-		if (isNaN(accountId)) {
-			return res.status(400).json({ error: 'accountId must be a number.' });
-		}
-
-		const canInvite = await db.canInvite(accountId, projectId);
-		if (!canInvite) {
-			return res.status(400).json({ error: 'cannot invite this user.' });
-		}
-
-		const alreadyInvited = await db.alreadyInvited(accountId, projectId);
-		if (!alreadyInvited) {
-			return res.status(400).json({ error: 'Already invited this user.' });
-		}
-
-		await db.sendCollabInvite(accountId, projectId, role);
-
-		return res.status(200).json({ message: 'Collaboration invite sent successfully' });
-	} catch (err) {
-		return res.status(500).json({ error: 'Internal Error' });
-	}
 }));
 
-router.get('/api/collaboration/invites', requireAuthentication(async (req, res) => {
-	try {
-		const userId = req.user.id;
-		const result = await db.getPendingCollabInvites(userId);
-		return res.json(result);
-	} catch (err) {
-		console.error(err);
-		return res.status(400).json({ error: 'bad request' });
-	}
+const expectValidRole = (role) => {
+	expectForValid(role, 'Missing role.');
+	const validRoles = ['Reviewer', 'Researcher'];
+	const invalidRoleMsg = `Invalid role. Role must be one of the following ${validRoles.join(', ')}.`;
+	expectForValid(validRoles.includes(role), invalidRoleMsg);
+}
+
+router.post('/api/collaboration/invite', makeSafeHandler(async (req, res) => {
+	const { projectId, accountId, role } = req.body;
+
+	expectValidRole(role);
+	expectValidNumId(projectId, 'Expected valid project id.');
+	expectValidNumId(accountId, 'Expected valid account id.');
+	expectValidRole(role);
+
+	const canInvite = await db.canInvite(accountId, projectId);
+	expectForValid(canInvite, 'Cannot invite this user.');
+	const alreadyInvited = await db.alreadyInvited(accountId, projectId);
+	expectForValid(alreadyInvited, 'Already invited this user.');
+	await db.sendCollabInvite(accountId, projectId, role);
+	return res.status(200).json({ message: 'Collaboration invite sent successfully' });
 }));
 
-router.post('/api/collaboration/invite/reply', requireAuthentication(async (req, res) => {
-	try {
-		const { projectId, role, isAccept } = req.body;
-		if (!projectId || !role) {
-			return res.status(400).json({ error: 'missing required fields: projectId, accountId and role are required.' });
-		}
-
-		const validRoles = ['Reviewer', 'Researcher'];
-
-		if (!validRoles.includes(role)) {
-			return res.status(400).json({ error: `invalid role. Role must be one of the following: ${validRoles.join(', ')}.` });
-		}
-
-		if (isNaN(projectId)) {
-			return res.status(400).json({ error: 'projectId must be a number.' });
-		}
-
-		await db.replyToCollabInvite(isAccept, req.user.id, projectId, role);
-
-		return res.status(200).json({ message: 'Collaboration invite sent successfully' });
-	} catch (err) {
-		console.log(err);
-		return res.status(500).json({ error: 'Internal Error' });
-	}
+router.get('/api/collaboration/invites', makeSafeHandler(async (req, res) => {
+	const userId = req.user.id;
+	const result = await db.getPendingCollabInvites(userId);
+	return res.json(result);
 }));
 
-router.get('/api/user/projectNames', requireAuthentication(async (req, res) => {
-	let projects = await db.fetchAssociatedProjectsByLatest(req.user);
+router.post('/api/collaboration/invite/reply', makeSafeHandler(async (req, res) => {
+	const { projectId, role, isAccept } = req.body;
+	expectValidNumId(projectId, 'Expected valid project id.');
+	expectValidRole(role);
+
+	await db.replyToCollabInvite(isAccept, req.user.id, projectId, role);
+
+	return res.status(200).json({ message: 'Collaboration invite sent successfully' });
+}));
+
+router.get('/api/user/projectNames', makeSafeHandler(async (req, res) => {
+	let projects = await db.fetchAssociatedProjectsByLatest(req.user.id);
 	res.json(projects);
 }));
 
@@ -476,182 +546,103 @@ const authenticatedForView = (project, user) => {
 }
 
 // For when a user accepts a request to collaborate on a project
-router.put('/api/accept/collaborator', requireAuthentication(async (req, res) => {
+router.put('/api/accept/collaborator', makeSafeHandler(async (req, res) => {
 	const { userId, projectId } = req.body;
-	if (!userId || !projectId) {
-		return res.status(400).json({ error: 'Bad Request.' });
-	}
-
+	expectValidNumId(userId);
+	expectValidNumId(projectId);
 	const permittedToAccept = await db.permittedToAcceptCollaborator(req.user, userId, projectId);
-
-	if (!permittedToAccept) {
-		return res.status(400).json({ error: 'Bad Request.' });
-	}
-
-	try {
-		await db.acceptCollaborator(userId, projectId);
-		res.send('Successful');
-	} catch (err) {
-		res.status(400).json({ error: 'Error.' });
-	}
+	expectForValid(permittedToAccept, 'Not permitted to accept this collaborator.');
+	await db.acceptCollaborator(userId, projectId);
+	return res.status(200).json({ message: 'Successfully accepted collaborator' });
 }));
 
-router.delete('/api/reject/collaborator', requireAuthentication(async (req, res) => {
+router.delete('/api/reject/collaborator', makeSafeHandler(async (req, res) => {
 	const { userId, projectId } = req.body;
-	if (!userId || !projectId) {
-		return res.status(400).json({ error: 'Bad Request.' });
-	}
-
+	expectValidNumId(userId, 'Expected valid user id.');
+	expectValidNumId(projectId, 'Expected valid project id.');
 	const permittedToReject = await db.permittedToRejectCollaborator(req.user, userId, projectId);
+	expectForValid(permittedToReject, 'Not permitted to reject this collaborator.');
 
-	if (!permittedToReject) {
-		return res.status(400).json({ error: 'Bad Request.' });
-	}
-
-	try {
-		await db.removeCollaborator(userId, projectId);
-		res.send('Successful');
-	} catch (err) {
-		res.status(400).json({ error: 'Error.' });
-	}
+	await db.removeCollaborator(userId, projectId);
+	return res.status(200).json({ message: 'Successfully rejected collaborator' });
 }));
 
 // Route for when users want to fetch a specific project (based on id)
-router.get('/api/project', requireAuthentication(async (req, res) => {
-	if (!authenticateRequest(req)) {
-		res.status(401).json({ error: 'Not authenticated' });
-		return;
-	}
-	
+router.get('/api/project', makeSafeHandler(async (req, res) => {
 	const { id } = req.query;
-	if (!id) {
-		res.status(400).json({ error: "Bad Request." });
-		return;
-	}
-
+	expectValidNumId(id);
 	const project = await db.fetchProjectById(id);
 
-	if (!project) {
-		res.json(null);
-		return;
-	}
+	expectForValid(authenticatedForView(project, req.user), "Not authorized to view this project.");
 
-	if (!authenticatedForView(project, req.user)) {
-		res.status(400).json({ error: "Cannot view project." });
-		return;
-	}
+	return res.json(project);
+}));
 
-	res.json(project);
-}, { statusCode: 401 }));
-
-/*
-// Route for when users want to view a specific user (based on site id)
-router.get('/api/user', async (req, res) => {
-	if (!authenticateRequest(req)) {
-		res.status(401).json({ error: 'Bad Request.' });
-		return;
-	}
-
-	const { id } = req.query;
-	if (!id) {
-		res.status(400).json({ error: "Bad Request." });
-		return;
-	}
+router.get('/api/user/info/:id', makeSafeHandler(async (req, res) => {
+	const id = req.params.id;
+	expectValidNumId(id, 'Expected valid account id.')
 
 	const user = await db.fetchUserById(id);
-
-	if (!user) {
-		res.json(null);
-		return;
-	}
-
-	res.json(user);
-});
-*/
-
-router.get('/api/search/project', requireAuthentication(async (req, res) => {
-	const { projectName } = req.query;
-	if (!projectName || typeof projectName !== "string") {
-		res.status(400).json({ error: "Bad Request." });
-		return;
-	}
-
-	res.json(await db.searchProjects(projectName));
-
+	return res.json(user);
 }));
-/*
-});
 
-//fetch current user project
-router.get('/api/user/project', async (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-*/
+router.get('/api/search/project', makeSafeHandler(async (req, res) => {
+	const { projectName } = req.query;
+	expectForValid(projectName && typeof projectName === "string", "Expected valid project name");
+	return res.json(await db.searchProjects(projectName));
+}));
 
-router.get('/api/user/project', requireAuthentication(async (req, res) => {
+router.get('/api/user/project', makeSafeHandler(async (req, res) => {
 	let projects = await db.fetchAssociatedProjects(req.user);
 	await db.appendCollaborators(projects);
 
-	res.json(projects);
+	return res.json(projects);
 }));
 
-/*
-//fetch other user project
-router.get('/api/other/project', async (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.status(401).json({ error: 'Not authenticated' });
-	}
+router.get(`/api/projects/by/user/:userId`, makeSafeHandler(async (req, res) => {
+	const id = req.params.userId;
+	console.log(`Id received was ${id}`);
+	console.log("USED");
+	expectValidNumId(id, 'Expected valid account id');
+	const projects = await db.fetchPublicAssociatedProjects(id);
+	return res.json(projects);
+}));
 
-
+router.get('/api/other/project', makeSafeHandler(async (req, res) => {
 	let { id } = req.query;
-	if (!id) {
-		return res.status(400).json({ error: 'Missing user id' });
-	}
+	expectValidNumId(id, 'Expected valid account id');
 	let projects = await db.fetchPublicAssociatedProjects(id);
-
-	res.json(projects);
-});
-*/
-
-router.get('/api/collaborator', requireAuthentication(async (req, res) => {
-	let pending_collaborators = await db.fetchPendingCollaborators(req.user);
-	res.json(pending_collaborators);
+	return res.json(projects);
 }));
 
-router.get('/reviewProject', (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-	res.sendFile(path.join(__dirname, "public", "reviewProject.html"));
-});
+router.get('/api/collaborator', makeSafeHandler(async (req, res) => {
+	let pending_collaborators = await db.fetchPendingCollaborators(req.user);
+	return res.json(pending_collaborators);
+}));
 
-router.get('/api/reviews', requireAuthentication(async (req, res) => {
+router.get('/reviewProject', requireAuthentication((req, res) => {
+	res.sendFile(path.join(__dirname, "public", "reviewProject.html"));
+}));
+
+router.get('/api/reviews', makeSafeHandler(async (req, res) => {
 	const projectId = req.query.projectId;
+	expectValidNumId(projectId);
 	const page = parseInt(req.query.page) || 1;
 	const limit = parseInt(req.query.limit) || 10;
 	const offset = (page - 1) * limit;
 
-	try {
-		const reviews = await db.getProjectReviews(projectId, limit, offset);
-		const totalCount = await db.getReviewCount(projectId);
+	const reviews = await db.getProjectReviews(projectId, limit, offset);
+	const totalCount = await db.getReviewCount(projectId);
 
-		res.json({
-			reviews: reviews,
-			totalCount: totalCount
-		});
-	} catch (err) {
-		console.error('Error fetching reviews:', err);
-		res.status(500).json({ error: 'Failed to fetch reviews' });
-	}
+	return res.json({
+		reviews: reviews,
+		totalCount: totalCount
+	});
 }));
 
-router.get('/analyticsDashboard', (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
+router.get('/analyticsDashboard', requireAuthentication((req, res) => {
 	res.sendFile(path.join(__dirname, "public", "analyticsDashboard.html"));
-});
+}));
 
 /* POST Request Routing */
 router.post('/create/project', requireAuthentication(async (req, res) => {
@@ -672,18 +663,11 @@ router.post('/create/project', requireAuthentication(async (req, res) => {
 	}
 }));
 
-router.post('/api/collaboration/request', requireAuthentication(async (req, res) => {
+router.post('/api/collaboration/request', makeSafeHandler(async (req, res) => {
 	const { projectId } = req.body;
-	if (!projectId || typeof projectId !== 'number') {
-		return res.status(400).send("Bad Request");
-	}
-
-	try {
-		await db.insertPendingCollaborator(req.user.id, projectId);
-		res.send('Successfully sent collobaroration request.');
-	} catch (err) {
-		res.status(400).json({ error: 'Failed' });
-	}
+	expectValidNumId(projectId);
+	await db.insertPendingCollaborator(req.user.id, projectId);
+	return res.status(200).json({ message: 'Successfully sent collaboration request.' });
 }));
 
 router.post('/remove/user', requireAuthentication(async (req, res) => {
@@ -719,31 +703,31 @@ router.post('/remove/user', requireAuthentication(async (req, res) => {
 	}
 }));
 
+const expectAllPresentForValid = (...values) => {
+	const missing = values.filter(value => value == null);
+	if (missing.length > 0) {
+		throw new ValidationError("Missing required fields", { missing });
+	}
+};
+
 //Reviews Page
-router.post('/api/review', requireAuthentication(async (req, res) => {
-	if (!req.body || !req.body.projectId || !req.body.rating || !req.body.comment) {
-		return res.status(400).json({ error: "Missing required fields" });
-	}
-
+router.post('/api/review', makeSafeHandler(async (req, res) => {
+	expectAllPresentForValid(req.body, req.body.projectId, req.body.rating, req.body.comment);
 	const { projectId, rating, comment } = req.body;
+	expectValidNumId(projectId);
 
-	try {
-		await db.createReview({
-			project_id: parseInt(projectId),
-			reviewer_id: req.user.id,
-			rating: parseInt(rating),
-			comment
-		});
+	await db.createReview({
+		project_id: parseInt(projectId),
+		reviewer_id: req.user.id,
+		rating: parseInt(rating),
+		comment
+	});
 
-		res.status(201).json({
-			message: 'Review submitted!',
-			redirect: '/successfulReviewPost'
-		});
-	} catch (err) {
-		console.error('Error creating review:', err);
-		res.status(500).json({ error: 'Failed to submit review', details: err.message });
-	}
-})); 
+	return res.status(201).json({
+		message: 'Review submitted!',
+		redirect: '/successfulReviewPost'
+	});
+}));
 
 router.get('/successfulReviewPost', requireAuthentication((req, res) => {
 	res.sendFile(path.join(__dirname, "public", "successfulReviewPost.html"));
@@ -759,20 +743,11 @@ router.get('/view/users', requireAuthentication((req, res) => {
 }));
 
 //Searching for users 
-router.get('/api/search/user', async (req, res) => {
-	if (!authenticateRequest(req)) {
-		res.status(401).json({ error: 'Not authenticated' });
-		return;
-	}
-
+router.get('/api/search/user', makeSafeHandler(async (req, res) => {
 	const { userName } = req.query;
-	if (!userName || typeof userName !== "string") {
-		res.status(400).json({ error: "Bad Request." });
-		return;
-	}
-
+	expectForValid(userName && typeof userName === 'string');
 	res.json(await db.searchUsers(userName));
-});
+}));
 
 //Suspends an account
 router.put('/suspend/user', async (req, res) => {
@@ -803,30 +778,22 @@ router.get('/admin', async (req, res) => {
 });
 
 //Redirect to other profile
-router.get('/view/other/profile', (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-
+router.get('/view/other/profile', requireAuthentication((req, res) => {
 	res.sendFile(path.join(__dirname, "public", "viewOtherProfile.html"));
-});
+}));
 
 //Redirect to my profile
-router.get('/view/curr/profile', (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-
+router.get('/view/curr/profile', requireAuthentication((req, res) => {
 	res.sendFile(path.join(__dirname, "public", "viewCurrProfile.html"));
-});
+}));
 
-router.get('/suspended', (req, res) => {
+router.get('/suspended', requireAuthentication((req, res) => {
 	if (!authenticateRequest(req)) {
 		return res.redirect('/forbidden');
 	}
 
 	res.sendFile(path.join(__dirname, "public", "suspended.html"));
-});
+}));
 
 router.get('/isSuspended', requireAuthentication(async (req, res) => {
 	try {
@@ -839,16 +806,11 @@ router.get('/isSuspended', requireAuthentication(async (req, res) => {
 }));
 
 //Put request to update profile
-router.put('/update/profile', async (req, res) => {
-	if (!authenticateRequest(req)) {
-		res.status(401).json({ error: 'Not authenticated' });
-		return;
-	}
-
+router.put('/update/profile', requireAuthentication(async (req, res) => {
 	const params = req.body;
 
 	res.json(await db.updateProfile(params));
-});
+}));
 
 /* PUT Request Routing */
 router.put('user/details', requireAuthentication(async (req, res) => {

@@ -3,6 +3,10 @@ let projects = [];
 
 let suspend;
 
+const noneIfAbsent = (s) => {
+	return !s ? 'None' : s;
+}
+
 const checkAdmin = async () => {
 	const res = await fetch('/admin');
 	const admin = await res.json();
@@ -55,17 +59,18 @@ const populateElements = async () => {
 	if (!userId) {
 		return null;
 	}
-	const res = await fetch(`/api/user?id=${encodeURIComponent(userId)}`);
+	const res = await fetch(`/api/user/info/${encodeURIComponent(userId)}`);
 	const user = await res.json();
+	console.log(user);
 	if (!user) {
 		document.getElementById('userName').innerText = "Could not display user.";
 		return;
 	}
 
-	document.getElementById('userName').innerText = user[0].name;
-	document.getElementById('userUni').innerHTML = user[0].university;
-	document.getElementById('userDepartment').innerHTML = user[0].department;
-	document.getElementById('userBio').innerHTML = user[0].bio;
+	document.getElementById('userName').innerText = user.name;
+	document.getElementById('userUni').innerHTML = noneIfAbsent(user.university);
+	document.getElementById('userDepartment').innerHTML = noneIfAbsent(user.department);
+	document.getElementById('userBio').innerHTML = noneIfAbsent(user.bio);
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -78,7 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	if (!userId) return;
 
 	try {
-		const res = await fetch(`/api/other/project?id=${encodeURIComponent(userId)}`);
+		const res = await fetch(`/api/projects/by/user/${userId}`);
 		if (!res.ok) {
 			throw new Error(`Failed to fetch projects: ${res.statusText}`);
 		}

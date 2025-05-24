@@ -1,37 +1,34 @@
 import userInfo from './userInfo.js'
-import fetchUsername from './fetchUsername.js'
 import pageAdder from './pageAdder.js'
 
 let projects = [];
 
+const noneIfAbsent = (s) => {
+	return !s ? 'None' : s;
+}
+
 const populateElements = async () => {
-    try {
-        const user = await userInfo.fetchFromApi();
-        document.getElementById("username").innerHTML = fetchUsername.setUsername();
-        document.getElementById('userName').innerHTML = user.name;
-        document.getElementById('userBio').innerHTML = user.bio;
+	try {
+		const user = await userInfo.fetchFromApi();
+		console.log(user);
+		document.getElementById('userName').innerText = user.name;
+		document.getElementById('userBio').innerText = noneIfAbsent(user.bio);
 
-        const res = await fetch(`/api/user?id=${encodeURIComponent(user.id)}`);
-        const newinfo = await res.json();
-        document.getElementById('userUni').innerHTML = newinfo[0].university;
-        document.getElementById('userDepartment').innerHTML = newinfo[0].department;
-    } catch (error) {
-        console.error("User not authenticated:", error);
-        document.getElementById('userName').innerText = "Could not display user.";
-    }
-  }
-  
+		document.getElementById('userUni').innerText = noneIfAbsent(user.university);
+		document.getElementById('userDepartment').innerText = noneIfAbsent(user.department);
+	} catch (error) {
+		document.getElementById('userName').innerText = "Could not display user.";
+	}
+}
 
-  document.addEventListener("DOMContentLoaded", () => {
-    populateElements();
-  });
 
-(async () => {
+document.addEventListener("DOMContentLoaded", async () => {
 	try {
 		const res = await fetch('/api/user/project');
 		projects = await res.json();
 		pageAdder.addProjectsToPage('projectCardList', projects);
+		populateElements();
 	} catch (err) {
 		console.error('Error loading Projects:', err);
 	}
-})();
+});

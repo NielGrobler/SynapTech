@@ -63,7 +63,7 @@ export function initDashboard() {
 		pageAdder.addProjectsToPage("project-list", projects);
 	});
 
-	form.addEventListener('submit', event => {
+	form.addEventListener('input', event => {
 		event.preventDefault();
 		const query = input.value;
 		const comparator = stringSearch.getComparator(query);

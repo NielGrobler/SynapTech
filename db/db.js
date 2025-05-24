@@ -9,20 +9,21 @@ import { getDirname } from './../dirname.js';
 
 import { QuerySender, FileStorageClient } from './connectionInterfaces.js';
 import { DatabaseQueryBuilder } from './query.js';
+import { ValidationError } from '../errors.js';
 
 dotenv.config();
 
 // For convenience, as these don't exist in ES modules.
 let __dirname;
 try {
-  const __filename = fileURLToPath(import.meta.url);
-  __dirname = path.dirname(__filename);
+	const __filename = fileURLToPath(import.meta.url);
+	__dirname = path.dirname(__filename);
 } catch (err) {
-  try {
-    __dirname = getDirname(import.meta);
-  } catch (e) {
-    __dirname = '/'; // fallback for test/browser envs
-  }
+	try {
+		__dirname = getDirname(import.meta);
+	} catch (e) {
+		__dirname = '/'; // fallback for test/browser envs
+	}
 }
 
 const ca = fs.readFileSync(path.join(__dirname, 'server.crt'));
@@ -106,13 +107,20 @@ const mayUploadToProject = async (projectId, accountId) => {
 			RIGHT JOIN Project
 				ON Collaborator.project_id = Project.project_id
 			WHERE (Project.project_id = {{project_id}} AND Collaborator.account_id = {{account_id}} 
-				AND Collaborator.role = 'Researcher')
+				AND Collaborator.role = 'Researcher'
+				AND Collaborator.is_pending = 0
+			)
 				OR (Project.created_by_account_id = {{account_id}});
 		`)
 		.build()
 	);
 
 	return result.recordSet.length > 0;
+}
+
+const mayRequestProjectFunding = async (projectId, accountId) => {
+	// same conditions
+	return await mayUploadToProject(projectId, accountId);
 }
 
 const getProjectFiles = async (projectId) => {
@@ -228,8 +236,6 @@ const replyToCollabInvite = async (isAccept, accountId, projectId, role) => {
 		.build()
 	);
 
-	console.log(isAccept);
-	console.log(result);
 
 	if (isNaN(result.rowsAffected) || result.rowsAffected == 0) {
 		throw new Error("cannot reject a nonexistent invite");
@@ -322,9 +328,9 @@ const fetchAssociatedProjects = async (user) => {
 };
 
 // Like fetchAssociatedProjects, except returning less information and orders projects based on the latest message
-const fetchAssociatedProjectsByLatest = async (user) => {
+const fetchAssociatedProjectsByLatest = async (userId) => {
 	const result = await sender.getResult(new DatabaseQueryBuilder()
-		.input('id', user.id)
+		.input('id', userId)
 		.query(`
 			SELECT 
 			    Project.project_id AS id,
@@ -345,9 +351,9 @@ const fetchAssociatedProjectsByLatest = async (user) => {
 	return result.recordSet;
 };
 
-const fetchPublicAssociatedProjects = async (user) => {
-	const result = await new DatabaseQueryBuilder()
-		.input('id', user.id)
+const fetchPublicAssociatedProjects = async (userId) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('id', userId)
 		.query(`
 			SELECT DISTINCT 
 			    Project.project_id AS id,
@@ -358,11 +364,11 @@ const fetchPublicAssociatedProjects = async (user) => {
 			    Project.is_public AS is_public
 			FROM Project
 			LEFT JOIN Collaborator ON Collaborator.project_id = Project.project_id
-			LEFT JOIN Account ON Account.account_id = Collaborator.account_id
-			WHERE Project.created_by_account_id = {{id}} AND Project.isPublic = 1
+			WHERE (Project.created_by_account_id = {{id}} AND Project.is_public = 1)
 			OR (Collaborator.account_id = {{id}} AND Collaborator.is_pending = 0);
 		`)
-		.getResultUsing(agent);
+		.build()
+	);
 
 	return result.recordSet;
 };
@@ -402,7 +408,7 @@ const deleteUser = async (userId) => {
 };
 
 const isSuspended = async (userId) => {
-  const result = await sender.getResult(new DatabaseQueryBuilder() 
+	const result = await sender.getResult(new DatabaseQueryBuilder()
 		.input('id', userId)
 		.query(`
 			SELECT is_suspended
@@ -422,7 +428,7 @@ const suspendUser = async (userId) => {
 		.input('id', userId)
 		.input('negation', negation)
 		.query(`
-				UPDATE [dbo].[Account]
+				UPDATE Account
 				SET is_suspended = {{negation}}
 				WHERE account_id = {{id}};
 		`)
@@ -627,9 +633,10 @@ const retrieveLatestMessages = async (projectId, limit = 64) => {
 }
 
 const storeMessageWithAttachment = async (userId, projectId, text, attachment) => {
-	const messageResult = await storeMessage(userId, projectId, text);
+	// try upload first
 	const uploadResult = await fileClient.uploadFile(attachment.buffer, attachment.name);
 	const uuid = uploadResult.uuid;
+	const messageResult = await storeMessage(userId, projectId, text);
 	const messageId = messageResult.insertId;
 
 	await sender.send(new DatabaseQueryBuilder()
@@ -729,12 +736,13 @@ const fetchUserById = async (id) => {
 		.input('id', id)
 		.query(`
 			SELECT	DISTINCT
-				Account.acount_id AS id,
+				Account.account_id AS id,
 				Account.name AS name,
 				Account.bio AS bio,
 				Account.university AS university,
 				Account.department AS department,
 				Account.is_suspended AS is_suspended
+			FROM Account
 			WHERE Account.account_id = {{id}}
 			LIMIT 1;
 		`)
@@ -761,11 +769,11 @@ const updateProfile = async (params) => {
 		.input('department', department)
 		.query(`
 			UPDATE Account
-			SET Account.name = @username, 
+			SET Account.name = {{username}}, 
 			Account.bio = {{bio}}, 
 			Account.university = {{university}}, 
 			Account.department= {{department}}
-			WHERE Account.account_id = {{id}}
+			WHERE Account.account_id = {{id}};
 		`)
 		.build()
 	);
@@ -845,6 +853,112 @@ const createReview = async (review) => {
 	);
 };
 
+const alreadyRequestedFunding = async (opportunityId, projectId) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('funding_opportunity_id', opportunityId)
+		.input('project_id', projectId)
+		.query(`SELECT project_id FROM FundingRequest WHERE project_id = {{project_id}} AND funding_opportunity_id = {{funding_opportunity_id}};
+		`)
+		.build()
+	);
+
+	return result.recordSet.length === 0;
+}
+
+const insertFundingRequest = async (opportunityId, projectId) => {
+	await sender.send(new DatabaseQueryBuilder()
+		.input('funding_opportunity_id', opportunityId)
+		.input('project_id', projectId)
+		.query(`
+			INSERT INTO FundingRequest (project_id, funding_opportunity_id)
+			VALUES({{project_id}}, {{funding_opportunity_id}});
+		`)
+		.build()
+	);
+};
+
+const getFundingOpportunities = async () => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.query(`
+			SELECT *
+			FROM FundingOpportunity;
+		`)
+		.build()
+	);
+
+	return result.recordSet;
+}
+
+const getMilestones = async (projectId) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input("project_id", projectId)
+		.query(`
+			SELECT *
+			FROM ProjectMilestone
+			WHERE project_id = {{project_id}}
+			ORDER BY created_at;
+		`)
+		.build()
+	);
+
+	return result.recordSet;
+}
+
+const insertMilestone = async (projectId, name, description) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('project_id', projectId)
+		.input('name', name)
+		.query(`
+			SELECT project_milestone_id
+			FROM ProjectMilestone
+			WHERE project_id = {{project_id}} AND name = {{name}};
+		`)
+		.build()
+	);
+
+	if (result.recordSet.length > 0) {
+		throw new ValidationError("Cannot have two milestones with the same name in one project.");
+	}
+
+	await sender.send(new DatabaseQueryBuilder()
+		.input("project_id", projectId)
+		.input("name", name)
+		.input("desc", description)
+		.query(`
+			INSERT INTO ProjectMilestone (project_id, name, description)
+			VALUES({{project_id}}, {{name}}, {{desc}});
+		`)
+		.build()
+	);
+}
+
+const toggleMilestone = async (milestoneId) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('id', milestoneId)
+		.query(`
+			SELECT completed_at FROM ProjectMilestone WHERE project_milestone_id = {{id}};
+		`)
+		.build()
+	);
+
+	if (result.recordSet.length === 0) {
+		throw new ValidationError('Project milestone does not exist.');
+	}
+
+	const isCompleted = result.recordSet[0].completed_at !== null;
+	const query = `
+		UPDATE ProjectMilestone
+		SET completed_at = ${isCompleted ? 'NULL' : 'NOW()'}
+		WHERE project_milestone_id = {{id}};
+	`;
+
+	await sender.send(new DatabaseQueryBuilder()
+		.input('id', milestoneId)
+		.query(query)
+		.build()
+	);
+}
+
 export default {
 	getUserByGUID,
 	createUser,
@@ -885,5 +999,12 @@ export default {
 	getProjectFiles,
 	mayAccessProject,
 	mayUploadToProject,
-	uploadToProject
+	uploadToProject,
+	insertFundingRequest,
+	getFundingOpportunities,
+	mayRequestProjectFunding,
+	alreadyRequestedFunding,
+	getMilestones,
+	insertMilestone,
+	toggleMilestone
 };
