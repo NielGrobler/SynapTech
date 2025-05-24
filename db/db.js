@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 
 import { QuerySender, FileStorageClient } from './connectionInterfaces.js';
 import { DatabaseQueryBuilder } from './query.js';
+import { ValidationError } from '../errors.js';
 
 dotenv.config();
 
@@ -101,13 +102,20 @@ const mayUploadToProject = async (projectId, accountId) => {
 			RIGHT JOIN Project
 				ON Collaborator.project_id = Project.project_id
 			WHERE (Project.project_id = {{project_id}} AND Collaborator.account_id = {{account_id}} 
-				AND Collaborator.role = 'Researcher')
+				AND Collaborator.role = 'Researcher'
+				AND Collaborator.is_pending = 0
+			)
 				OR (Project.created_by_account_id = {{account_id}});
 		`)
 		.build()
 	);
 
 	return result.recordSet.length > 0;
+}
+
+const mayRequestProjectFunding = async (projectId, accountId) => {
+	// same conditions
+	return await mayUploadToProject(projectId, accountId);
 }
 
 const getProjectFiles = async (projectId) => {
@@ -184,7 +192,7 @@ const canInvite = async (accountId, projectId) => {
 		.input("account_id", accountId)
 		.input("project_id", projectId)
 		.query(`
-			SELECT *
+			SELECT Project.project_id
 			FROM Collaborator
 			RIGHT JOIN Project
 			ON Collaborator.project_id = Project.project_id
@@ -317,9 +325,9 @@ const fetchAssociatedProjects = async (user) => {
 };
 
 // Like fetchAssociatedProjects, except returning less information and orders projects based on the latest message
-const fetchAssociatedProjectsByLatest = async (user) => {
+const fetchAssociatedProjectsByLatest = async (userId) => {
 	const result = await sender.getResult(new DatabaseQueryBuilder()
-		.input('id', user.id)
+		.input('id', userId)
 		.query(`
 			SELECT 
 			    Project.project_id AS id,
@@ -340,9 +348,10 @@ const fetchAssociatedProjectsByLatest = async (user) => {
 	return result.recordSet;
 };
 
-const fetchPublicAssociatedProjects = async (user) => {
+//changed from user parameter to userId 
+const fetchPublicAssociatedProjects = async (userId) => {
 	const result = await sender.getResult(new DatabaseQueryBuilder()
-		.input('id', user.id)
+		.input('id', userId)
 		.query(`
 			SELECT DISTINCT 
 				Project.project_id AS id,
@@ -353,12 +362,8 @@ const fetchPublicAssociatedProjects = async (user) => {
 				Project.is_public AS is_public
 			FROM Project
 			LEFT JOIN Collaborator ON Collaborator.project_id = Project.project_id
-			LEFT JOIN Account ON Account.account_id = Collaborator.account_id
-			WHERE (
-				(Project.created_by_account_id = {{id}} AND Project.is_public = 1)
-				OR 
-				(Collaborator.account_id = {{id}} AND Collaborator.is_pending = 0)
-			)
+			WHERE (Project.created_by_account_id = {{id}} AND Project.is_public = 1)
+			OR (Collaborator.account_id = {{id}} AND Collaborator.is_pending = 0);
 		`)
 		.build()
 	);
@@ -626,9 +631,10 @@ const retrieveLatestMessages = async (projectId, limit = 64) => {
 }
 
 const storeMessageWithAttachment = async (userId, projectId, text, attachment) => {
-	const messageResult = await storeMessage(userId, projectId, text);
+	// try upload first
 	const uploadResult = await fileClient.uploadFile(attachment.buffer, attachment.name);
 	const uuid = uploadResult.uuid;
+	const messageResult = await storeMessage(userId, projectId, text);
 	const messageId = messageResult.insertId;
 
 	await sender.send(new DatabaseQueryBuilder()
@@ -725,9 +731,15 @@ const searchUsers = async (userName) => {
 
 const fetchUserById = async (id) => {
 	const result = await sender.getResult(new DatabaseQueryBuilder()
-		.input('id', id)
+		.input('id', id) //the old query was SELECT *
 		.query(`
-			SELECT *
+			SELECT	DISTINCT
+				Account.account_id AS id,
+				Account.name AS name,
+				Account.bio AS bio,
+				Account.university AS university,
+				Account.department AS department,
+				Account.is_suspended AS is_suspended
 			FROM Account
 			WHERE Account.account_id = {{id}}
 			LIMIT 1;
@@ -756,11 +768,11 @@ const updateProfile = async (params) => {
 		.input('department', department)
 		.query(`
 			UPDATE Account
-			SET Account.name = @username, 
+			SET Account.name = {{username}}, 
 			Account.bio = {{bio}}, 
 			Account.university = {{university}}, 
 			Account.department= {{department}}
-			WHERE Account.account_id = {{id}}
+			WHERE Account.account_id = {{id}};
 		`)
 		.build()
 	);
@@ -839,6 +851,122 @@ const createReview = async (review) => {
 		.build()
 	);
 };
+
+const alreadyRequestedFunding = async (opportunityId, projectId) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('funding_opportunity_id', opportunityId)
+		.input('project_id', projectId)
+		.query(`SELECT project_id FROM FundingRequest WHERE project_id = {{project_id}} AND funding_opportunity_id = {{funding_opportunity_id}};
+		`)
+		.build()
+	);
+
+	return result.recordSet.length === 0;
+}
+
+const insertFundingRequest = async (opportunityId, projectId) => {
+	await sender.send(new DatabaseQueryBuilder()
+		.input('funding_opportunity_id', opportunityId)
+		.input('project_id', projectId)
+		.query(`
+			INSERT INTO FundingRequest (project_id, funding_opportunity_id)
+			VALUES({{project_id}}, {{funding_opportunity_id}});
+		`)
+		.build()
+	);
+};
+
+const getFundingOpportunities = async () => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.query(`
+			SELECT *
+			FROM FundingOpportunity;
+		`)
+		.build()
+	);
+
+	return result.recordSet;
+}
+
+const getMilestones = async (projectId) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input("project_id", projectId)
+		.query(`
+			SELECT *
+			FROM ProjectMilestone
+			WHERE project_id = {{project_id}}
+			ORDER BY created_at;
+		`)
+		.build()
+	);
+
+	return result.recordSet;
+}
+
+const insertMilestone = async (projectId, name, description) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('project_id', projectId)
+		.input('name', name)
+		.query(`
+			SELECT project_milestone_id
+			FROM ProjectMilestone
+			WHERE project_id = {{project_id}} AND name = {{name}};
+		`)
+		.build()
+	);
+
+	if (result.recordSet.length > 0) {
+		throw new ValidationError("Cannot have two milestones with the same name in one project.");
+	}
+
+	await sender.send(new DatabaseQueryBuilder()
+		.input("project_id", projectId)
+		.input("name", name)
+		.input("desc", description)
+		.query(`
+			INSERT INTO ProjectMilestone (project_id, name, description)
+			VALUES({{project_id}}, {{name}}, {{desc}});
+		`)
+		.build()
+	);
+}
+
+const toggleMilestone = async (milestoneId) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('id', milestoneId)
+		.query(`
+			SELECT completed_at FROM ProjectMilestone WHERE project_milestone_id = {{id}};
+		`)
+		.build()
+	);
+
+	if (result.recordSet.length === 0) {
+		throw new ValidationError('Project milestone does not exist.');
+	}
+
+	const isCompleted = result.recordSet[0].completed_at !== null;
+	const query = `
+		UPDATE ProjectMilestone
+		SET completed_at = ${isCompleted ? 'NULL' : 'NOW()'}
+		WHERE project_milestone_id = {{id}};
+	`;
+
+	await sender.send(new DatabaseQueryBuilder()
+		.input('id', milestoneId)
+		.query(query)
+		.build()
+	);
+}
+
+/*
+const deductFunding = async (projectId, amount, name) => {
+	await sender.send(new DatabaseQueryBuilder()
+		.input
+};
+
+const getProjectFunding = async (projectId, amount) => {
+};
+*/
 
 // Add this function to your db.js file
 const getFundingReportData = async (projectIds) => {
@@ -1039,27 +1167,6 @@ export const generateCustomReport = async (options) => {
 	};
 };
 
-const getMilestones = async(id) =>{
-	const result = await sender.getResult(new DatabaseQueryBuilder()
-		.input('id', id)
-		.query(`
-			SELECT * 
-			FROM ProjectMilestone
-			WHERE project_id = {{id}};
-		`)
-		.build()
-	);
-
-	const milestones = result.recordSet
-
-	if(!milestones){
-		return null;
-	}
-
-	console.log(milestones);
-	return milestones;
-};
-
 const getMilestone = async(id) =>{
 	const result = await sender.getResult(new DatabaseQueryBuilder()
 		.input('id', id)
@@ -1254,6 +1361,13 @@ export default {
 	getProjectFiles,
 	mayAccessProject,
 	mayUploadToProject,
+	uploadToProject,
+	insertFundingRequest,
+	getFundingOpportunities,
+	mayRequestProjectFunding,
+	alreadyRequestedFunding,
+	insertMilestone,
+	toggleMilestone,
 	uploadToProject,
 	getFundingReportData,
 	fetchUserProjectsWithResources,

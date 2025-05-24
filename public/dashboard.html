@@ -46,8 +46,8 @@
 				<li>
 					<button class="nav-item flex-row gap-small center-content-v"
 						onclick="window.location.href='/dashboard'">
-						<i class='bx bxs-dashboard'></i>
-						Dashboard
+						<i class='bx bx-home'></i>
+						Home
 					</button>
 				</li>
 				<li>
@@ -72,31 +72,30 @@
 					</button>
 				</li>
 				<li>
-					<button class="nav-item flex-row gap-small center-content-v"
-						onclick="window.location.href='/create/project'">
-						<i class='bx bx-book-content'></i>
-						Create Project
-					</button>
-				</li>
-				<li>
-					<button class="nav-item flex-row gap-small center-content-v"
-						onclick="window.location.href='/collaboration'">
-						<i class='bx bx-user-voice'></i>
-						Collaboration Requests
-					</button>
-				</li>
-				<li>
-					<button class="nav-item flex-row gap-small center-content-v"
-						onclick="window.location.href='/invite'">
-						<i class='bx bxs-party'></i>
-						Collaboration Invites
-					</button>
+					<span class="dropdown pad-right hover-rotate">
+						<button id="userButton" class="flex-row gap-small center-content-v">
+							<i class='bx bx-chevron-right'></i>
+							<span>Collaboration</span>
+						</button>
+
+						<ul class="dropdown-menu">
+							<li><a href='/collaboration'>
+									<i class='bx bx-user-voice'></i>
+									Requests
+								</a>
+							</li>
+							<li><a href='/invite'> <i class='bx bxs-party'></i>
+									Invites
+								</a>
+							</li>
+						</ul>
+					</span>
 				</li>
 			</ul>
 		</nav>
 
 		<span class="dropdown pad-right hover-rotate">
-			<button id="userButton" class="flex-row gap-small padding-vert-small center-content-v">
+			<button id="userButton" class="flex-row very-round gap-small center-content-v">
 				<i class='bx bx-chevron-right'></i>
 				<span id="username">Loading...</span>
 			</button>
@@ -116,7 +115,7 @@
 		<section class="accent-underline">
 			<section class="inset">
 				<section class="split">
-					<h1 class="large-text accent-underline">Your Projects</h1>
+					<h1 class="large-text accent-underline">Your Active Projects</h1>
 					<button class="very-round pad-small-h no-pad-v"
 						onclick="window.location.href='/create/project'">
 						<i class='bx bx-plus'></i>
@@ -142,7 +141,6 @@
 	</footer>
 </body>
 
-<script type="module" src="/dashboard.js"></script>
 <script type="module">
 	import {initDashboard} from './dashboard.js';
 	initDashboard();
