@@ -103,11 +103,14 @@ describe('Router Module Tests', () => {
 
 	describe('Normal Routes', () => {
 		describe('GET /', () => {
-			it('should serve dashboard for authenticated users and redirect unauthenticated users to login', async () => {
-				let res = await request(app).get('/');
+			it('should redirect unauthenticated users to login', async () => {
+				const res = await request(app).get('/');
 				expect(res.status).toBe(302);
 				expect(res.headers.location).toBe('/login');
-				res = await request(app).get('/')
+			});
+
+			it('should redirect authenticated users to dashboard', async () => {
+				const res = await request(app).get('/')
 					.set('authenticated', 'true');
 				expect(res.status).toBe(302);
 				expect(res.headers.location).toBe('/dashboard');
@@ -115,32 +118,36 @@ describe('Router Module Tests', () => {
 		});
 
 		describe('GET /dashboard', () => {
-			it('should serve page for authenticated users and redirect unauthenticated users', async () => {
-				let res = await request(app).get('/dashboard').set('authenticated', 'false');
+			it('should redirect unauthenticated users to /forbidden', async () => {
+				const res = await request(app).get('/dashboard').set('authenticated', 'false');
 				expect(res.status).toBe(302);
 				expect(res.headers.location).toBe('/forbidden');
-				res = await request(app).get('/dashboard').set('authenticated', 'true');
+				
+			});
+			it('should serve dashboard.html for authenticated users', async () => {
+				const res = await request(app).get('/dashboard')
+					.set('authenticated', 'true');
 				expect(res.text).toBe('served dashboard.html');
 			});
 		});
 
 		describe('GET /login', () => {
 			it('should serve page to all users', async () => {
-				let res = await request(app).get('/login');
+				const res = await request(app).get('/login');
 				expect(res.text).toBe('served login.html');
 			});
 		});
 
 		describe('GET /signup', () => {
 			it('should serve page to all users', async () => {
-				let res = await request(app).get('/signup');
+				const res = await request(app).get('/signup');
 				expect(res.text).toBe('served signup.html');
 			});
 		});
 
 		describe('GET /logout', () => {
 			it('should logout for all authenticated users', async () => {
-				let res = await request(app).get('/logout')
+				const res = await request(app).get('/logout')
 					.set('authenticated', 'true');
 				expect(res.status).toBe(302);
 				expect(res.headers.location).toBe('/');
@@ -148,155 +155,200 @@ describe('Router Module Tests', () => {
 		});
 
 		describe('GET /create/project', () => {
-			it('should serve page for authenticated users and redirect unauthenticated users', async () => {
-				let res = await request(app).get('/create/project');
+			it('should redirect unauthenticated users to /forbidden', async () => {
+				const res = await request(app).get('/create/project');
 				expect(res.status).toBe(302);
 				expect(res.headers.location).toBe('/forbidden');
-				res = await request(app).get('/create/project')
+			});
+
+			it('should serve addProject.html for authenticated users', async () => {
+				const res = await request(app).get('/create/project')
 					.set('authenticated', 'true');
 				expect(res.text).toBe('served addProject.html');
 			});
 		});
 
 		describe('GET /view/search', () => {
-			it('should serve page for authenticated users and redirect unauthenticated users', async () => {
-				let res = await request(app).get('/view/search');
+			it('should redirect unauthenticated users to /forbidden', async () => {
+				const res = await request(app).get('/view/search');
 				expect(res.status).toBe(302);
 				expect(res.headers.location).toBe('/forbidden');
-				res = await request(app).get('/view/search')
+			});
+
+			it('should serve search.html for authenticated users', async () => {
+				const res = await request(app).get('/view/search')
 					.set('authenticated', 'true');
 				expect(res.text).toBe('served search.html');
 			});
 		});
 
 		describe('GET /view/project', () => {
-			it('should serve page for authenticated users and redirect unauthenticated users', async () => {
-				let res = await request(app).get('/view/project');
+			it('should redirect unauthenticated users to /forbidden', async () => {
+				const res = await request(app).get('/view/project');
 				expect(res.status).toBe(302);
 				expect(res.headers.location).toBe('/forbidden');
-				res = await request(app).get('/view/project')
+			});
+
+			it('should serve viewProject.html for authenticated users', async () => {
+				const res = await request(app).get('/view/project')
 					.set('authenticated', 'true');
 				expect(res.text).toBe('served viewProject.html');
 			});
 		});
 
 		describe('GET /settings', () => {
-			it('should serve page for authenticated users and redirect unauthenticated users', async () => {
-				let res = await request(app).get('/settings').set('authenticated', 'false');
+			it('should reject unauthenticated requests', async () => {
+				const res = await request(app).get('/settings')
+					.set('authenticated', 'false');
 				expect(res.status).toBe(401);
-				res = await request(app).get('/settings').set('authenticated', 'true');
+				
+			});
+
+			it('should serve settings.html for authenticated users', async () => {
+				const res = await request(app).get('/settings')
+					.set('authenticated', 'true');
 				expect(res.text).toBe('served settings.html');
 			});
 		});
 
 		describe('GET /invite', () => {
-			it('should serve page for authenticated users and redirect unauthenticated users', async () => {
-				let res = await request(app).get('/invite').set('authenticated', 'false');
+			it('should reject unauthenticated requests', async () => {
+				const res = await request(app).get('/invite')
+					.set('authenticated', 'false');
 				expect(res.status).toBe(401);
-				res = await request(app).get('/invite').set('authenticated', 'true');
+			});
+
+			it('should serve invite.html for authenticated users', async () => {
+				const res = await request(app).get('/invite')
+					.set('authenticated', 'true');
 				expect(res.text).toBe('served invite.html');
 			});
 		});
 
 		describe('GET /messages', () => {
-			it('should serve page for authenticated users and redirect unauthenticated users', async () => {
-				let res = await request(app).get('/message');
+			it('should redirect unauthenticated users to /forbidden', async () => {
+				const res = await request(app).get('/message');
 				expect(res.status).toBe(302);
 				expect(res.headers.location).toBe('/forbidden');
-				res = await request(app).get('/message').set('authenticated', 'true');
+			
+			});
+
+			it('should serve messages.html for authenticated users', async () => {
+				const res = await request(app).get('/message')
+					.set('authenticated', 'true');
 				expect(res.text).toBe('served messages.html');
 			});
 		});
 
 		describe('GET /reviewProject', () => {
-			it('should serve page for authenticated users and redirect unauthenticated users', async () => {
-				let res = await request(app).get('/reviewProject');
+			it('should redirect unauthenticated users to /forbidden', async () => {
+				const res = await request(app).get('/reviewProject');
 				expect(res.status).toBe(302);
 				expect(res.headers.location).toBe('/forbidden');
-				res = await request(app).get('/reviewProject')
+			});
+
+			it('should serve reviewProject.html for authenticated users', async () => {
+				const res = await request(app).get('/reviewProject')
 					.set('authenticated', 'true');
 				expect(res.text).toBe('served reviewProject.html');
 			});
 		});
 
 		describe('GET /analyticsDashboard', () => {
-			it('should serve page for authenticated users and redirect unauthenticated users', async () => {
-				let res = await request(app).get('/analyticsDashboard');
+			it('should redirect unauthenticated users to /forbidden', async () => {
+				const res = await request(app).get('/analyticsDashboard');
 				expect(res.status).toBe(302);
 				expect(res.headers.location).toBe('/forbidden');
-				res = await request(app).get('/analyticsDashboard')
+			});
+
+			it('should serve analyticsDashboard.html for authenticated users', async () => {
+				const res = await request(app).get('/analyticsDashboard')
 					.set('authenticated', 'true');
 				expect(res.text).toBe('served analyticsDashboard.html');
 			});
 		});
 
 		describe('GET /successfulReviewPost', () => {
-			it('should serve page for authenticated users and redirect unauthenticated users', async () => {
-				let res = await request(app).get('/successfulReviewPost');
+			it('should redirect unauthenticated users to /forbidden', async () => {
+				const res = await request(app).get('/successfulReviewPost');
 				expect(res.status).toBe(302);
 				expect(res.headers.location).toBe('/forbidden');
-				res = await request(app).get('/successfulReviewPost')
+			});
+			it('should serve successfulReviewPost.html for authenticated users', async () => {
+				const res = await request(app).get('/successfulReviewPost')
 					.set('authenticated', 'true');
 				expect(res.text).toBe('served successfulReviewPost.html');
 			});
 		});
 
 		describe('GET /view/users', () => {
-			it('should serve page for authenticated users and redirect unauthenticated users', async () => {
-				let res = await request(app).get('/view/users');
+			it('should redirect unauthenticated users to /forbidden', async () => {
+				const res = await request(app).get('/view/users');
 				expect(res.status).toBe(302);
 				expect(res.headers.location).toBe('/forbidden');
-				res = await request(app).get('/view/users')
+			});
+
+			it('should serve searchUsers.html for authenticated users', async () => {
+				const res = await request(app).get('/view/users')
 					.set('authenticated', 'true');
 				expect(res.text).toBe('served searchUsers.html');
 			});
 		});
 
 		describe('GET /view/other/profile', () => {
-			it('should serve page for authenticated users and redirect unauthenticated users', async () => {
-				let res = await request(app).get('/view/other/profile');
+			it('should redirect unauthenticated users to /forbidden', async () => {
+				const res = await request(app).get('/view/other/profile');
 				expect(res.status).toBe(302);
 				expect(res.headers.location).toBe('/forbidden');
-				res = await request(app).get('/view/other/profile')
+			});
+
+			it('should serve viewOtherProfile.html for authenticated users', async () => {
+				const res = await request(app).get('/view/other/profile')
 					.set('authenticated', 'true');
 				expect(res.text).toBe('served viewOtherProfile.html');
 			});
 		});
 
 		describe('GET /view/curr/profile', () => {
-			it('should serve page for authenticated users and redirect unauthenticated users', async () => {
-				let res = await request(app).get('/view/curr/profile');
+			it('should redirect unauthenticated users to /forbidden', async () => {
+				const res = await request(app).get('/view/curr/profile');
 				expect(res.status).toBe(302);
 				expect(res.headers.location).toBe('/forbidden');
-				res = await request(app).get('/view/curr/profile')
+			});
+
+			it('should serve viewCurrProfile.html for authenticated users', async () => {
+				const res = await request(app).get('/view/curr/profile')
 					.set('authenticated', 'true');
 				expect(res.text).toBe('served viewCurrProfile.html');
 			});
 		});
 
 		describe('GET /suspended', () => {
-			it('should serve page for authenticated users and redirect unauthenticated users', async () => {
-				let res = await request(app).get('/suspended');
+			it('should redirect unauthenticated users to /forbidden', async () => {
+				const res = await request(app).get('/suspended');
 				expect(res.status).toBe(302);
 				expect(res.headers.location).toBe('/forbidden');
-				res = await request(app).get('/suspended')
+			});
+
+			it('should serve suspended.html for authenticated users', async () => {
+				const res = await request(app).get('/suspended')
 					.set('authenticated', 'true');
 				expect(res.text).toBe('served suspended.html');
 			});
 		});
 
 		describe('GET /redirect/edit/milestone', () => {
-				it('should redirect unauthenticated users to /forbidden', async () => {
-					const res = await request(app).get('/redirect/edit/milestone');
-					expect(res.status).toBe(302);
-					expect(res.headers.location).toBe('/forbidden');
-				});
+			it('should redirect unauthenticated users to /forbidden', async () => {
+				const res = await request(app).get('/redirect/edit/milestone');
+				expect(res.status).toBe(302);
+				expect(res.headers.location).toBe('/forbidden');
+			});
 
-				it('should serve editMilestone.html for authenticated users', async () => {
-					const res = await request(app).get('/redirect/edit/milestone')
-						.set('authenticated', 'true');
-					expect(res.text).toBe('served editMilestone.html');
-				});
+			it('should serve editMilestone.html for authenticated users', async () => {
+				const res = await request(app).get('/redirect/edit/milestone')
+					.set('authenticated', 'true');
+				expect(res.text).toBe('served editMilestone.html');
+			});
 		});
 
 		describe('GET /redirect/add/milestone', () => {
