@@ -25,31 +25,31 @@ https://synaptech-fbc2huaabab8g6e0.southafricanorth-01.azurewebsites.net
 When first opening the app, you can either login with your pre-existing Google or Orcid account to access the site. If you do not have an account, Navigate to "Don't have an account?" and Sign-up with either of those options. At any point you want to logout, navigate top right to the button with your username and click "Logout".
 
 ### Search & View Your Projects
-On your dashboard, you should see a list of projects. If you click on a particular project, you can view the associated information with a project. Using the search bar you can narrow down the results.
+On your dashboard, you should see a list of your projects. If you click on a particular project, you can view the associated information with a project. Using the search bar you can narrow down the results.
 
 ### Creating New Projects
-You can start either from Dashboard by clicking the + symbol, or by navigating to Create Project. Fill in details for Project Name, Description and Field of Study, set "Make project public" for either public or private, then click Create Project.
+From the Dashboard, click Create Project. Fill in details for Project Name, Description and Field of Study, set the visiblity to either public or private. If successful, the project should appear on your dashboard.
 
 ### Edit Projects
-### See Reports
+When a viewing a project, you can add Milestones, upload Project Files and request funding
 
-### Search & View Other Projects
-Navigate to Search and make sure Projects is toggled. After looking for terms, you can view any project info from results by clicking on it.
+### See Reports
+Navigate to Analytics.
+
+### Messaging
+Navigate to Messages. From there, there should be a list of all projects you are involved with. Select one and then send messages in its appropriate chat.
+
+### Search Other Projects and Users
+Navigate to Search and make sure Projects is toggled. After looking for terms, you can view any project info from results by clicking on it. Toggling it to User gives results for users, which you can view their profiles.
 
 ### Review Project
 When viewing a project, you can click Review Project to be able to set a rating score and write a description of the review and then click Submit Review.
 
 ### Collaborator Requests (sending)
-As a reviewer, when viewing a particular project you can click Request Collaboration to send a request. All outgoing requests can found under the Collaboration Requests tab.
+When viewing a particular project you can click Request Collaboration to send a request. All outgoing requests can found by going to Dashboard, navigating to Collaboration, and then selecting Requests to view it.
 
 ### Collaborator Requests (accepting)
-All Requests should be findable under Collaborator Invites.
+Under Collaboration, select Invites. A list of invites will be shown which can be accepted or rejected.
 
-### View & Edit Profile
-Under the button featuring your name, a dropdown should appear with 3 options. Profile will allow you to view your profile while Settings will allow you to Save Changes as well as Delete Account.
-
-### Viewing Other Profiles
-Navigate to Search and make sure User is toggled. After looking for terms, you can view any project info from results by clicking on it.
-
-### Messaging
-Navigate to Messages. From there, there should be a list of all projects you are involved with. Select one and then send messages in its appropriate chat.
+### Profile
+Under the button featuring your username, a dropdown should appear. Profile will allow you to view your profile, and Settings will direct you to a page to set your details. In settings you can also delete your account if needed.
