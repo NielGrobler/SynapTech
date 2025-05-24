@@ -1,3 +1,10 @@
+import { io } from 'socket.io-client';
+
+let selectedRoomId;
+let hasJoinedRoom = false;
+export const socket = io({ auth: { token: localStorage.getItem('jwt') } });
+//io function is being called from what? added import; this might break in prod doe.
+
 const uploadBtn = document.getElementById("uploadBtn");
 const trueUploadBtn = document.getElementById("file");
 
@@ -106,10 +113,6 @@ function addMessageToDOM(msg) {
 	scrollToBottomIfNeeded();
 }
 
-let selectedRoomId;
-let hasJoinedRoom = false;
-const socket = io({ auth: { token: localStorage.getItem('jwt') } });
-
 document.addEventListener('DOMContentLoaded', async () => {
 	const projects = await fetchProjects();
 	if (!projects.length) return;
@@ -183,3 +186,15 @@ document.getElementById('sendBtn').onclick = async () => {
 	document.getElementById('text').value = '';
 	fileInput.value = '';
 };
+
+export {
+	scrollToBottomIfNeeded,
+	fetchProjects,
+	addMessageToDOM
+}
+
+export default{
+	scrollToBottomIfNeeded,
+	fetchProjects,
+	addMessageToDOM
+}

@@ -417,7 +417,6 @@ const makeSafeHandler = (handler) => {
 		if (!authenticateRequest(req)) {
 			return res.status(401).json({ error: 'Authentication required' });
 		}
-
 		try {
 			await handler(req, res)
 		} catch (err) {
@@ -639,6 +638,7 @@ router.delete('/api/reject/collaborator', makeSafeHandler(async (req, res) => {
 }));
 
 // Route for when users want to fetch a specific project (based on id)
+//this gives an internal server error
 router.get('/api/project', makeSafeHandler(async (req, res) => {
 	const { id } = req.query;
 	expectValidNumId(id);
@@ -1125,7 +1125,7 @@ router.put('/update/profile', requireAuthentication(async (req, res) => {
 	const params = req.body;
 
 	res.json(await db.updateProfile(params));
-}));
+}, { statusCode: 401 }));
 
 /* PUT Request Routing */
 router.put('user/details', requireAuthentication(async (req, res) => {

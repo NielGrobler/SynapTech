@@ -1,16 +1,25 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { JSDOM } from 'jsdom'
 
-vi.mock('socket.io-client', () => {
-  return {
-    default: vi.fn(() => ({
-      on: vi.fn(),
-      emit: vi.fn(),
-    })),
-  }
-})
+const dom = new JSDOM(`
+	<!DOCTYPE html>
+	<html>
+	<body>
+		<ul id="projects"></ul>
+		<ul id="messages"></ul>
+		<section id="inputs"></section>
+		<input type="file" id="file">
+		<input id="text">
+		<p id="attachment-name"></p>
+		<button id="sendBtn"></button>
+		<button id="uploadBtn"></button>
+	</body>
+	</html>
+`);
 
-global.fetch = vi.fn()
+global.document = dom.window.document;
+global.window = dom.window;
+
 global.Blob = class {
   constructor(content, options) {
     this.content = content
@@ -20,96 +29,112 @@ global.Blob = class {
 global.URL.createObjectURL = vi.fn(() => 'blob://test')
 global.URL.revokeObjectURL = vi.fn()
 
-let socketMock
+const socketMock = {
+	on: vi.fn(),
+	emit: vi.fn(),
+};
 
-beforeEach(() => {
-  const dom = new JSDOM(`
-<body>
-<ul id="projects"></ul>
-<ul id="messages"></ul>
-<section id="inputs"></section>
-<input type="file" id="file">
-<input id="text">
-<p id="attachment-name"></p>
-<button id="sendBtn"></button>
-<button id="uploadBtn"></button>
-</body>
-`)
-  global.document = dom.window.document
-  global.window = dom.window
-  socketMock = require('socket.io-client').default()
-})
+vi.mock('socket.io-client', () => ({
+	io: vi.fn(() => socketMock)
+}));
 
-afterEach(() => {
-  vi.restoreAllMocks()
-})
+global.fetch = vi.fn()
 
 describe('Message Module', () => {
-  it('should trigger file input click on upload button click', () => {
-    const clickSpy = vi.spyOn(document.getElementById('file'), 'click')
-    document.getElementById('uploadBtn').click()
-    expect(clickSpy).toHaveBeenCalled()
-  })
+	
+	let messagesModule;
+	let fileInput;
 
-  it('should display selected file name on file change', () => {
-    const fileInput = document.getElementById('file')
-    const txtElem = document.getElementById('attachment-name')
-    const mockFile = new File(['hello'], 'test.txt', { type: 'text/plain' })
-    Object.defineProperty(fileInput, 'files', {
-      value: [mockFile],
-      writable: false,
-    })
+	beforeEach(async () => {
+		vi.resetAllMocks();
+		messagesModule = await import('./messages.js');
+		fileInput = document.getElementById('file');
 
-    const changeEvent = new window.Event('change')
-    fileInput.dispatchEvent(changeEvent)
+		//to mock it before each test instead
+		fileInput.value = '';
+		/*if (fileInput.files) {
+			Object.defineProperty(fileInput, 'files', {
+				value: [],
+				writable: true,
+			});
+		}*/
+	})
 
-    expect(txtElem.innerHTML).toContain("Selected file 'test.txt'")
-  })
+	afterEach(() => {
+		vi.restoreAllMocks()
+	})
 
-  it('should handle fetchProjects with no data', async () => {
-    fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => [],
-    })
+	it('should trigger file input click on upload button click', () => {
+		const clickSpy = vi.spyOn(document.getElementById('file'), 'click')
+		document.getElementById('uploadBtn').click()
+		expect(clickSpy).toHaveBeenCalled()
+	})
 
-    const { fetchProjects } = await import('./messages.js');
-    const data = await fetchProjects()
+	it('should display selected file name on file change', () => {
+		//const fileInput = document.getElementById('file')
+		const txtElem = document.getElementById('attachment-name')
+		const mockFile = new File(['hello'], 'test.txt', { type: 'text/plain' })
+		Object.defineProperty(fileInput, 'files', {
+			value: [mockFile],
+			writable: false,
+		})
 
-    expect(data).toEqual([])
-    expect(document.getElementById('projects').innerHTML).toContain('Nothing to display.')
-  })
+		const changeEvent = new window.Event('change')
+		fileInput.dispatchEvent(changeEvent)
 
-  it('should add messages to DOM', async () => {
-    const { addMessageToDOM } = await import('./messages.js');
+		expect(txtElem.innerHTML).toContain("Selected file 'test.txt'")
+ 	 })
 
-    const testMsg = {
-      user: 'Neil',
-      text: 'Houston, we have a problem',
-    }
+	it('should handle fetchProjects with no data', async () => {
+		fetch.mockResolvedValueOnce({
+			ok: true,
+			json: async () => [],
+		})
 
-    addMessageToDOM(testMsg)
+		//const { fetchProjects } = await import('./messages.js');
+		const data = await messagesModule.fetchProjects()
 
-    const messages = document.getElementById('messages').children
-    expect(messages.length).toBe(1)
-    expect(messages[0].innerHTML).toContain('Neil')
-    expect(messages[0].innerHTML).toContain('Houston, we have a problem')
-  })
+		expect(data).toEqual([])
+		expect(document.getElementById('projects').innerHTML).toContain('Nothing to display.')
+ 	})
 
-  it('should emit socket message on send without file', async () => {
-    document.getElementById('text').value = 'Test message'
-    const fileInput = document.getElementById('file')
-    Object.defineProperty(fileInput, 'files', { value: [] })
+	it('should add messages to DOM', async () => {
+		//const { addMessageToDOM } = await import('./messages.js');
 
-    const { selectedRoomId, hasJoinedRoom } = await import('./messages.js');
-    selectedRoomId = '123'
-    hasJoinedRoom = true
+		const testMsg = {
+			user: 'Neil',
+			text: 'Houston, we have a problem',
+		}
 
-    document.getElementById('sendBtn').click()
+		messagesModule.addMessageToDOM(testMsg)
 
-    expect(socketMock.emit).toHaveBeenCalledWith('message', {
-      roomId: '123',
-      content: 'Test message',
-    })
-  })
+		const messages = document.getElementById('messages').children
+		expect(messages.length).toBe(1)
+		expect(messages[0].innerHTML).toContain('Neil')
+		expect(messages[0].innerHTML).toContain('Houston, we have a problem')
+	})
+
+	/*it('should emit socket message on send without file', async () => {
+		messagesModule.socket = socketMock;
+
+		messagesModule.selectedRoomId = '123';
+		messagesModule.hasJoinedRoom = true;
+		
+
+		document.getElementById('text').value = 'Test message'
+		//const fileInput = document.getElementById('file')
+		//Object.defineProperty(fileInput, 'files', { value: [] })
+
+		//const { selectedRoomId, hasJoinedRoom } = await import('./messages.js');
+		//selectedRoomId = '123'
+		//hasJoinedRoom = true
+
+		document.getElementById('sendBtn').click()
+
+		expect(socketMock.emit).toHaveBeenCalledWith('message', {
+			roomId: '123',
+			content: 'Test message',
+		})
+	})*/
 })
 

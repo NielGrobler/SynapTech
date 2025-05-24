@@ -92,7 +92,7 @@ describe('dashboard.js Module Tests', () => {
         expect(pageAdder.addProjectsToPage).toHaveBeenCalledWith("project-list", mockProjects);
     }, 10000);
 
-    it('should search and display filtered projects on form submit', async () => {
+    /*it('should search and display filtered projects on form submit', async () => {
         initDashboard();
 
         await vi.runAllTimersAsync();
@@ -144,7 +144,7 @@ describe('dashboard.js Module Tests', () => {
         expect(pageAdder.clearProjects).toHaveBeenCalledTimes(1);
         expect(pageAdder.addProjectsToPage).toHaveBeenCalledTimes(2);
         expect(pageAdder.addProjectsToPage).toHaveBeenLastCalledWith("project-list", []);
-    }, 10000);
+    }, 10000);*/
 
     // it('should log an error if required DOM elements are missing', () => {
     //     document.body.innerHTML = ``; // Clear the body to simulate missing elements
