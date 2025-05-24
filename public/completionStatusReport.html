@@ -5,8 +5,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="/styles.css" />
+    <!-- You might want a specific CSS file for report styling like reportsStyling.css -->
+    <!-- <link rel="stylesheet" href="/reportsStyling.css" /> -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="icon" href="logo.png" type="image/png" />
+    <link rel="icon" href="/logo.png" type="image/png" /> <!-- Added leading / for root-relative path -->
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
         rel="stylesheet" />
@@ -14,32 +16,121 @@
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <!-- Ensure you are using a version of html2canvas that supports onclone if needed for charts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <title>Unilink | Project Completion Report</title>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!-- Google Sign-In client, keep if needed, but generally not part of a static report page -->
+    <!-- <script src="https://accounts.google.com/gsi/client" async defer></script> -->
+
+    <style>
+        /* Basic styles for the header layout if not in a global /reportsStyling.css */
+        .report-header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            /* Aligns items to the top */
+            flex-wrap: wrap;
+            /* Allows items to wrap on smaller screens */
+            padding-bottom: 1rem;
+            /* Spacing below header */
+        }
+
+        .report-header-info {
+            flex-grow: 1;
+            /* Allows title/description to take available space */
+            margin-right: 1rem;
+            /* Space between info and actions */
+        }
+
+        .report-header-info h1 {
+            margin-bottom: 0.25rem;
+            /* Adjust spacing for your large-text class */
+        }
+
+        .report-header-actions {
+            display: flex;
+            gap: 0.5rem;
+            /* Or var(--gap-small) if you have it */
+            align-items: center;
+            /* Vertically align buttons */
+            flex-shrink: 0;
+            /* Prevent buttons from shrinking too much */
+        }
+
+        /* Optional: Responsive adjustments */
+        @media (max-width: 768px) {
+            .report-header-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .report-header-info {
+                margin-right: 0;
+                margin-bottom: 1rem;
+            }
+
+            .report-header-actions {
+                justify-content: flex-start;
+            }
+        }
+
+        /* Card metric styling (if not already global) */
+        .card-metric {
+            font-weight: bold;
+            /* color: #2c3e50; */
+            /* Example, adjust to your theme */
+        }
+
+        /* Ensure figures within articles have margin reset if needed */
+        article figure {
+            margin: 0;
+            /* Reset default figure margins */
+            padding: 0;
+        }
+    </style>
 </head>
 
 <body>
-    <nav class="inset">
+    <!-- Added id for PDF hiding -->
+    <nav class="inset" id="mainNav">
         <a href="javascript:history.back()">&larr; Back</a>
     </nav>
 
+    <section id="loadingOverlay" class="loading-overlay"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); justify-content: center; align-items: center; z-index: 1001;">
+        <span class="spinner"
+            style="border: 5px solid #f3f3f3; border-top: 5px solid #3498db; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite;"></span>
+    </section>
+    <style>
+        /* Spinner animation if not in global CSS */
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+
     <main id="dashboard-content">
         <header>
-            <section class="inset">
-                <div class="flex-row space-between center-content-v">
+            <section class="inset report-header-container">
+                <div class="report-header-info">
                     <h1 class="large-text" id="reportTitle">Project Completion Report</h1>
-                    <div class="flex-row gap-small">
-                        <button class="secondary" id="filterBtn">
-                            <i class="bx bx-filter"></i> Filter
-                        </button>
-                        <button class="accent-underline" id="downloadBtn">
-                            <i class="bx bx-download"></i> Download Report
-                        </button>
-                    </div>
+                    <p>Overview of project completion metrics and collaborator contributions</p>
                 </div>
-                <p>Overview of project completion metrics and collaborator contributions</p>
+                <!-- Added id for PDF hiding -->
+                <div class="report-header-actions" id="reportActions">
+                    <button class="secondary" id="filterBtn">
+                        <i class="bx bx-filter"></i> Filter
+                    </button>
+                    <button class="accent-underline" id="downloadBtn">
+                        <i class="bx bx-download"></i> Download Report
+                    </button>
+                </div>
             </section>
         </header>
 
@@ -50,7 +141,7 @@
                     <h3>Contributors</h3>
                 </header>
                 <div class="inset-small">
-                    <p class="card-metric large-text">11</p>
+                    <p class="card-metric large-text" id="totalContributors">0</p> <!-- Added ID -->
                 </div>
                 <figure class="inset-small" style="height: 150px;">
                     <canvas id="contributorsChart"></canvas>
@@ -63,11 +154,11 @@
                     <h3>Days to Task Complete</h3>
                 </header>
                 <div class="inset-small">
-                    <p class="card-metric large-text">5.6</p>
+                    <p class="card-metric large-text" id="avgDaysToComplete">0.0</p> <!-- Added ID -->
                     <p>Avg Days to Task Complete</p>
                 </div>
                 <figure class="inset-small" style="height: 150px;">
-                    <canvas id="gaugeChart"></canvas>
+                    <canvas id="gaugeChart"></canvas> <!-- Placeholder for gauge, or replace with simple bar/text -->
                 </figure>
             </article>
 
@@ -77,7 +168,7 @@
                     <h3>Project Progress</h3>
                 </header>
                 <div class="inset-small">
-                    <p class="card-metric large-text">50%</p>
+                    <p class="card-metric large-text" id="projectProgress">0%</p> <!-- Added ID -->
                 </div>
                 <figure class="inset-small" style="height: 150px;">
                     <canvas id="progressChart"></canvas>
@@ -91,7 +182,7 @@
                 <header class="inset-small">
                     <h3>Project Progress Comparison</h3>
                 </header>
-                <p class="inset-small">Compared to projects started on the same day</p>
+                <p class="inset-small" id="comparisonSubtext">Compared to similar projects</p> <!-- Added ID -->
                 <figure class="inset" style="height: 200px;">
                     <canvas id="progressComparisonChart"></canvas>
                 </figure>
@@ -111,11 +202,32 @@
         </section>
     </main>
 
+    <!-- Filter Modal (Example Structure) -->
+    <section id="filterModal" class="modal"
+        style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+        <article class="modal-content"
+            style="background-color: white; margin: 15% auto; padding: 20px; border-radius: 8px; width: 80%; max-width: 500px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+            <h3>Filter Report</h3>
+            <select id="projectFilter">
+                <option value="all">All Projects</option>
+                <!-- Project options will be added dynamically -->
+            </select>
+            <p><small>Note: Filtering might only apply to certain sections of this report.</small></p>
+            <footer class="modal-actions"
+                style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+                <button class="secondary" id="closeModal">Cancel</button>
+                <button class="primary" id="applyFilter">Apply</button>
+            </footer>
+        </article>
+    </section>
+
     <footer class="inset">
         <p>&copy; 2025 Unilink. All rights reserved.</p>
     </footer>
+
+    <!-- Ensure paths are root-relative if your server setup requires it -->
     <script type="module" src="/savedTheme.js"></script>
-    <script src="completionStatusReport.js"></script>
+    <script src="/completionStatusReport.js"></script> <!-- IMPORTANT: Changed to root-relative -->
 </body>
 
 </html>

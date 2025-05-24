@@ -2,18 +2,17 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="/styles.css" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="icon" href="logo.png" type="image/png" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
-        rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link rel="icon" href="logo.png" type="image/png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <title>Unilink | Funding Report</title>
 </head>
 
@@ -23,46 +22,43 @@
     </nav>
 
     <main id="dashboard-content">
-        <header>
-            <section class="inset">
-                <h1 class="large-text" id="reportTitle">Funding Report</h1>
-                <span class="flex-row gap-small">
-                    <button class="secondary" id="filterBtn">
-                        <i class="bx bx-filter"></i> Filter
-                    </button>
-                    <button class="accent-underline" id="downloadBtn">
-                        <i class="bx bx-download"></i> Download Report
-                    </button>
-                </span>
-                <p>Overview of funding usage and allocations</p>
+        <header class="dark">
+            <!-- Use inline styles to create the specific layout needed -->
+            <section
+                style="display: flex; justify-content: space-between; align-items: center; padding: 2rem 3rem; margin: 0;">
+                <article>
+                    <h1 class="large-text" id="reportTitle" style="margin: 0 0 0.5rem 0; color: white;">Funding Report
+                    </h1>
+                    <p id="reportSubtitle" style="margin: 0; color: #aaa;">Funding overview as of 24/05/2025</p>
+                </article>
+                <button class="primary" id="downloadBtn" style="display: flex; align-items: center; gap: 8px;">
+                    <i class="bx bx-download"></i> Download Report
+                </button>
             </section>
         </header>
-
-        <!-- Funding Summary Section -->
         <section class="inset flex-row gap-medium">
             <article class="border-solid-thin shadow secondary" style="flex: 1;">
                 <header class="inset-small">
                     <h3>Total Funding</h3>
                 </header>
-                <p class="inset-small card-metric large-text" id="totalFunding">$0.00</p>
+                <p class="inset-small card-metric large-text" id="totalFunding">R0.00</p>
             </article>
 
             <article class="border-solid-thin shadow secondary" style="flex: 1;">
                 <header class="inset-small">
                     <h3>Amount Used</h3>
                 </header>
-                <p class="inset-small card-metric large-text" id="amountUsed">$0.00</p>
+                <p class="inset-small card-metric large-text" id="amountUsed">R0.00</p>
             </article>
 
             <article class="border-solid-thin shadow secondary" style="flex: 1;">
                 <header class="inset-small">
                     <h3>Amount Left</h3>
                 </header>
-                <p class="inset-small card-metric large-text" id="amountLeft">$0.00</p>
+                <p class="inset-small card-metric large-text" id="amountLeft">R0.00</p>
             </article>
         </section>
 
-        <!-- Funding Charts Section -->
         <section class="inset">
             <article class="border-solid-thin shadow secondary">
                 <header class="inset-small">
@@ -101,7 +97,10 @@
         <p>&copy; 2025 Unilink. All rights reserved.</p>
     </footer>
 
-    <script src="fundingReport.js"></script>
+    <script type="module" src="/savedTheme.js"></script>
+    <script src="/fundingReport.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </body>
 
 </html>

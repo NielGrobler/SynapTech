@@ -654,9 +654,6 @@ router.get('/analyticsDashboard', (req, res) => {
 });
 
 // Funding Report
-// Route to display the fundingReports page
-// Funding Report
-// Route to display the fundingReports page
 router.get('/reports/funding', requireAuthentication((req, res) => {
 	try {
 		if (!authenticateRequest(req)) {
@@ -664,201 +661,44 @@ router.get('/reports/funding', requireAuthentication((req, res) => {
 			return;
 		}
 
-		res.sendFile(path.join(__dirname, "public", "fundingReports.html"));
+		res.sendFile(path.join(__dirname, "public", "fundingReport.html"));
 	} catch (err) {
 		console.error('Error displaying funding reports page:', err);
 		res.status(500).json({ error: 'Failed to display funding reports page' });
 	}
 }));
 
-// Completion Status Report
-router.get('/reports/completion-status', requireAuthentication(async (req, res) => {
+// Add this to your router.js where other API routes are defined
+router.get('/api/reports/funding', requireAuthentication(async (req, res) => {
 	try {
-		const { projectId } = req.query;
+		const userId = req.user.id;
 
-		// If a specific project ID is provided, get details for that project
-		let projectData = null;
-		if (projectId) {
-			const project = await db.fetchProjectById(projectId);
-			if (!project) {
-				return res.status(404).json({ error: 'Project not found' });
-			}
-
-			// Check if user has access to this project
-			if (!authenticatedForView(project, req.user)) {
-				return res.status(403).json({ error: 'Not authorized to view this project' });
-			}
-
-			// Get milestones (use ProjectMilestone table)
-			const milestonesQuery = await sender.getResult(new DatabaseQueryBuilder()
-				.input('projectId', projectId)
-				.query(`
-          SELECT 
-            project_milestone_id AS id,
-            name,
-            description,
-            created_at,
-            completed_at
-          FROM ProjectMilestone
-          WHERE project_id = {{projectId}}
-          ORDER BY created_at
-        `)
-				.build()
-			);
-
-			// Calculate completion percentage based on completed milestones
-			const milestones = milestonesQuery.recordSet;
-			let completedMilestones = 0;
-			if (milestones && milestones.length > 0) {
-				completedMilestones = milestones.filter(m => m.completed_at).length;
-			}
-
-			const completionPercentage = milestones.length > 0
-				? Math.round((completedMilestones / milestones.length) * 100)
-				: 50; // Default to 50% if no milestones
-
-			// Add calculated fields to project
-			project.progress = completionPercentage;
-			project.milestones = milestones;
-
-			projectData = project;
-		}
-
-		// Get all user projects for comparison
-		const userProjects = await db.fetchAssociatedProjects(req.user);
-		await db.appendCollaborators(userProjects);
-
-		// Calculate progress for each project (random for demo purposes)
-		userProjects.forEach(project => {
-			project.progress = Math.floor(Math.random() * 80) + 20; // Random progress between 20-100%
-		});
-
-		res.sendFile(path.join(__dirname, "public", "completionStatusReport.html"));
-	} catch (err) {
-		console.error('Error generating completion status report:', err);
-		res.status(500).json({ error: 'Failed to generate completion status report' });
-	}
-}));
-
-// API endpoint to get the report data for the client-side JS
-router.get('/api/reports/completion-status', requireAuthentication(async (req, res) => {
-	try {
-		const { projectId } = req.query;
-
-		if (!projectId) {
-			return res.status(400).json({ error: 'Project ID is required' });
-		}
-
-		// Get project details
-		const project = await db.fetchProjectById(projectId);
-		if (!project) {
-			return res.status(404).json({ error: 'Project not found' });
-		}
-
-		// Check if user has access to this project
-		if (!authenticatedForView(project, req.user)) {
-			return res.status(403).json({ error: 'Not authorized to view this project' });
-		}
-
-		// Get project milestones
-		const milestonesQuery = await sender.getResult(new DatabaseQueryBuilder()
-			.input('projectId', projectId)
-			.query(`
-        SELECT 
-          project_milestone_id AS id,
-          name,
-          description,
-          created_at,
-          completed_at
-        FROM ProjectMilestone
-        WHERE project_id = {{projectId}}
-        ORDER BY created_at
-      `)
-			.build()
-		);
-
-		const milestones = milestonesQuery.recordSet;
-
-		// Calculate completion percentage based on completed milestones
-		let completedMilestones = 0;
-		if (milestones && milestones.length > 0) {
-			completedMilestones = milestones.filter(m => m.completed_at).length;
-		}
-
-		const completionPercentage = milestones.length > 0
-			? Math.round((completedMilestones / milestones.length) * 100)
-			: 50; // Default to 50% if no milestones
-
-		// Add calculated fields to project
-		project.progress = completionPercentage;
-		project.milestones = milestones;
-
-		// Get all user projects for comparison
+		// Get projects associated with this user
 		const userProjects = await db.fetchAssociatedProjects(req.user);
 
-		// Calculate progress for each project (using milestone completion if available)
-		for (const comparison_project of userProjects) {
-			if (comparison_project.id === project.id) {
-				comparison_project.progress = completionPercentage;
-			} else {
-				// For demo purposes assign random progress
-				comparison_project.progress = Math.floor(Math.random() * 80) + 20; // 20-100%
-			}
+		if (userProjects.length === 0) {
+			return res.json({
+				totalFunding: 0,
+				amountUsed: 0,
+				amountLeft: 0,
+				usageCategories: [],
+				grants: [],
+				projectFunding: []
+			});
 		}
 
-		// Return the combined data
-		res.json({
-			project: project,
-			similarProjects: userProjects.filter(p => p.id !== project.id),
-			collaborators: project.collaborators || [],
-			completionData: {
-				tasksCompleted: completedMilestones,
-				totalTasks: milestones.length,
-				avgDaysToComplete: 5.6  // This would ideally be calculated from your actual data
-			}
-		});
+		// Extract project IDs
+		const projectIds = userProjects.map(project => project.id);
 
+		// Get funding data for these projects
+		const fundingData = await db.getFundingReportData(projectIds);
+
+		res.json(fundingData);
 	} catch (err) {
-		console.error('Error generating completion status report data:', err);
-		res.status(500).json({ error: 'Failed to generate completion status report data' });
+		console.error('Error generating funding report:', err);
+		res.status(500).json({ error: 'Failed to generate funding report' });
 	}
 }));
-
-// Customizable Report
-router.get('/reports/custom', requireAuthentication(async (req, res) => {
-	try {
-		// Get parameters from the query string
-		const { metrics, projectIds, timeframe, groupBy } = req.query;
-
-		if (!metrics) {
-			return res.status(400).json({ error: 'No metrics specified for custom report' });
-		}
-
-		// Parse the metrics and validate them
-		const metricsList = metrics.split(',');
-		const validMetrics = ['completion', 'resources', 'collaborators', 'reviews', 'uploads'];
-		const filteredMetrics = metricsList.filter(m => validMetrics.includes(m));
-
-		if (filteredMetrics.length === 0) {
-			return res.status(400).json({ error: 'No valid metrics specified' });
-		}
-
-		// Generate custom report based on specified metrics
-		const customReportData = await db.generateCustomReport({
-			userId: req.user.id,
-			metrics: filteredMetrics,
-			projectIds: projectIds ? projectIds.split(',').map(id => parseInt(id)) : null,
-			timeframe: timeframe || 'all',
-			groupBy: groupBy || 'project'
-		});
-
-		res.json(customReportData);
-	} catch (err) {
-		console.error('Error generating custom report:', err);
-		res.status(500).json({ error: 'Failed to generate custom report', details: err.message });
-	}
-}));
-
 /* POST Request Routing */
 router.post('/create/project', requireAuthentication(async (req, res) => {
 	const { projectName, description, field, visibility } = req.body;
