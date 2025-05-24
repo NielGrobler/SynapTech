@@ -299,6 +299,7 @@ const addCollaboratorButton = async (userDetails, project) => {
 const loadProjectFiles = (project) => {
 	fetchProjectFiles(project)
 		.then((files) => {
+			const filesList = document.getElementById("filesList");
 			filesList.innerHTML = '';
 			pageAdder.assignListToElement("filesList", files, projectFileToHTML);
 		})
@@ -470,7 +471,8 @@ const displayReviews = (reviews, append = false) => {
 		reviewsList.innerHTML = '';
 	}
 
-	if (reviews.length === 0) {
+	
+	if (!reviews || reviews.length === 0) { //reviews is undefined if empty? Bizarre
 		if (!append) {
 			const emptyItem = document.createElement('li');
 			emptyItem.textContent = 'No reviews yet for this project.';
