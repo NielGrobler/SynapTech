@@ -1,9 +1,6 @@
 
 import { failToast, successToast } from './toast.js';
 
-const uploadBtn = document.getElementById("uploadBtn");
-const trueUploadBtn = document.getElementById("file");
-
 const setupEventListeners = () => {
 	const uploadBtn = document.getElementById("uploadBtn");
 	const trueUploadBtn = document.getElementById("file");
@@ -134,10 +131,48 @@ const scrollDown = () => {
 
 let selectedRoomId;
 let hasJoinedRoom = false;
-const socket = io({ auth: { token: localStorage.getItem('jwt') } });
+
+const makeSocket = () => {
+	socket = io({ auth: { token: localStorage.getItem('jwt') } });
+	socket.on('connect', () => {
+		console.log('Connected to server');
+	});
+
+	socket.on('joined-room', ({ roomId, latestMessages }) => {
+		hasJoinedRoom = true;
+
+		const messagesContainer = document.getElementById('messages');
+		messagesContainer.innerHTML = '';
+		latestMessages.forEach(addMessageToDOM);
+	});
+
+	socket.on('message', addMessageToDOM);
+
+	socket.on('error', (err) => {
+		const msg = typeof err === 'string' ? err : err.message;
+		console.error('Server error:', msg);
+		failToast(msg);
+	});
+
+	socket.on('download-response', (file) => {
+		const blob = new Blob([new Uint8Array(file.buffer)], { type: file.contentType });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = file.filename || 'downloaded-file';
+		document.body.appendChild(a);
+		a.click();
+		a.remove();
+		URL.revokeObjectURL(url);
+	});
+
+	return socket;
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
+	socket = makeSocket();
 	setupEventListeners();
+	document.getElementById('sendBtn').addEventListener(sendListener);
 	const projects = await fetchProjects();
 	if (!projects.length) return;
 	selectedRoomId = projects[0].id;
@@ -148,40 +183,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 	scrollDown();
 });
 
-socket.on('connect', () => {
-	console.log('Connected to server');
-});
-
-socket.on('joined-room', ({ roomId, latestMessages }) => {
-	console.log(`Joined room: ${roomId}`);
-	hasJoinedRoom = true;
-
-	const messagesContainer = document.getElementById('messages');
-	messagesContainer.innerHTML = '';
-	latestMessages.forEach(addMessageToDOM);
-});
-
-socket.on('message', addMessageToDOM);
-
-socket.on('error', (err) => {
-	const msg = typeof err === 'string' ? err : err.message;
-	console.error('Server error:', msg);
-	failToast(msg);
-});
-
-socket.on('download-response', (file) => {
-	const blob = new Blob([new Uint8Array(file.buffer)], { type: file.contentType });
-	const url = URL.createObjectURL(blob);
-	const a = document.createElement('a');
-	a.href = url;
-	a.download = file.filename || 'downloaded-file';
-	document.body.appendChild(a);
-	a.click();
-	a.remove();
-	URL.revokeObjectURL(url);
-});
-
-document.getElementById('sendBtn').onclick = async () => {
+const sendListener = async (e) => {
+	e.preventDefault()
 	if (!hasJoinedRoom) {
 		failToast('A room must be joined before chatting.');
 		return;
@@ -210,6 +213,6 @@ document.getElementById('sendBtn').onclick = async () => {
 	document.getElementById('attachment-name').innerHTML = "No file chosen";
 	document.getElementById('text').value = '';
 	fileInput.value = '';
-};
+}
 
 export default { scrollToBottomIfNeeded, fetchProjects, addMessageToDOM };

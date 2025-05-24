@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">51.35% </span>
+                <span class="strong">25% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>19/37</span>
+                <span class='fraction'>7/28</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">50% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>1/2</span>
+                <span class='fraction'>0/0</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>0/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">51.35% </span>
+                <span class="strong">25% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>19/37</span>
+                <span class='fraction'>7/28</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line medium'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -97,22 +97,31 @@
 <a name='L32'></a><a href='#L32'>32</a>
 <a name='L33'></a><a href='#L33'>33</a>
 <a name='L34'></a><a href='#L34'>34</a>
-<a name='L35'></a><a href='#L35'>35</a>
-<a name='L36'></a><a href='#L36'>36</a>
-<a name='L37'></a><a href='#L37'>37</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L35'></a><a href='#L35'>35</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -122,63 +131,48 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span></td><td class="text"><pre class="prettyprint lang-js">import userInfo from './userInfo.js'
-import fetchUsername from './fetchUsername.js'
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import userInfo from './userInfo.js'
 import pageAdder from './pageAdder.js'
 &nbsp;
 let projects = [];
 &nbsp;
+const noneIfAbsent = <span class="fstat-no" title="function not covered" >(s) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >	return !s ? 'None' : s;</span>
+<span class="cstat-no" title="statement not covered" >}</span>
+&nbsp;
 const populateElements = <span class="fstat-no" title="function not covered" >async () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    try {</span>
-<span class="cstat-no" title="statement not covered" >        const user = await userInfo.fetchFromApi();</span>
-<span class="cstat-no" title="statement not covered" >        document.getElementById("username").innerHTML = fetchUsername.setUsername();</span>
-<span class="cstat-no" title="statement not covered" >        document.getElementById('userName').innerHTML = user.name;</span>
-<span class="cstat-no" title="statement not covered" >        document.getElementById('userBio').innerHTML = user.bio;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        const res = await fetch(`/api/user?id=${encodeURIComponent(user.id)}`);</span>
-<span class="cstat-no" title="statement not covered" >        const newinfo = await res.json();</span>
-<span class="cstat-no" title="statement not covered" >        document.getElementById('userUni').innerHTML = newinfo[0].university;</span>
-<span class="cstat-no" title="statement not covered" >        document.getElementById('userDepartment').innerHTML = newinfo[0].department;</span>
-<span class="cstat-no" title="statement not covered" >    } catch (error) {</span>
-<span class="cstat-no" title="statement not covered" >        console.error("User not authenticated:", error);</span>
-<span class="cstat-no" title="statement not covered" >        document.getElementById('userName').innerText = "Could not display user.";</span>
-<span class="cstat-no" title="statement not covered" >    }</span>
-<span class="cstat-no" title="statement not covered" >  }</span>
-  
+<span class="cstat-no" title="statement not covered" >	try {</span>
+<span class="cstat-no" title="statement not covered" >		const user = await userInfo.fetchFromApi();</span>
+<span class="cstat-no" title="statement not covered" >		console.log(user);</span>
+<span class="cstat-no" title="statement not covered" >		document.getElementById('userName').innerText = user.name;</span>
+<span class="cstat-no" title="statement not covered" >		document.getElementById('userBio').innerText = noneIfAbsent(user.bio);</span>
 &nbsp;
-  document.addEventListener("DOMContentLoaded", () =&gt; {
-<span class="cstat-no" title="statement not covered" >    populateElements();</span>
-  });
+<span class="cstat-no" title="statement not covered" >		document.getElementById('userUni').innerText = noneIfAbsent(user.university);</span>
+<span class="cstat-no" title="statement not covered" >		document.getElementById('userDepartment').innerText = noneIfAbsent(user.department);</span>
+<span class="cstat-no" title="statement not covered" >	} catch (error) {</span>
+<span class="cstat-no" title="statement not covered" >		document.getElementById('userName').innerText = "Could not display user.";</span>
+<span class="cstat-no" title="statement not covered" >	}</span>
+<span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
-(async () =&gt; {
-	try {
-		const res = await fetch('/api/user/project');
-<span class="cstat-no" title="statement not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >		projects = await res.json();</span></span>
+&nbsp;
+document.addEventListener("DOMContentLoaded", async () =&gt; {
+<span class="cstat-no" title="statement not covered" >	try {</span>
+<span class="cstat-no" title="statement not covered" >		const res = await fetch('/api/user/project');</span>
+<span class="cstat-no" title="statement not covered" >		projects = await res.json();</span>
 <span class="cstat-no" title="statement not covered" >		pageAdder.addProjectsToPage('projectCardList', projects);</span>
-	} catch (err) {
-		console.error('Error loading Projects:', err);
-	}
-})();</pre></td></tr></table></pre>
+<span class="cstat-no" title="statement not covered" >		populateElements();</span>
+<span class="cstat-no" title="statement not covered" >	} catch (err) {</span>
+<span class="cstat-no" title="statement not covered" >		console.error('Error loading Projects:', err);</span>
+<span class="cstat-no" title="statement not covered" >	}</span>
+});
+&nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-18T23:52:57.394Z
+                at 2025-05-24T16:17:39.301Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

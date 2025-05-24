@@ -129,4 +129,4 @@ const setupForm = () => {
 	projectToggle.addEventListener("change", queryListener);
 }
 
-export default { fetchProjects, fetchUsers, markType, merge, setupForm };
+export default { fetchProjects, fetchUsers, markType, merge, setupForm, promiseOnToggle, queryListener };

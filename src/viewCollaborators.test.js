@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import * as toast from './toast.js';
 import viewCollaborators from './viewCollaborators.js';
 import pageAdder from './pageAdder.js';
 
@@ -8,12 +9,16 @@ vi.mock('./pageAdder.js', () => ({
   }
 }));
 
-global.alert = vi.fn(); // mock alert
-global.fetch = vi.fn().mockResolvedValue({
-  json: vi.fn().mockResolvedValue([]),
-  ok: true,
-  text: vi.fn().mockResolvedValue(''),
+vi.mock('./toast.js', async () => {
+  const actual = await vi.importActual('./toast.js');
+  return {
+    ...actual,
+    failToast: vi.fn(),
+    successToast: vi.fn(),
+  };
 });
+
+global.fetch = vi.fn();
 
 describe('generateCollaboratorRequestHTML', () => {
   const collaborator = {
@@ -31,7 +36,6 @@ describe('generateCollaboratorRequestHTML', () => {
     expect(element.tagName).toBe('LI');
     expect(element.querySelector('p').innerHTML).toContain('Alice');
     expect(element.querySelector('p').innerHTML).toContain('QuantumApp');
-    // Removed failing assertion for "Project is public" text
     expect(element.innerHTML).toContain('Accept');
     expect(element.innerHTML).toContain('Reject');
   });
@@ -42,37 +46,40 @@ describe('handleAccept', () => {
 
   beforeEach(() => {
     fetch.mockReset();
+    toast.failToast.mockClear();
+    toast.successToast.mockClear();
     pageAdder.assignListToElement.mockClear();
   });
 
   it('sends correct PUT request and refreshes collaborators on success', async () => {
-    fetch.mockResolvedValueOnce({ ok: true }); // accept call
-    fetch.mockResolvedValueOnce({
-      json: vi.fn().mockResolvedValueOnce([]) // fetchCollaborators call
-    });
+    fetch.mockResolvedValueOnce({ ok: true }); // PUT
+    fetch.mockResolvedValueOnce({ json: vi.fn().mockResolvedValue([]) }); // fetch updated list
 
     await viewCollaborators.handleAccept(collaborator);
 
     expect(fetch).toHaveBeenCalledWith('/api/accept/collaborator', expect.objectContaining({
       method: 'PUT'
     }));
-    expect(fetch).toHaveBeenCalledTimes(2); // accept + fetchCollaborators
+    expect(fetch).toHaveBeenCalledTimes(2);
   });
 
-  it('alerts on server error', async () => {
-    fetch.mockResolvedValueOnce({ ok: false, text: () => Promise.resolve('Failure') });
+  it('shows toast on server error', async () => {
+    fetch.mockResolvedValueOnce({
+      ok: false,
+      text: () => Promise.resolve('Failure')
+    });
 
     await viewCollaborators.handleAccept(collaborator);
 
-    expect(alert).toHaveBeenCalledWith('Error: Failure');
+    expect(toast.failToast).toHaveBeenCalledWith('Error: Failure');
   });
 
-  it('alerts on network error', async () => {
+  it('shows toast on network error', async () => {
     fetch.mockRejectedValueOnce(new Error('Network fail'));
 
     await viewCollaborators.handleAccept(collaborator);
 
-    expect(alert).toHaveBeenCalledWith('Failed to send collaboration request.');
+    expect(toast.failToast).toHaveBeenCalledWith('Failed to send collaboration request.');
   });
 });
 
@@ -81,50 +88,74 @@ describe('handleReject', () => {
 
   beforeEach(() => {
     fetch.mockReset();
+    toast.failToast.mockClear();
+    toast.successToast.mockClear();
     pageAdder.assignListToElement.mockClear();
   });
 
   it('sends correct DELETE request and refreshes collaborators on success', async () => {
     fetch.mockResolvedValueOnce({ ok: true });
-    fetch.mockResolvedValueOnce({
-      json: vi.fn().mockResolvedValueOnce([])
-    });
+    fetch.mockResolvedValueOnce({ json: vi.fn().mockResolvedValue([]) });
 
     await viewCollaborators.handleReject(collaborator);
 
     expect(fetch).toHaveBeenCalledWith('/api/reject/collaborator', expect.objectContaining({
       method: 'DELETE'
     }));
-    expect(fetch).toHaveBeenCalledTimes(2); // reject + fetchCollaborators
+    expect(fetch).toHaveBeenCalledTimes(2);
   });
 
-  it('alerts on server error', async () => {
-    fetch.mockResolvedValueOnce({ ok: false, text: () => Promise.resolve('Some error') });
+  it('shows toast on server error', async () => {
+    fetch.mockResolvedValueOnce({
+      ok: false,
+      text: () => Promise.resolve('Some error')
+    });
 
     await viewCollaborators.handleReject(collaborator);
 
-    expect(alert).toHaveBeenCalledWith('Error: Some error');
+    expect(toast.failToast).toHaveBeenCalledWith('Error: Some error');
   });
 
-  it('alerts on network error', async () => {
+  it('shows toast on network error', async () => {
     fetch.mockRejectedValueOnce(new Error('Offline'));
 
     await viewCollaborators.handleReject(collaborator);
 
-    expect(alert).toHaveBeenCalledWith('Failed to send collaboration request.');
+    expect(toast.failToast).toHaveBeenCalledWith('Failed to send collaboration request.');
   });
 });
 
 describe('fetchCollaborators', () => {
+  beforeEach(() => {
+    fetch.mockReset();
+    toast.failToast.mockClear();
+    toast.successToast.mockClear();
+    pageAdder.assignListToElement.mockClear();
+  });
+
   it('calls API and assigns collaborator data', async () => {
     const mockData = [{ account_name: 'Bob' }];
     fetch.mockResolvedValueOnce({
-      json: vi.fn().mockResolvedValueOnce(mockData)
+      json: vi.fn().mockResolvedValue(mockData),
+      ok: true
     });
 
     await viewCollaborators.fetchCollaborators();
 
     expect(fetch).toHaveBeenCalledWith('/api/collaborator');
-    expect(pageAdder.assignListToElement).toHaveBeenCalledWith('collaboratorRequests', mockData, expect.any(Function));
+    expect(pageAdder.assignListToElement).toHaveBeenCalledWith(
+      'collaboratorRequests',
+      mockData,
+      viewCollaborators.generateCollaboratorRequestHTML
+    );
+  });
+
+  it('shows toast on fetch failure', async () => {
+    fetch.mockRejectedValueOnce(new Error('Boom'));
+
+    await viewCollaborators.fetchCollaborators();
+
+    expect(toast.failToast).toHaveBeenCalledWith('Failed to fetch collaborators.');
   });
 });
+

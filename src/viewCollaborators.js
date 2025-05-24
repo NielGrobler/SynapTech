@@ -51,11 +51,19 @@ const handleReject = async (collaborator) => {
 	}
 }
 const fetchCollaborators = async () => {
-	let res = await fetch('/api/collaborator');
-	let collaboratorData = await res.json();
-	pageAdder.assignListToElement('collaboratorRequests', collaboratorData, generateCollaboratorRequestHTML); 
+	try {
+		const res = await fetch('/api/collaborator');
+		if (!res.ok) {
+			throw new Error(await res.json());
+		}
+		let collaboratorData = await res.json();
+		pageAdder.assignListToElement('collaboratorRequests', collaboratorData, generateCollaboratorRequestHTML);
+	} catch (error) {
+		failToast('Failed to fetch collaborators.');
+	}
 }
+
 if (typeof vi === 'undefined' && process.env.VITEST !== 'true') { //to account for a specific testing issue
-	(async () => {	await fetchCollaborators();})();
+	(async () => { await fetchCollaborators(); })();
 }
 export default { fetchCollaborators, handleAccept, handleReject, generateCollaboratorRequestHTML }

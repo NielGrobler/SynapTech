@@ -3,7 +3,7 @@ import userInfo from './userInfo.js'
 import pageAdder from './pageAdder.js';
 import { failToast, successToast } from './toast.js';
 
-function populateCollaborators(project) {
+export const populateCollaborators = (project) => {
 	let list = document.getElementById('collaboratorList');
 	list.innerHTML = '';
 
@@ -19,7 +19,7 @@ function populateCollaborators(project) {
 	});
 }
 
-const fetchProject = async () => {
+export const fetchProject = async () => {
 	const params = new URLSearchParams(window.location.search);
 	const projectId = params.get('id');
 	if (!projectId) {
@@ -31,7 +31,7 @@ const fetchProject = async () => {
 	return project;
 }
 
-const fetchProjectFiles = async (project) => {
+export const fetchProjectFiles = async (project) => {
 	try {
 		const res = await fetch(`/api/project/${project.id}/files`);
 
@@ -47,7 +47,7 @@ const fetchProjectFiles = async (project) => {
 	}
 }
 
-const downloadProjectFile = async (projectId, uuid, filename, ext) => {
+export const downloadProjectFile = async (projectId, uuid, filename, ext) => {
 	try {
 		const res = await fetch(`/api/project/${projectId}/file/${uuid}/${ext}`);
 
@@ -74,7 +74,7 @@ const downloadProjectFile = async (projectId, uuid, filename, ext) => {
 	}
 };
 
-const fetchMilestones = async (projectId) => {
+export const fetchMilestones = async (projectId) => {
 	try {
 		const res = await fetch(`/api/project/${projectId}/milestones`);
 
@@ -90,7 +90,7 @@ const fetchMilestones = async (projectId) => {
 	}
 }
 
-const postMilestone = async (projectId, name, description) => {
+export const postMilestone = async (projectId, name, description) => {
 	const resp = await fetch(`/api/post/project/${projectId}/milestone`, {
 		method: 'POST',
 		headers: {
@@ -107,7 +107,7 @@ const postMilestone = async (projectId, name, description) => {
 	}
 }
 
-const toggleMilestone = async (projectId, milestoneId) => {
+export const toggleMilestone = async (projectId, milestoneId) => {
 	const resp = await fetch(`/api/toggle/project/${projectId}/milestone`, {
 		method: 'POST',
 		headers: {
@@ -122,7 +122,7 @@ const toggleMilestone = async (projectId, milestoneId) => {
 	}
 }
 
-const toggleMilestoneForm = (e) => {
+export const toggleMilestoneForm = (e) => {
 	e.preventDefault();
 	const formSection = document.getElementById('milestone-form-section');
 	const icon = document.getElementById('milestone-list-icon');
@@ -138,7 +138,7 @@ const toggleMilestoneForm = (e) => {
 	}
 }
 
-const setMilestoneIcon = (icon, wasChecked) => {
+export const setMilestoneIcon = (icon, wasChecked) => {
 	if (wasChecked) {
 		icon.classList.remove('bx-checkbox');
 		icon.classList.add('bx-checkbox-checked');
@@ -148,7 +148,7 @@ const setMilestoneIcon = (icon, wasChecked) => {
 	}
 }
 
-const milestoneToHTML = (projectId, milestone) => {
+export const milestoneToHTML = (projectId, milestone) => {
 	const name = milestone.name;
 	const description = milestone.description;
 	const id = milestone.project_milestone_id;
@@ -203,12 +203,12 @@ const milestoneToHTML = (projectId, milestone) => {
 	return li;
 }
 
-const getFileExt = (fileName) => {
+export const getFileExt = (fileName) => {
 	const parts = fileName.split('.');
 	return parts.length > 1 ? parts.pop() : '';
 };
 
-const projectFileToHTML = (projectFile) => {
+export const projectFileToHTML = (projectFile) => {
 	const li = document.createElement('li');
 	const link = document.createElement('a');
 	link.href = '#';
@@ -232,7 +232,7 @@ const projectFileToHTML = (projectFile) => {
 	return li;
 }
 
-const isParticipant = (userId, project) => {
+export const isParticipant = (userId, project) => {
 	if (userId === project.created_by_account_id) {
 		console.log("WENT HERE");
 		return true;
@@ -247,7 +247,7 @@ const isParticipant = (userId, project) => {
 	return false;
 }
 
-const postFundingRequest = async (opportunityId, projectId) => {
+export const postFundingRequest = async (opportunityId, projectId) => {
 	console.log(opportunityId, projectId);
 	const resp = await fetch('/api/post/funding/request', {
 		method: 'POST',
@@ -267,7 +267,7 @@ const postFundingRequest = async (opportunityId, projectId) => {
 
 }
 
-const fundingOpportunityToHTML = (project, item) => {
+export const fundingOpportunityToHTML = (project, item) => {
 	const title = item.organisation_name;
 	const description = item.description;
 	const currencyCode = item.currency_code;
@@ -295,7 +295,7 @@ const fundingOpportunityToHTML = (project, item) => {
 	return article;
 }
 
-const addFundingButton = (userId, project) => {
+export const addFundingButton = (userId, project) => {
 	console.log('[addFundingButton]');
 	if (!isParticipant(userId, project)) {
 		return;
@@ -318,7 +318,7 @@ const addFundingButton = (userId, project) => {
 	return resultingButton;
 }
 
-const addRequestCollaboration = async (userDetails, project) => {
+export const addRequestCollaboration = async (userDetails, project) => {
 	if (isParticipant(userDetails.id, project)) {
 		return false;
 	}
@@ -354,13 +354,13 @@ const addRequestCollaboration = async (userDetails, project) => {
 	return true;
 }
 
-const createUserList = () => {
+export const createUserList = () => {
 	let result = document.createElement('ul');
 	result.id = 'users';
 	return result;
 }
 
-const inviteCollaborator = async (accountId, projectId, role) => {
+export const inviteCollaborator = async (accountId, projectId, role) => {
 	try {
 		const response = await fetch('/api/collaboration/invite', {
 			method: 'POST',
@@ -382,7 +382,7 @@ const inviteCollaborator = async (accountId, projectId, role) => {
 	}
 };
 
-const milestoneFormListener = (project) => {
+export const milestoneFormListener = (project) => {
 	return async (e) => {
 		e.preventDefault();
 		const nameInput = document.getElementById('milestoneName');
@@ -402,7 +402,7 @@ const milestoneFormListener = (project) => {
 }
 
 var inviteFormCreated = false;
-const createInviteForm = (project) => {
+export const createInviteForm = (project) => {
 	const projectId = project.id;
 	inviteFormCreated = true;
 	let form = document.createElement('form');
@@ -482,7 +482,7 @@ const createInviteForm = (project) => {
 	return form;
 }
 
-const addCollaboratorButton = async (userDetails, project) => {
+export const addCollaboratorButton = async (userDetails, project) => {
 	if (project.created_by_account_id !== userDetails.id) {
 		return false;
 	}
@@ -502,7 +502,7 @@ const addCollaboratorButton = async (userDetails, project) => {
 	return true;
 }
 
-const loadProjectFiles = (project) => {
+export const loadProjectFiles = (project) => {
 	fetchProjectFiles(project)
 		.then((files) => {
 			filesList.innerHTML = '';
@@ -513,7 +513,7 @@ const loadProjectFiles = (project) => {
 		});
 }
 
-const addUploadButton = (userDetails, project) => {
+export const addUploadButton = (userDetails, project) => {
 	if (project.created_by_account_id !== userDetails.id) {
 		return false;
 	}
@@ -571,13 +571,13 @@ const addUploadButton = (userDetails, project) => {
 	return true;
 }
 
-const populateMilestones = async (project) => {
+export const populateMilestones = async (project) => {
 	const data = await fetchMilestones(project.id);
 	document.getElementById('milestone-list').innerHTML = '';
 	pageAdder.assignListToElement(`milestone-list`, data, (item) => milestoneToHTML(project.id, item));
 }
 
-const populateElements = async () => {
+export const populateElements = async () => {
 	const project = await fetchProject();
 	if (!project) {
 		document.getElementById('projectName').innerText = "Could not display project.";
@@ -645,7 +645,7 @@ export async function initPage() {
 }
 
 // Fetch reviews for a project
-const fetchReviews = async (projectId, page = 1, limit = 10) => {
+export const fetchReviews = async (projectId, page = 1, limit = 10) => {
 	try {
 		const res = await fetch(`/api/reviews?projectId=${projectId}&page=${page}&limit=${limit}`);
 		if (!res.ok) {
@@ -659,13 +659,13 @@ const fetchReviews = async (projectId, page = 1, limit = 10) => {
 	}
 };
 
-const formatDate = (dateString) => {
+export const formatDate = (dateString) => {
 	const options = { year: 'numeric', month: 'short', day: 'numeric' };
 	return new Date(dateString).toLocaleDateString(undefined, options);
 };
 
 // Create a star rating display
-const createStarRating = (rating) => {
+export const createStarRating = (rating) => {
 	const figure = document.createElement('figure');
 	figure.className = 'star-rating';
 
@@ -686,7 +686,7 @@ const createStarRating = (rating) => {
 	return figure;
 };
 
-const displayReviews = (reviews, append = false) => {
+export const displayReviews = (reviews, append = false) => {
 	const reviewsList = document.getElementById('reviewsList');
 
 	if (!append) {
@@ -723,7 +723,7 @@ const displayReviews = (reviews, append = false) => {
 };
 
 // Load and display project reviews
-const loadProjectReviews = async (project) => {
+export const loadProjectReviews = async (project) => {
 	const reviewsSection = document.getElementById('reviews');
 	const paginationNav = document.getElementById('reviewsPagination');
 	let currentPage = 1;

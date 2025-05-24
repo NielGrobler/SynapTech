@@ -1,5 +1,8 @@
 export const showToast = (message, type = 'success') => {
 	const container = document.getElementById('toast-container');
+	if (!container) {
+		return;
+	}
 
 	const toast = document.createElement('div');
 	toast.className = `toast toast-${type}`;
@@ -25,10 +28,10 @@ export const showToast = (message, type = 'success') => {
 	container.appendChild(toast);
 }
 
-export const successToast = (message) => {
-	showToast(message, 'success');
+export const successToast = (message, toaster = showToast) => {
+	toaster(message, 'success');
 }
 
-export const failToast = (message) => {
-	showToast(message, 'fail');
+export const failToast = (message, toaster = showToast) => {
+	toaster(message, 'fail');
 }

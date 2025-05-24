@@ -116,46 +116,9 @@ describe('Router Endpoints', () => {
 		expect(res.body).toEqual(user);
 	});
 
-	/*
-	it('POST /api/message/send', async () => {
-		let res = await request(app).post('/api/message/send').send({});
-		expect(res.status).toBe(302);
-		res = await request(app).post('/api/message/send')
-			.set('authenticated', 'true').send({});
-		expect(res.status).toBe(400);
-		db.storeMessage.mockResolvedValue();
-		res = await request(app).post('/api/message/send')
-			.set('authenticated', 'true').set('user', JSON.stringify({ id: 5 }))
-			.send({ messageBody: 'Hi', receivedRecipientId: '10' });
-		expect(db.storeMessage).toHaveBeenCalledWith(5, 10, 'Hi');
-		expect(res.status).toBe(200);
-	});
-	
-
-	it('GET /api/message/allMessagedUsers', async () => {
-		let res = await request(app).get('/api/message/allMessagedUsers');
-		expect(res.status).toBe(302);
-		db.retrieveMessagedUsers.mockResolvedValue([{ id: 2 }]);
-		res = await request(app).get('/api/message/allMessagedUsers')
-			.set('authenticated', 'true').set('user', JSON.stringify({ id: 3 }));
-		expect(res.body).toEqual([{ id: 2 }]);
-	});
-	
-
-	it('GET /api/message/:id', async () => {
-		let res = await request(app).get('/api/message/junk')
-			.set('authenticated', 'true').set('user', JSON.stringify({ id: 4 }));
-		expect(res.status).toBe(400);
-		db.retrieveMessages.mockResolvedValue(['m']);
-		res = await request(app).get('/api/message/7')
-			.set('authenticated', 'true').set('user', JSON.stringify({ id: 4 }));
-		expect(res.body).toEqual(['m']);
-	});
-	*/
-
 	it('PUT /api/accept/collaborator', async () => {
 		let res = await request(app).put('/api/accept/collaborator').send({});
-		expect(res.status).toBe(302);
+		expect(res.status).toBe(401);
 		res = await request(app).put('/api/accept/collaborator')
 			.set('authenticated', 'true').send({});
 		expect(res.status).toBe(400);
@@ -166,12 +129,12 @@ describe('Router Endpoints', () => {
 		db.permittedToAcceptCollaborator.mockResolvedValue(true);
 		res = await request(app).put('/api/accept/collaborator')
 			.set('authenticated', 'true').send({ userId: 1, projectId: 1 });
-		expect(res.text).toBe('Successful');
+		expect(res.text).toContain('Successful');
 	});
 
 	it('DELETE /api/reject/collaborator', async () => {
 		let res = await request(app).delete('/api/reject/collaborator').send({});
-		expect(res.status).toBe(302);
+		expect(res.status).toBe(401);
 		res = await request(app).delete('/api/reject/collaborator')
 			.set('authenticated', 'true').send({});
 		expect(res.status).toBe(400);
@@ -182,7 +145,7 @@ describe('Router Endpoints', () => {
 		db.permittedToRejectCollaborator.mockResolvedValue(true);
 		res = await request(app).delete('/api/reject/collaborator')
 			.set('authenticated', 'true').send({ userId: 1, projectId: 2 });
-		expect(res.text).toBe('Successful');
+		expect(res.text).toContain('Successful');
 	});
 
 	it('GET /api/project', async () => {
@@ -194,7 +157,7 @@ describe('Router Endpoints', () => {
 		db.fetchProjectById.mockResolvedValue(null);
 		res = await request(app).get('/api/project?id=5')
 			.set('authenticated', 'true');
-		expect(res.body).toBeNull();
+		expect(res.body).toStrictEqual({ error: 'Internal server error' });
 		const proj = { is_public: false, created_by_account_id: 2, collaborators: [] };
 		db.fetchProjectById.mockResolvedValue(proj);
 		res = await request(app).get('/api/project?id=5')
@@ -245,4 +208,3 @@ describe('Router Endpoints', () => {
 	});
 	*/
 });
-

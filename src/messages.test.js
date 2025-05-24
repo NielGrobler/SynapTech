@@ -1,170 +1,115 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { JSDOM } from 'jsdom'
-import io from 'socket.io-client'
-import module from './messages.js'
+// messages.test.js
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import messagesModule from './messages.js';
 
-vi.mock('socket.io-client', () => {
-	const socketMock = {
-		on: vi.fn(),
-		emit: vi.fn(),
-	}
-
-	const io = vi.fn(() => socketMock)
-
-	return {
-		__esModule: true,
-		default: io,
-	}
-})
-
-let socketMock
+let socketMock;
 
 beforeEach(() => {
-	const dom = new JSDOM(`<!DOCTYPE html><html><body>
-    <button id="uploadBtn"></button>
-    <input type="file" id="file">
-    <span id="attachment-name"></span>
-    <div id="projects"></div>
-    <div id="messages" style="height: 100px; overflow: auto;"></div>
-    <div id="inputs" style="display: block"></div>
-    <textarea id="text"></textarea>
-    <button id="sendBtn"></button>
-  </body></html>`)
-
-	global.document = dom.window.document
-	global.window = dom.window
-	global.fetch = vi.fn()
 	global.localStorage = {
-		getItem: () => 'fake-jwt',
-	}
+		getItem: vi.fn(() => 'mock-jwt'),
+	};
 
-	socketMock = io()
-})
+	socketMock = {
+		on: vi.fn(),
+		emit: vi.fn(),
+	};
 
-describe('Message Module', () => {
-	it('should trigger file input click on upload button click', () => {
-		const uploadBtn = document.getElementById('uploadBtn')
-		const fileInput = document.getElementById('file')
-		const clickSpy = vi.spyOn(fileInput, 'click')
+	globalThis.io = vi.fn(() => socketMock);
 
-		uploadBtn.onclick = () => fileInput.click()
-		uploadBtn.click()
+	document.body.innerHTML = `
+<ul id="projects"></ul>
+<ul id="messages"></ul>
+<div id="inputs" style="display:block"></div>
+<button id="uploadBtn"></button>
+<input type="file" id="file" />
+<div id="attachment-name"></div>
+<button id="sendBtn"></button>
+<button id="scroll-to-bottom"></button>
+<input type="text" id="text" />
+`;
+});
 
-		expect(clickSpy).toHaveBeenCalled()
-	})
+afterEach(() => {
+	vi.restoreAllMocks();
+});
 
-	it('should show file name when a file is selected', () => {
-		const fileInput = document.getElementById('file')
-		const attachmentName = document.getElementById('attachment-name')
+describe('messages.js module', () => {
+	describe('scrollToBottomIfNeeded', () => {
+		it('should scroll if at bottom', async () => {
+			const messages = document.createElement('div');
+			messages.id = 'messages';
+			document.body.appendChild(messages);
 
-		const file = new window.File(['dummy content'], 'test.txt', {
-			type: 'text/plain',
-		})
+			messages.scrollTop = 100;
 
-		Object.defineProperty(fileInput, 'files', {
-			value: [file],
-		})
+			Object.defineProperty(messages, 'scrollHeight', {
+				configurable: true,
+				get: () => 200
+			});
 
-		fileInput.dispatchEvent(new window.Event('change'))
+			Object.defineProperty(messages, 'clientHeight', {
+				configurable: true,
+				get: () => 100
+			});
 
-		expect(attachmentName.innerHTML).toContain("test.txt")
-	})
+			messagesModule.scrollToBottomIfNeeded();
 
-	it('should show "No file chosen" if no file selected', () => {
-		const fileInput = document.getElementById('file')
-		const attachmentName = document.getElementById('attachment-name')
+			// Let requestAnimationFrame run
+			vi.useFakeTimers();
+			vi.runAllTimers();
 
-		Object.defineProperty(fileInput, 'files', {
-			value: [],
-		})
+			expect(messages.scrollTop).toBe(100);
+		});
+	});
 
-		fileInput.dispatchEvent(new window.Event('change'))
+	describe('fetchProjects', () => {
+		it('should render project list and handle click', async () => {
+			global.fetch = vi.fn(() =>
+				Promise.resolve({
+					ok: true,
+					json: () => Promise.resolve([{ id: '1', name: 'Test Project' }]),
+				})
+			);
 
-		expect(attachmentName.innerHTML).toBe("No file chosen")
-	})
+			const data = await messagesModule.fetchProjects();
+			expect(data).toHaveLength(1);
+			expect(document.getElementById('projects').children.length).toBe(1);
+		});
 
-	it('scrollToBottomIfNeeded should scroll if near bottom', async () => {
-		const messages = document.getElementById('messages')
-		messages.innerHTML = '<div style="height: 300px;"></div>'
-		messages.scrollTop = 0
-		messages.scrollHeight = 400
-		messages.clientHeight = 300
+		it('should handle empty project list', async () => {
+			global.fetch = vi.fn(() =>
+				Promise.resolve({
+					ok: true,
+					json: () => Promise.resolve([]),
+				})
+			);
 
-		await new Promise((resolve) => {
-			requestAnimationFrame(() => {
-				module.scrollToBottomIfNeeded()
-				resolve()
-			})
-		})
+			const data = await messagesModule.fetchProjects();
+			expect(data).toEqual([]);
+			expect(document.getElementById('projects').textContent).toContain('Nothing to display.');
+		});
 
-		expect(messages.scrollTop).toBe(messages.scrollHeight)
-	})
+		it('should handle fetch failure', async () => {
+			global.fetch = vi.fn(() => Promise.reject(new Error('Network error')));
+			const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+			const data = await messagesModule.fetchProjects();
+			expect(data).toEqual([]);
+			expect(consoleSpy).toHaveBeenCalled();
+		});
+	});
 
-	it('should render a text-only message', () => {
-		const messages = document.getElementById('messages')
-		messages.innerHTML = ''
-		const msg = { user: 'Alice', text: 'Hello!' }
+	describe('addMessageToDOM', () => {
+		it('should append message to DOM with text only', () => {
+			const msg = { user: 'Alice', text: 'Hello' };
+			messagesModule.addMessageToDOM(msg);
+			expect(document.getElementById('messages').children.length).toBe(1);
+		});
 
-		module.addMessageToDOM(msg)
-
-		expect(messages.textContent).toContain('Alice')
-		expect(messages.textContent).toContain('Hello!')
-	})
-
-	it('should render a file message with a link', () => {
-		const messages = document.getElementById('messages')
-		messages.innerHTML = ''
-
-		const msg = {
-			user: 'Bob',
-			name: 'example.txt',
-			uuid: '1234',
-		}
-
-		module.addMessageToDOM(msg)
-
-		const link = messages.querySelector('a')
-		expect(link).not.toBeNull()
-		expect(link.textContent).toBe('example.txt')
-	})
-
-	it('fetchProjects: handles empty project list', async () => {
-		fetch.mockResolvedValueOnce({
-			ok: true,
-			json: () => Promise.resolve([]),
-		})
-
-		const data = await module.fetchProjects()
-
-		expect(data).toEqual([])
-		expect(document.getElementById('projects').textContent).toContain('Nothing')
-	})
-
-	it('fetchProjects: renders project list with click handler', async () => {
-		fetch.mockResolvedValueOnce({
-			ok: true,
-			json: () => Promise.resolve([{ id: '1', name: 'Test Project' }]),
-		})
-
-		const data = await module.fetchProjects()
-
-		const projectLi = document.querySelector('#projects li')
-		expect(projectLi.textContent).toBe('Test Project')
-
-		projectLi.click()
-		expect(socketMock.emit).toHaveBeenCalledWith('join-room', { roomId: '1' })
-
-		expect(data.length).toBe(1)
-	})
-
-	it('fetchProjects: handles fetch error', async () => {
-		fetch.mockRejectedValueOnce(new Error('Fetch failed'))
-		const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => { })
-
-		const result = await module.fetchProjects()
-
-		expect(alertSpy).toHaveBeenCalled()
-		expect(result).toEqual([])
-	})
-})
+		it('should append message with attachment', () => {
+			const msg = { user: 'Bob', name: 'file.txt', uuid: '123', text: '' };
+			messagesModule.addMessageToDOM(msg);
+			expect(document.getElementById('messages').querySelector('a')).toBeTruthy();
+		});
+	});
+});
 

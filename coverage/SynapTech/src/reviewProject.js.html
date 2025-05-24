@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/45</span>
+                <span class='fraction'>0/43</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/45</span>
+                <span class='fraction'>0/43</span>
             </div>
         
             
@@ -109,24 +109,28 @@
 <a name='L44'></a><a href='#L44'>44</a>
 <a name='L45'></a><a href='#L45'>45</a>
 <a name='L46'></a><a href='#L46'>46</a>
-<a name='L47'></a><a href='#L47'>47</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -155,50 +159,52 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >document.addEventListener('DOMContentLoaded', function() {<span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" ></span></span></span>
-<span class="cstat-no" title="statement not covered" >    function getProjectId() {</span>
-<span class="cstat-no" title="statement not covered" >        const urlParams = new URLSearchParams(window.location.search);</span>
-<span class="cstat-no" title="statement not covered" >        return urlParams.get('id');</span>
-<span class="cstat-no" title="statement not covered" >    }</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    document.getElementById('submitReviewBtn').addEventListener('click', function() {</span>
-<span class="cstat-no" title="statement not covered" >        const review = {</span>
-<span class="cstat-no" title="statement not covered" >            projectId: getProjectId(),</span>
-<span class="cstat-no" title="statement not covered" >            rating: document.getElementById('rating').value,</span>
-<span class="cstat-no" title="statement not covered" >            comment: document.getElementById('comment').value</span>
-<span class="cstat-no" title="statement not covered" >        };</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        if (!review.rating || !review.comment) {</span>
-<span class="cstat-no" title="statement not covered" >            alert('Please fill all required fields');</span>
-<span class="cstat-no" title="statement not covered" >            return;</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        fetch('/api/review', {</span>
-<span class="cstat-no" title="statement not covered" >            method: 'POST',</span>
-<span class="cstat-no" title="statement not covered" >            headers: {</span>
-<span class="cstat-no" title="statement not covered" >                'Content-Type': 'application/json',</span>
-<span class="cstat-no" title="statement not covered" >            },</span>
-<span class="cstat-no" title="statement not covered" >            body: JSON.stringify(review),</span>
-<span class="cstat-no" title="statement not covered" >        })</span>
-<span class="cstat-no" title="statement not covered" >            .then(res =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >                if (!res.ok) {</span>
-<span class="cstat-no" title="statement not covered" >                    throw new Error(`Request failed with status: ${res.status}`);</span>
-<span class="cstat-no" title="statement not covered" >                }</span>
-<span class="cstat-no" title="statement not covered" >                return res.json();</span>
-<span class="cstat-no" title="statement not covered" >            })</span>
-<span class="cstat-no" title="statement not covered" >            .then(data =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >                console.log('Server response:', data);</span>
-<span class="cstat-no" title="statement not covered" >                if (data.message === 'Review submitted!') {</span>
-<span class="cstat-no" title="statement not covered" >                    window.location.href = data.redirect || '/successfulReviewPost';</span>
-<span class="cstat-no" title="statement not covered" >                } else if (data.error) {</span>
-<span class="cstat-no" title="statement not covered" >                    alert('Error: ' + data.error);</span>
-<span class="cstat-no" title="statement not covered" >                }</span>
-<span class="cstat-no" title="statement not covered" >            })</span>
-<span class="cstat-no" title="statement not covered" >            .catch(err =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >                console.error('Error:', err);</span>
-<span class="cstat-no" title="statement not covered" >                alert('Failed to submit review. Please try again.');</span>
-<span class="cstat-no" title="statement not covered" >            });</span>
-<span class="cstat-no" title="statement not covered" >    });</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >import { successToast, failToast } from './toast.js';</span></span></span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >document.addEventListener('DOMContentLoaded', function() {</span>
+<span class="cstat-no" title="statement not covered" >	function getProjectId() {</span>
+<span class="cstat-no" title="statement not covered" >		const urlParams = new URLSearchParams(window.location.search);</span>
+<span class="cstat-no" title="statement not covered" >		return urlParams.get('id');</span>
+<span class="cstat-no" title="statement not covered" >	}</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >	document.getElementById('submitReviewBtn').addEventListener('click', function() {</span>
+<span class="cstat-no" title="statement not covered" >		const review = {</span>
+<span class="cstat-no" title="statement not covered" >			projectId: getProjectId(),</span>
+<span class="cstat-no" title="statement not covered" >			rating: document.getElementById('rating').value,</span>
+<span class="cstat-no" title="statement not covered" >			comment: document.getElementById('comment').value</span>
+<span class="cstat-no" title="statement not covered" >		};</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >		if (!review.rating || !review.comment) {</span>
+<span class="cstat-no" title="statement not covered" >			failToast('Please fill all required fields');</span>
+<span class="cstat-no" title="statement not covered" >			return;</span>
+<span class="cstat-no" title="statement not covered" >		}</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >		fetch('/api/review', {</span>
+<span class="cstat-no" title="statement not covered" >			method: 'POST',</span>
+<span class="cstat-no" title="statement not covered" >			headers: {</span>
+<span class="cstat-no" title="statement not covered" >				'Content-Type': 'application/json',</span>
+<span class="cstat-no" title="statement not covered" >			},</span>
+<span class="cstat-no" title="statement not covered" >			body: JSON.stringify(review),</span>
+<span class="cstat-no" title="statement not covered" >		})</span>
+<span class="cstat-no" title="statement not covered" >			.then(res =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >				if (!res.ok) {</span>
+<span class="cstat-no" title="statement not covered" >					throw new Error(`Request failed with status: ${res.status}`);</span>
+<span class="cstat-no" title="statement not covered" >				}</span>
+<span class="cstat-no" title="statement not covered" >				return res.json();</span>
+<span class="cstat-no" title="statement not covered" >			})</span>
+<span class="cstat-no" title="statement not covered" >			.then(data =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >				console.log('Server response:', data);</span>
+<span class="cstat-no" title="statement not covered" >				if (data.message === 'Review submitted!') {</span>
+<span class="cstat-no" title="statement not covered" >					window.location.href = data.redirect || '/successfulReviewPost';</span>
+<span class="cstat-no" title="statement not covered" >				} else if (data.error) {</span>
+<span class="cstat-no" title="statement not covered" >					failToast('Error: ' + data.error);</span>
+<span class="cstat-no" title="statement not covered" >				}</span>
+<span class="cstat-no" title="statement not covered" >			})</span>
+<span class="cstat-no" title="statement not covered" >			.catch(err =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >				console.error('Error:', err);</span>
+<span class="cstat-no" title="statement not covered" >				failToast('Failed to submit review. Please try again.');</span>
+<span class="cstat-no" title="statement not covered" >			});</span>
+<span class="cstat-no" title="statement not covered" >	});</span>
 <span class="cstat-no" title="statement not covered" >});</span>
 &nbsp;
 &nbsp;</pre></td></tr></table></pre>
@@ -208,7 +214,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-18T23:52:57.394Z
+                at 2025-05-24T16:17:39.301Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

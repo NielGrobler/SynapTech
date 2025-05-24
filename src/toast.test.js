@@ -1,49 +1,65 @@
-import { describe, it, beforeEach, expect, vi } from 'vitest';
-import toastModule from './toast';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import * as ToastModule from './toast.js'; // Import the entire module for spying
+import { JSDOM } from 'jsdom';
 
-describe('showToast', () => {
-	beforeEach(() => {
-		document.body.innerHTML = '<section id="toast-container"></section>';
-	});
+let container;
 
-	it('should create a success toast with correct icon and message', () => {
-		toastModule.showToast('Success message', 'success');
+beforeEach(() => {
+	const dom = new JSDOM(`<!DOCTYPE html><html><body><div id="toast-container"></div></body></html>`);
+	global.document = dom.window.document;
+	global.window = dom.window;
+	container = document.getElementById('toast-container');
+});
 
-		const toast = document.querySelector('.toast-success');
+describe('Toast Notifications', () => {
+	it('showToast creates and appends a success toast', () => {
+		ToastModule.showToast('Success message');
+
+		const toast = container.querySelector('.toast.toast-success');
 		expect(toast).toBeTruthy();
 		expect(toast.textContent).toContain('Success message');
-		expect(toast.querySelector('i').className).toContain('bx-check-circle');
+		expect(toast.querySelector('i').className).toBe('bx bx-check-circle');
 	});
 
-	it('should create an error toast with correct icon and message', () => {
-		toastModule.showToast('Error occurred', 'error');
+	it('showToast creates and appends a fail toast', () => {
+		ToastModule.showToast('Error message', 'fail');
 
-		const toast = document.querySelector('.toast-error');
+		const toast = container.querySelector('.toast.toast-fail');
 		expect(toast).toBeTruthy();
-		expect(toast.textContent).toContain('Error occurred');
-		expect(toast.querySelector('i').className).toContain('bx-error-circle');
+		expect(toast.textContent).toContain('Error message');
+		expect(toast.querySelector('i').className).toBe('bx bx-error-circle');
 	});
 
-	it('should remove the toast on click', () => {
-		toastModule.showToast('Click to dismiss', 'success');
-
-		const toast = document.querySelector('.toast');
+	it('toast is removed when clicked', () => {
+		ToastModule.showToast('Clickable toast');
+		const toast = container.querySelector('.toast');
 		toast.click();
-
-		expect(document.querySelector('.toast')).toBeNull();
+		expect(container.contains(toast)).toBe(false);
 	});
-	it('should remove the toast on fadeOut animation end', () => {
-		toastModule.showToast('Auto dismiss', 'success');
 
-		const toast = document.querySelector('.toast');
+	it('toast is removed after fadeOut animation ends', () => {
+		ToastModule.showToast('Animated toast');
+		const toast = container.querySelector('.toast');
 
-		// Simulate animationend with a fake animationName
-		const event = new Event('animationend');
+		const event = new window.Event('animationend');
 		Object.defineProperty(event, 'animationName', { value: 'fadeOut' });
 
 		toast.dispatchEvent(event);
+		expect(container.contains(toast)).toBe(false);
+	});
 
-		expect(document.querySelector('.toast')).toBeNull();
+	it('successToast calls showToast with type success', () => {
+		const spy = vi.fn();
+		ToastModule.successToast('Test success', spy);
+		expect(spy).toHaveBeenCalledWith('Test success', 'success');
+		spy.mockRestore();
+	});
+
+	it('failToast calls showToast with type fail', () => {
+		const spy = vi.fn();
+		ToastModule.failToast('Test fail', spy);
+		expect(spy).toHaveBeenCalledWith('Test fail', 'fail');
+		spy.mockRestore();
 	});
 });
 
