@@ -125,8 +125,11 @@ describe('Router Module Tests', () => {
 				
 			});
 			it('should serve dashboard.html for authenticated users', async () => {
+				db.isSuspended.mockResolvedValue([{ is_suspended: false }]);
+
 				const res = await request(app).get('/dashboard')
-					.set('authenticated', 'true');
+					.set('authenticated', 'true')
+					.set('user', JSON.stringify({ id: 'test-user-id' }));
 				expect(res.text).toBe('served dashboard.html');
 			});
 		});

@@ -53,7 +53,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 	} catch (err) {
 		console.error('Error loading Projects:', err);
 	}
-})();
+});
 
 (async()=>{
 	try{
