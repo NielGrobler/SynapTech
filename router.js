@@ -761,7 +761,7 @@ router.get('/successfulReviewPost', requireAuthentication((req, res) => {
 }));
 
 router.get('/messages', requireAuthentication((req, res) => {
-	res.sendFile(path.join(__dirname, "public", "index.html"));
+	res.sendFile(path.join(__dirname, "public", "messages.html"));
 }));
 
 //Move to search for users page

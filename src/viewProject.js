@@ -1,6 +1,7 @@
 
 import userInfo from './userInfo.js'
 import pageAdder from './pageAdder.js';
+import { failToast, successToast } from './toast.js';
 
 function populateCollaborators(project) {
 	let list = document.getElementById('collaboratorList');
@@ -69,7 +70,7 @@ const downloadProjectFile = async (projectId, uuid, filename, ext) => {
 		URL.revokeObjectURL(url);
 	} catch (err) {
 		console.error("Error downloading file:", err.message || err);
-		alert("There was an error downloading the file.");
+		failToast("There was an error downloading the file.");
 	}
 };
 
@@ -85,7 +86,7 @@ const fetchMilestones = async (projectId) => {
 		return data;
 	} catch (err) {
 		console.error("Error downloading file:", err.message || err);
-		alert("There was an error downloading the file.");
+		failToast("There was an error downloading the file.");
 	}
 }
 
@@ -99,10 +100,10 @@ const postMilestone = async (projectId, name, description) => {
 	});
 
 	if (resp.ok) {
-		alert('Milestone successfully posted!');
+		successToast('Milestone successfully posted!');
 	} else {
-		const error = await resp.text();
-		alert(`Error: ${error}`);
+		const error = await resp.json();
+		failToast(`Error: ${error.error}`);
 	}
 }
 
@@ -116,8 +117,8 @@ const toggleMilestone = async (projectId, milestoneId) => {
 	});
 
 	if (!resp.ok) {
-		const error = await resp.text();
-		alert(`Error: ${error}`);
+		const error = await resp.json();
+		failToast(`Error: ${error.error}`);
 	}
 }
 
@@ -223,7 +224,7 @@ const projectFileToHTML = (projectFile) => {
 			await downloadProjectFile(link.dataset.projectId, link.dataset.uuid, link.dataset.name, link.dataset.ext);
 		} catch (err) {
 			console.error("Error downloading the project file:", err);
-			alert("There was an error downloading the file.");
+			failToast("There was an error downloading the file.");
 		}
 	});
 	li.appendChild(link);
@@ -247,6 +248,7 @@ const isParticipant = (userId, project) => {
 }
 
 const postFundingRequest = async (opportunityId, projectId) => {
+	console.log(opportunityId, projectId);
 	const resp = await fetch('/api/post/funding/request', {
 		method: 'POST',
 		headers: {
@@ -256,10 +258,11 @@ const postFundingRequest = async (opportunityId, projectId) => {
 	});
 
 	if (resp.ok) {
-		alert('Funding request sent successfully!');
+		successToast('Funding request sent successfully!');
 	} else {
-		const error = await resp.text();
-		alert(`Error: ${error}`);
+		const error = await resp.json();
+		console.log(error);
+		failToast(`Error: ${error.error}`);
 	}
 
 }
@@ -286,7 +289,7 @@ const fundingOpportunityToHTML = (project, item) => {
 
 	article.addEventListener('click', (e) => {
 		e.preventDefault();
-		postFundingRequest(project.id, item.funding_opportunity_id);
+		postFundingRequest(item.funding_opportunity_id, project.id);
 	});
 
 	return article;
@@ -299,6 +302,7 @@ const addFundingButton = (userId, project) => {
 	}
 
 	let resultingButton = document.createElement('button');
+	resultingButton.id = 'request-funding-button-id';
 	resultingButton.innerText = 'Request Funding';
 
 	resultingButton.addEventListener('click', async (e) => {
@@ -306,6 +310,7 @@ const addFundingButton = (userId, project) => {
 		const res = await fetch('/api/funding/opportunities');
 		const data = await res.json();
 		pageAdder.assignListToElement(`opportunities`, data, (item) => fundingOpportunityToHTML(project, item));
+		resultingButton.remove();
 	});
 
 	document.getElementById('opportunity-section').appendChild(resultingButton);
@@ -333,14 +338,14 @@ const addRequestCollaboration = async (userDetails, project) => {
 			});
 
 			if (response.ok) {
-				alert('Collaboration request sent successfully!');
+				successToast('Collaboration request sent successfully!');
 			} else {
-				const error = await response.text();
-				alert(`Error: ${error}`);
+				const error = await response.json();
+				failToast(`Error: ${error.error}`);
 			}
 		} catch (error) {
 			console.error('Error sending request:', error);
-			alert('Failed to send collaboration request.');
+			failToast('Failed to send collaboration request.');
 		}
 	});
 
@@ -366,14 +371,14 @@ const inviteCollaborator = async (accountId, projectId, role) => {
 		});
 
 		if (response.ok) {
-			alert('Collaboration invite sent successfully!');
+			successToast('Collaboration invite sent successfully!');
 		} else {
-			const error = await response.text();
-			alert(`Error: ${error}`);
+			const error = await response.json();
+			failToast(`Error: ${error.error}`);
 		}
 	} catch (error) {
 		console.error('Error sending request:', error);
-		alert('Failed to send collaboration request.');
+		failToast('Failed to send collaboration request.');
 	}
 };
 
@@ -387,7 +392,7 @@ const milestoneFormListener = (project) => {
 		nameInput.value = '';
 		descriptionInput.value = '';
 		if (!name || !description) {
-			alert('Please fill out both fields.');
+			failToast('Please fill out both fields.');
 			return;
 		}
 		const projectId = project.id;
@@ -526,7 +531,7 @@ const addUploadButton = (userDetails, project) => {
 		fileInput.addEventListener('change', async (event) => {
 			const file = event.target.files[0];
 			if (!file) {
-				alert("No file selected.");
+				failToast("No file selected.");
 				return;
 			}
 
@@ -547,14 +552,14 @@ const addUploadButton = (userDetails, project) => {
 				const data = await response.json();
 
 				if (response.ok) {
-					alert('File uploaded successfully!');
+					successToast('File uploaded successfully!');
 					loadProjectFiles(project);
 				} else {
-					alert(`Error: ${data.error || 'Failed to upload file.'}`);
+					failToast(`Error: ${data.message || 'Failed to upload file.'}`);
 				}
 			} catch (error) {
 				console.error('Error uploading file:', error);
-				alert('An error occurred while uploading the file.');
+				failToast('An error occurred while uploading the file.');
 			} finally {
 				loadingMessage.remove();
 			}

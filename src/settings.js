@@ -1,4 +1,5 @@
 import userInfo from './userInfo.js';
+import { failToast, successToast } from './toast.js';
 
 let info = {};
 
@@ -46,9 +47,9 @@ const changeDetails = async() => {
 		});
 
 		if (res.ok) {
-			alert('Succesfully changed details!');
+			successToast('Succesfully changed details!');
 		} else {
-			alert('Failed updating details.');
+			failToast('Failed updating details.');
 		}
 	} catch(error) {
 		console.error('Error changing data users:', error);
@@ -81,7 +82,7 @@ const deleteButton = document.getElementById('deleteButton');
 deleteButton.addEventListener('click', async function() {
 	const userConfirmed = confirm("Are you sure you want to delete your account?");
 	if (!userConfirmed) {
-		alert("Account deletion canceled.");
+		failToast("Account deletion canceled.");
 		return;
 	}
 

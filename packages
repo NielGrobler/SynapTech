@@ -1,2 +1,2 @@
-npm install express passport passport-google-oauth20 passport-orcid express-session dotenv mssql joi jest jsdom node-fetch @azure/storage-blob multer axios mime-type file-type socket.io
+npm install express passport passport-google-oauth20 passport-orcid express-session dotenv mssql joi jest jsdom node-fetch @azure/storage-blob multer axios mime-type file-type socket.io socket.io-client
 

@@ -96,7 +96,7 @@ describe('dashboard.js', () => {
 		const filteredProjects = [{ name: 'Test Project A' }];
 		stringSearch.getComparator.mockReturnValue(() => true);
 
-		projectSearchForm.dispatchEvent(new Event('submit', { bubbles: true }));
+		projectSearchForm.dispatchEvent(new Event('input', { bubbles: true }));
 
 		await vi.runAllTimersAsync();
 		await Promise.resolve();

@@ -215,7 +215,7 @@ const alreadyInvited = async (accountId, projectId) => {
 		.input("account_id", accountId)
 		.input("project_id", projectId)
 		.query(`
-			SELECT *
+			SELECT project_id
 			FROM CollaborationInvite
 			WHERE account_id = {{account_id}} AND project_id = {{project_id}};
 		`)
@@ -270,7 +270,7 @@ const checkProjectNameUniqueness = async (project, user) => {
 		.input('name', project.name)
 		.input('created_by_account_id', user.id)
 		.query(`
-			SELECT *
+			SELECT project_id
 			FROM Project
 			WHERE Project.name = {{name}} AND Project.created_by_account_id = {{created_by_account_id}};
 		`)
@@ -960,8 +960,6 @@ const toggleMilestone = async (milestoneId) => {
 }
 
 const deductFunding = async (projectId, amount, name) => {
-	await sender.send(new DatabaseQueryBuilder()
-		.input
 };
 
 const getProjectFunding = async (projectId, amount) => {

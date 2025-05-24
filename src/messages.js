@@ -1,21 +1,30 @@
+
+import { failToast, successToast } from './toast.js';
+
 const uploadBtn = document.getElementById("uploadBtn");
 const trueUploadBtn = document.getElementById("file");
 
-uploadBtn.addEventListener("click", () => {
-	trueUploadBtn.click();
-});
+const setupEventListeners = () => {
+	const uploadBtn = document.getElementById("uploadBtn");
+	const trueUploadBtn = document.getElementById("file");
 
-trueUploadBtn.addEventListener("change", () => {
-	const txt = document.getElementById("attachment-name");
-	const file = trueUploadBtn.files[0];
-	if (file) {
-		txt.innerHTML = `Selected file '${file.name}' for upload`;
-	} else {
-		txt.innerHTML = "No file chosen";
+	if (uploadBtn && trueUploadBtn) {
+		uploadBtn.addEventListener("click", () => {
+			trueUploadBtn.click();
+		});
+
+		trueUploadBtn.addEventListener("change", () => {
+			const txt = document.getElementById("attachment-name");
+			const file = trueUploadBtn.files[0];
+			if (file) {
+				txt.innerHTML = `Selected file '${file.name}' for upload`;
+			} else {
+				txt.innerHTML = "No file chosen";
+			}
+		});
 	}
-});
-
-function scrollToBottomIfNeeded() {
+};
+const scrollToBottomIfNeeded = () => {
 	const messages = document.getElementById('messages');
 	const delta = 100;
 
@@ -29,7 +38,7 @@ function scrollToBottomIfNeeded() {
 	});
 }
 
-async function fetchProjects() {
+const fetchProjects = async () => {
 	try {
 		const response = await fetch('/api/user/projectNames', {
 			method: 'GET',
@@ -69,12 +78,12 @@ async function fetchProjects() {
 		return data;
 	} catch (error) {
 		console.error('Failed to fetch projects:', error);
-		alert('There was an error fetching your projects. Please try again later.');
+		failToast('There was an error fetching your projects. Please try again later.');
 		return [];
 	}
 }
 
-function addMessageToDOM(msg) {
+const addMessageToDOM = (msg) => {
 	const li = document.createElement('li');
 	const name = document.createElement('strong');
 	const messageBody = document.createElement('p');
@@ -106,11 +115,29 @@ function addMessageToDOM(msg) {
 	scrollToBottomIfNeeded();
 }
 
+const scrollDown = () => {
+	const scrollBtn = document.getElementById('scroll-to-bottom');
+
+	scrollBtn.addEventListener('click', () => {
+		window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+	});
+
+	window.addEventListener('scroll', () => {
+		const scrolledToBottom =
+			window.innerHeight + window.scrollY >= document.body.scrollHeight - 10;
+
+		scrollBtn.style.display = scrolledToBottom ? 'none' : 'block';
+	});
+
+	window.dispatchEvent(new Event('scroll'));
+}
+
 let selectedRoomId;
 let hasJoinedRoom = false;
 const socket = io({ auth: { token: localStorage.getItem('jwt') } });
 
 document.addEventListener('DOMContentLoaded', async () => {
+	setupEventListeners();
 	const projects = await fetchProjects();
 	if (!projects.length) return;
 	selectedRoomId = projects[0].id;
@@ -118,6 +145,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 	if (messages) messages.scrollTop = messages.scrollHeight;
 
 	socket.emit('join-room', { roomId: selectedRoomId });
+	scrollDown();
 });
 
 socket.on('connect', () => {
@@ -138,7 +166,7 @@ socket.on('message', addMessageToDOM);
 socket.on('error', (err) => {
 	const msg = typeof err === 'string' ? err : err.message;
 	console.error('Server error:', msg);
-	alert(msg);
+	failToast(msg);
 });
 
 socket.on('download-response', (file) => {
@@ -155,7 +183,7 @@ socket.on('download-response', (file) => {
 
 document.getElementById('sendBtn').onclick = async () => {
 	if (!hasJoinedRoom) {
-		alert('A room must be joined before chatting.');
+		failToast('A room must be joined before chatting.');
 		return;
 	}
 
@@ -183,3 +211,5 @@ document.getElementById('sendBtn').onclick = async () => {
 	document.getElementById('text').value = '';
 	fileInput.value = '';
 };
+
+export default { scrollToBottomIfNeeded, fetchProjects, addMessageToDOM };
