@@ -4,6 +4,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- code for loading in critical CSS because otherwise it keeps flashing white on dark mode -->
+    <script>
+    (function() {
+        const savedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+        
+        const criticalCSS = `html,body{background:var(--bg-color)}[data-theme=light]{--bg-color:#fff;--text-color:#000;}[data-theme=dark]{--bg-color:#121212;--text-color:#fff;}`;
+        
+        const style = document.createElement('style');
+        style.id = 'anti-fouc';
+        style.textContent = criticalCss;
+        document.head.appendChild(style);
+    })();
+    </script>
+
+    <link rel="preload" href="/styles.css" as="style" onload="this.onload=null;this.rel='stylesheet';document.getElementById('anti-fouc').remove();">
+    <noscript><link rel="stylesheet" href="/styles.css"></noscript>
+    <script src="/styleLoad.js"></script>
+
     <link rel="stylesheet" href="/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,9 +39,13 @@
 </head>
 
 <body>
-    <nav class="inset">
-        <a href="javascript:history.back()">&larr; Back</a>
-    </nav>
+    <nav class="inset secondary fill accent-underline flex-prop-1-5">
+		<button class="nav-item flex-row center-content-v gap-small"
+			onclick="history.back()">
+			<i class='bx bx-chevron-left'></i>
+			Back
+		</button>
+	</nav>
 
     <main id="dashboard-content">
         <header class="dark">

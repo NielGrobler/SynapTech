@@ -28,7 +28,7 @@ const genInviteReqHTML = (invite) => {
 	const container = document.createElement('li');
 	container.classList.add('highlight-hover');
 	const nameParagraph = document.createElement('p');
-	nameParagraph.innerHTML = `<strong>${invite.account_name}</strong> has sent an invite for you to colloborate on <strong>${invite.project_name}</strong> as a <strong>${invite.role}</strong>.`;
+	nameParagraph.innerHTML = `<strong>${invite.account_name}</strong> has sent an invite for you to collaborate on <strong>${invite.project_name}</strong> as a <strong>${invite.role}</strong>.`;
 	container.appendChild(nameParagraph);
 	let buttonSection = document.createElement('section');
 	buttonSection.classList.add('flex-row', 'gap', 'highlight-hover', 'width-25', 'split');
