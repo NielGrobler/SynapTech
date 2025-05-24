@@ -380,10 +380,10 @@ describe('Router Module Tests', () => {
 		});
 
 		describe('GET /reports/funding', () => {
-			it('should serve fundingReports.html for authenticated users', async () => {
+			it('should serve fundingReport.html for authenticated users', async () => {
 				const res = await request(app).get('/reports/funding')
 					.set('authenticated', 'true');
-				expect(res.text).toBe('served fundingReports.html');
+				expect(res.text).toBe('served fundingReport.html');
 			});
 
 			it('should reject unauthenticated requests', async () => {
