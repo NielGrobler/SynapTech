@@ -2,8 +2,35 @@
 <html lang="en">
 
 <head>
+	<script type="module" src="/savedTheme.js"></script>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+	<!-- code for loading in critical CSS because otherwise it keeps flashing white on dark mode -->
+	<script>
+		(function () {
+			const savedTheme = localStorage.getItem('theme');
+			const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+			const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+			document.documentElement.setAttribute('data-theme', theme);
+
+			const criticalCss = `html,body{background:var(--bg-color)}[data-theme=light]{--bg-color:#fff;--text-color:#000;}[data-theme=dark]{--bg-color:#121212;--text-color:#fff;}`;
+
+			const style = document.createElement('style');
+			style.id = 'anti-fouc';
+			style.textContent = criticalCss;
+			document.head.appendChild(style);
+		})();
+	</script>
+
+	<link rel="preload" href="/styles.css" as="style"
+		onload="this.onload=null;this.rel='stylesheet';document.getElementById('anti-fouc').remove();">
+	<noscript>
+		<link rel="stylesheet" href="/styles.css">
+	</noscript>
+	<script src="/styleLoad.js"></script>
+
+
 	<title>Unilink | View Project</title>
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
 	<link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,87 +40,136 @@
 		rel="stylesheet">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 	<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-
 	<link rel="stylesheet" href="/styles.css" />
 	<script type="module" src="/savedTheme.js"></script>
 </head>
 
 <body>
+	<section id="toast-container" aria-live="polite" aria-atomic="true"></section>
 	<nav class="inset secondary fill accent-underline">
-		<button class="nav-item flex-row center-content-v gap-small" onclick="history.back()">
+		<button class="nav-item flex-row center-content-v gap-small"
+			onclick="window.location.href='/dashboard'">
 			<i class='bx bx-chevron-left'></i>
 			Back
 		</button>
 	</nav>
-
-	<main class="inset flex-col gap-medium">
-		<section class="border-solid-thin shadow">
-			<section id="projectCard" class="inset">
-				<section class="split gap" id="infoAndName">
-					<h1 id="projectName" class="large-text">Placeholder</h1>
-					<section
-						class="flex-row very-round secondary space-between padding-vert-xsmall small-text gap-medium">
-						<p>Visibility: <span id="projectIsPublic">Private</span></p>
-						<p>Created by: <span id="projectCreatedBy">Ellie</span></p>
-						<p>Status: <span id="projectStatus">In progress</span></p>
-					</section>
+	<main class="inset flex-row gap-medium">
+		<article id="projectCard" class="tight-stack project-article usual-bg">
+			<header id="infoAndName" class="split gap accent-underline">
+				<h1 id="projectName" class="large-text">Placeholder</h1>
+				<section class="flex-row very-round secondary space-between padding-vert-xsmall small-text gap-medium"
+					aria-label="Project metadata">
+					<p>Visibility: <span id="projectIsPublic">Private</span></p>
+					<p>Created by: <span id="projectCreatedBy">Ellie</span></p>
+					<p>Status: <span id="projectStatus">In progress</span></p>
 				</section>
-				<h1 class="accent-underline">Description</h1>
+			</header>
+
+			<section class="project-description">
 				<p id="projectDescription">Loading...</p>
 			</section>
 
+			<section id='project-milestones'>
+				<section class='flex-row center-content-v gap split'>
+					<h2 class='to-start'>Milestones<h2>
+							<button id="add-milestone-btn"
+								class="very-round pad-small-h no-pad-v">
+								<i id='milestone-list-icon' class='bx bx-list-plus'></i>
+							</button>
+				</section>
+				<ul id='milestone-list' class="numbered-ul tight-stack gap"></ul>
+				<section id='milestone-form-section' class="visually-hidden">
+					<h3>Add Milestone</h3>
+					<form id="milestone-form">
+						<label for="milestoneName">Name</label>
+						<input type="text" placeholder="Add a name for your milestone..."
+							id="milestoneName" name="name" maxlength="1024" required
+							class="milestone-input" />
+
+						<label for="milestoneDescription">Description</label>
+						<textarea id="milestoneDescription"
+							placeholder="Add a description for your milestone..."
+							name="description" maxlength="1024" required></textarea>
+
+						<button type="submit">Submit</button>
+					</form>
+				</section>
+			</section>
+		</article>
+
+		<aside class="project-sidebar">
+
 			<section id="collaborators" class="inset">
-				<h1 class="accent-underline">Collaborators</h1>
-				<ul id="collaboratorList">
-				</ul>
+				<h2 class="accent-underline">
+					<i class='bx bx-user'></i>
+					Collaborators
+				</h2>
+				<ul id="collaboratorList"></ul>
 			</section>
 
 			<section id="reviews" class="inset">
-				<h1 class="accent-underline">Reviews</h1>
+				<section id='reviews-header' class='split accent-underline'>
+					<h2>
+						<i class='bx bx-happy-alt'></i>
+						Reviews
+					</h2>
+					<button id="review-list-drop-btn" class="very-round pad-small-h no-pad-v">
+						<i id='review-drop-icon' class='bx bx-chevron-down'></i>
+					</button>
+				</section>
 				<ul id="reviewsList">
 					<li>Loading reviews...</li>
 				</ul>
+
 				<nav id="reviewsPagination" class="flex-row gap-medium" style="display: none;">
 					<button id="loadMoreReviews" class="secondary">Load More Reviews</button>
 				</nav>
-				<button type="button" class="primary-button" onclick="reviewProject()">Review
+				<button type="button" class="primary-button small-margin-top"
+					onclick="reviewProject()">Review
 					Project</button>
 			</section>
 
 			<section id="files" class="inset">
-				<section class="split">
-					<h1 class="large-text accent-underline">Project Files</h1>
+				<section class="split center-content-v accent-underline">
+					<h2>
+						<i class='bx bx-folder-open'></i>
+						Project Files
+					</h2>
 					<button id="uploadButton" class="very-round pad-small-h no-pad-v"
 						style="display: none;">
 						<i class='bx bx-plus'></i>
 					</button>
 				</section>
-
-				<ul id="filesList">
-				</ul>
+				<ul id="filesList"></ul>
 			</section>
 
-		</section>
+			<section id="opportunity-section" class="inset">
+				<h2 class="accent-underline">
+					<i class='bx bx-money'></i>
+					Funding Opportunity
+				</h2>
+				<ul id="opportunities"></ul>
+			</section>
+
+		</aside>
+
 	</main>
+
 	<footer class="inset">
 		<p>&copy; 2025 Unilink. All rights reserved.</p>
 	</footer>
-
-	<script type="module" src="/viewProject.js"></script>
-	<script type="module">
-		import {initPage} from '/viewProject.js';
-		await initPage();
-	</script>
-
-	<script>
-		function reviewProject() {
-			const projectId = new URLSearchParams(window.location.search).get('id');
-			window.location.href = `/reviewProject?id=${projectId}`;
-		}
-	</script>
-
 </body>
 
+<script type="module">
+	import {initPage} from '/viewProject.js';
+	await initPage();
+</script>
 
+<script>
+	function reviewProject() {
+		const projectId = new URLSearchParams(window.location.search).get('id');
+		window.location.href = `/reviewProject?id=${projectId}`;
+	}
+</script>
 
 </html>

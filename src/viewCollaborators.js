@@ -1,5 +1,6 @@
 
 import pageAdder from './pageAdder.js'
+import { failToast, successToast } from './toast.js';
 
 const generateCollaboratorRequestHTML = (collaborator) => {
 	const container = document.createElement('li'); container.classList.add('highlight-hover'); const nameParagraph = document.createElement('p'); nameParagraph.innerHTML = `<strong>${collaborator.account_name}</strong> is requesting to collaborate on the <strong>${collaborator.project_name}</strong>`; container.appendChild(nameParagraph); const visibilityParagraph = document.createElement('p'); visibilityParagraph.innerText = `Project is ${collaborator.project_is_public ? 'public' : 'private'}.`; container.appendChild(visibilityParagraph); const roleParagraph = document.createElement('p'); roleParagraph.innerText = `Role: ${collaborator.role}`; container.appendChild(roleParagraph); let buttonSection = document.createElement('section'); buttonSection.classList.add('flex-row', 'gap', 'highlight-hover', 'width-25', 'split'); const acceptButton = document.createElement('button'); acceptButton.classList.add('flex-row', 'center-content-v', 'gap-small'); acceptButton.innerHTML = `<i class='bx bx-check' ></i>Accept`;
@@ -21,11 +22,11 @@ const handleAccept = async (collaborator) => {
 			await fetchCollaborators();
 		} else {
 			const error = await response.text();
-			alert(`Error: ${error}`);
+			failToast(`Error: ${error}`);
 		}
 	} catch (error) {
 		console.error('Error sending request:', error);
-		alert('Failed to send collaboration request.');
+		failToast('Failed to send collaboration request.');
 	}
 }
 
@@ -42,19 +43,27 @@ const handleReject = async (collaborator) => {
 			await fetchCollaborators();
 		} else {
 			const error = await response.text();
-			alert(`Error: ${error}`);
+			failToast(`Error: ${error}`);
 		}
 	} catch (error) {
 		console.error('Error sending request:', error);
-		alert('Failed to send collaboration request.');
+		failToast('Failed to send collaboration request.');
 	}
 }
 const fetchCollaborators = async () => {
-	let res = await fetch('/api/collaborator');
-	let collaboratorData = await res.json();
-	pageAdder.assignListToElement('collaboratorRequests', collaboratorData, generateCollaboratorRequestHTML); 
+	try {
+		const res = await fetch('/api/collaborator');
+		if (!res.ok) {
+			throw new Error(await res.json());
+		}
+		let collaboratorData = await res.json();
+		pageAdder.assignListToElement('collaboratorRequests', collaboratorData, generateCollaboratorRequestHTML);
+	} catch (error) {
+		failToast('Failed to fetch collaborators.');
+	}
 }
+
 if (typeof vi === 'undefined' && process.env.VITEST !== 'true') { //to account for a specific testing issue
-	(async () => {	await fetchCollaborators();})();
+	(async () => { await fetchCollaborators(); })();
 }
 export default { fetchCollaborators, handleAccept, handleReject, generateCollaboratorRequestHTML }

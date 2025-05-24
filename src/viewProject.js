@@ -1,8 +1,9 @@
 
 import userInfo from './userInfo.js'
 import pageAdder from './pageAdder.js';
+import { failToast, successToast } from './toast.js';
 
-function populateCollaborators(project) {
+export const populateCollaborators = (project) => {
 	let list = document.getElementById('collaboratorList');
 	list.innerHTML = '';
 
@@ -18,7 +19,7 @@ function populateCollaborators(project) {
 	});
 }
 
-const fetchProject = async () => {
+export const fetchProject = async () => {
 	const params = new URLSearchParams(window.location.search);
 	const projectId = params.get('id');
 	if (!projectId) {
@@ -30,7 +31,7 @@ const fetchProject = async () => {
 	return project;
 }
 
-const fetchProjectFiles = async (project) => {
+export const fetchProjectFiles = async (project) => {
 	try {
 		const res = await fetch(`/api/project/${project.id}/files`);
 
@@ -46,7 +47,7 @@ const fetchProjectFiles = async (project) => {
 	}
 }
 
-const downloadProjectFile = async (projectId, uuid, filename, ext) => {
+export const downloadProjectFile = async (projectId, uuid, filename, ext) => {
 	try {
 		const res = await fetch(`/api/project/${projectId}/file/${uuid}/${ext}`);
 
@@ -69,20 +70,148 @@ const downloadProjectFile = async (projectId, uuid, filename, ext) => {
 		URL.revokeObjectURL(url);
 	} catch (err) {
 		console.error("Error downloading file:", err.message || err);
-		alert("There was an error downloading the file.");
+		failToast("There was an error downloading the file.");
 	}
 };
 
-const getFileExt = (fileName) => {
+export const fetchMilestones = async (projectId) => {
+	try {
+		const res = await fetch(`/api/project/${projectId}/milestones`);
+
+		if (!res.ok) {
+			throw new Error(`Failed to download file: ${res.statusText}`);
+		}
+
+		const data = await res.json();
+		return data;
+	} catch (err) {
+		console.error("Error:", err.message || err);
+		failToast("Error fetching milestones.");
+	}
+}
+
+export const postMilestone = async (projectId, name, description) => {
+	const resp = await fetch(`/api/post/project/${projectId}/milestone`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify({ "name": name, "description": description })
+	});
+
+	if (resp.ok) {
+		successToast('Milestone successfully posted!');
+	} else {
+		const error = await resp.json();
+		failToast(`Error: ${error.error}`);
+	}
+}
+
+export const toggleMilestone = async (projectId, milestoneId) => {
+	const resp = await fetch(`/api/toggle/project/${projectId}/milestone`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify({ "milestoneId": milestoneId })
+	});
+
+	if (!resp.ok) {
+		const error = await resp.json();
+		failToast(`Error: ${error.error}`);
+	}
+}
+
+export const toggleMilestoneForm = (e) => {
+	e.preventDefault();
+	const formSection = document.getElementById('milestone-form-section');
+	const icon = document.getElementById('milestone-list-icon');
+	if (formSection.classList.contains('visually-hidden')) {
+		console.log("WENT HERE");
+		formSection.classList.remove('visually-hidden');
+		icon.classList.remove('bx-list-plus');
+		icon.classList.add('bx-list-ol');
+	} else {
+		formSection.classList.add('visually-hidden');
+		icon.classList.add('bx-list-plus');
+		icon.classList.remove('bx-list-ol');
+	}
+}
+
+export const setMilestoneIcon = (icon, wasChecked) => {
+	if (wasChecked) {
+		icon.classList.remove('bx-checkbox');
+		icon.classList.add('bx-checkbox-checked');
+	} else {
+		icon.classList.remove('bx-checkbox-checked');
+		icon.classList.add('bx-checkbox');
+	}
+}
+
+export const milestoneToHTML = (projectId, milestone) => {
+	const name = milestone.name;
+	const description = milestone.description;
+	const id = milestone.project_milestone_id;
+
+	const article = document.createElement('article');
+	const header = document.createElement('h4');
+	const span = document.createElement('span');
+	const icon = document.createElement('i');
+	let isChecked = milestone.completed_at !== null;
+
+	icon.id = `icon-${id}`;
+	icon.classList.add('bx');
+	span.appendChild(icon);
+	span.appendChild(header);
+	span.classList.add('flex-row', 'center-content-v', 'no-pad-v', 'tight-stack');
+
+	const para = document.createElement('p');
+	//para.classList.add('small-text');
+	header.innerText = name;
+	header.classList.add('strike-animate');
+	if (isChecked) {
+		header.classList.add('strike-now');
+		header.classList.add('green');
+	}
+	para.innerText = description;
+	article.appendChild(span);
+	article.appendChild(para);
+	article.dataset.id = id;
+	article.classList.add('highlight-hover', 'no-pad-v', 'tight-stack', 'grey-left-border');
+
+	setMilestoneIcon(icon, isChecked);
+	isChecked = !isChecked;
+	article.addEventListener('click', async (e) => {
+		e.preventDefault();
+		await toggleMilestone(projectId, article.dataset.id);
+		setMilestoneIcon(icon, isChecked);
+		header.classList.remove('strike-now', 'strike-reverse');
+		void header.offsetWidth;
+		if (isChecked) {
+			header.classList.add('green');
+			header.classList.add('strike-now');
+		} else {
+			header.classList.remove('green');
+			header.classList.add('strike-reverse');
+		}
+		isChecked = !isChecked;
+	});
+
+	const li = document.createElement('li');
+	li.appendChild(article);
+
+	return li;
+}
+
+export const getFileExt = (fileName) => {
 	const parts = fileName.split('.');
 	return parts.length > 1 ? parts.pop() : '';
 };
 
-const projectFileToHTML = (projectFile) => {
+export const projectFileToHTML = (projectFile) => {
 	const li = document.createElement('li');
 	const link = document.createElement('a');
 	link.href = '#';
-	console.log(projectFile);
 	link.textContent = `${projectFile.original_filename}`;
 	link.dataset.projectId = projectFile.project_id;
 	link.dataset.ext = getFileExt(projectFile.original_filename);
@@ -95,7 +224,7 @@ const projectFileToHTML = (projectFile) => {
 			await downloadProjectFile(link.dataset.projectId, link.dataset.uuid, link.dataset.name, link.dataset.ext);
 		} catch (err) {
 			console.error("Error downloading the project file:", err);
-			alert("There was an error downloading the file.");
+			failToast("There was an error downloading the file.");
 		}
 	});
 	li.appendChild(link);
@@ -103,9 +232,8 @@ const projectFileToHTML = (projectFile) => {
 	return li;
 }
 
-const isParticipant = (userId, project) => {
+export const isParticipant = (userId, project) => {
 	if (userId === project.created_by_account_id) {
-		console.log("WENT HERE");
 		return true;
 	}
 
@@ -118,7 +246,78 @@ const isParticipant = (userId, project) => {
 	return false;
 }
 
-const addRequestCollaboration = async (userDetails, project) => {
+export const postFundingRequest = async (opportunityId, projectId) => {
+	console.log(opportunityId, projectId);
+	const resp = await fetch('/api/post/funding/request', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify({ "opportunityId": opportunityId, "projectId": projectId })
+	});
+
+	if (resp.ok) {
+		successToast('Funding request sent successfully!');
+	} else {
+		const error = await resp.json();
+		console.log(error);
+		failToast(`Error: ${error.error}`);
+	}
+
+}
+
+export const fundingOpportunityToHTML = (project, item) => {
+	const title = item.organisation_name;
+	const description = item.description;
+	const currencyCode = item.currency_code;
+	const grantAmount = item.grant_amount;
+
+	const article = document.createElement('article');
+	const header = document.createElement('h1');
+	const para = document.createElement('p');
+	const grantBlock = document.createElement('p');
+
+	header.innerText = title;
+	para.innerText = description;
+	grantBlock.innerText = `${grantAmount} (${currencyCode})`;
+
+	article.appendChild(header);
+	article.appendChild(para);
+	article.appendChild(grantBlock);
+	article.classList.add('highlight-hover');
+
+	article.addEventListener('click', (e) => {
+		e.preventDefault();
+		postFundingRequest(item.funding_opportunity_id, project.id);
+	});
+
+	return article;
+}
+
+export const addFundingButton = (userId, project) => {
+	console.log('[addFundingButton]');
+	if (!isParticipant(userId, project)) {
+		return;
+	}
+
+	let resultingButton = document.createElement('button');
+	resultingButton.id = 'request-funding-button-id';
+	resultingButton.innerText = 'Request Funding';
+
+	resultingButton.addEventListener('click', async (e) => {
+		e.preventDefault();
+		const res = await fetch('/api/funding/opportunities');
+		const data = await res.json();
+		pageAdder.assignListToElement(`opportunities`, data, (item) => fundingOpportunityToHTML(project, item));
+		resultingButton.remove();
+	});
+
+	document.getElementById('opportunity-section').appendChild(resultingButton);
+
+	return resultingButton;
+}
+
+export const addRequestCollaboration = async (userDetails, project) => {
 	if (isParticipant(userDetails.id, project)) {
 		return false;
 	}
@@ -138,14 +337,14 @@ const addRequestCollaboration = async (userDetails, project) => {
 			});
 
 			if (response.ok) {
-				alert('Collaboration request sent successfully!');
+				successToast('Collaboration request sent successfully!');
 			} else {
-				const error = await response.text();
-				alert(`Error: ${error}`);
+				const error = await response.json();
+				failToast(`Error: ${error.error}`);
 			}
 		} catch (error) {
 			console.error('Error sending request:', error);
-			alert('Failed to send collaboration request.');
+			failToast('Failed to send collaboration request.');
 		}
 	});
 
@@ -154,13 +353,13 @@ const addRequestCollaboration = async (userDetails, project) => {
 	return true;
 }
 
-const createUserList = () => {
+export const createUserList = () => {
 	let result = document.createElement('ul');
 	result.id = 'users';
 	return result;
 }
 
-const inviteCollaborator = async (accountId, projectId, role) => {
+export const inviteCollaborator = async (accountId, projectId, role) => {
 	try {
 		const response = await fetch('/api/collaboration/invite', {
 			method: 'POST',
@@ -171,33 +370,39 @@ const inviteCollaborator = async (accountId, projectId, role) => {
 		});
 
 		if (response.ok) {
-			alert('Collaboration invite sent successfully!');
+			successToast('Collaboration invite sent successfully!');
 		} else {
-			const error = await response.text();
-			alert(`Error: ${error}`);
+			const error = await response.json();
+			failToast(`Error: ${error.error}`);
 		}
 	} catch (error) {
 		console.error('Error sending request:', error);
-		alert('Failed to send collaboration request.');
+		failToast('Failed to send collaboration request.');
 	}
 };
 
-var inviteFormCreated = false;
-var count = 0;
-const createInviteForm = (project) => {
-	const projectId = project.id;
-	if (inviteFormCreated) {
-		if (count > 5) {
-			alert("Fine. You win.");
-			document.body.innerHTML = '';
-		} else if (count > 4) {
-			alert("Seriously stop.");
-		} else if (count > 3) {
-			alert("Stop clicking her.");
+export const milestoneFormListener = (project) => {
+	return async (e) => {
+		e.preventDefault();
+		const nameInput = document.getElementById('milestoneName');
+		const descriptionInput = document.getElementById('milestoneDescription')
+		const name = nameInput.value.trim();
+		const description = descriptionInput.value.trim();
+		nameInput.value = '';
+		descriptionInput.value = '';
+		if (!name || !description) {
+			failToast('Please fill out both fields.');
+			return;
 		}
-		count++;
-		return;
+		const projectId = project.id;
+		await postMilestone(projectId, name, description);
+		await populateMilestones(project);
 	}
+}
+
+var inviteFormCreated = false;
+export const createInviteForm = (project) => {
+	const projectId = project.id;
 	inviteFormCreated = true;
 	let form = document.createElement('form');
 	form.id = "user-search-form";
@@ -239,7 +444,7 @@ const createInviteForm = (project) => {
 				description.textContent = rawUser.bio;
 				const id = rawUser.account_id;
 				let buttonSection = document.createElement('section');
-				buttonSection.classList.add('flex-row', 'gap', 'width-30', 'split');
+				buttonSection.classList.add('flex-col', 'gap', 'to-start');
 
 				const buttonAddAsResearcher = document.createElement('button');
 				const buttonAddAsReviewer = document.createElement('button');
@@ -276,7 +481,7 @@ const createInviteForm = (project) => {
 	return form;
 }
 
-const addCollaboratorButton = async (userDetails, project) => {
+export const addCollaboratorButton = async (userDetails, project) => {
 	if (project.created_by_account_id !== userDetails.id) {
 		return false;
 	}
@@ -296,9 +501,10 @@ const addCollaboratorButton = async (userDetails, project) => {
 	return true;
 }
 
-const loadProjectFiles = (project) => {
+export const loadProjectFiles = (project) => {
 	fetchProjectFiles(project)
 		.then((files) => {
+			const filesList = document.getElementById("filesList");
 			filesList.innerHTML = '';
 			pageAdder.assignListToElement("filesList", files, projectFileToHTML);
 		})
@@ -307,7 +513,7 @@ const loadProjectFiles = (project) => {
 		});
 }
 
-const addUploadButton = (userDetails, project) => {
+export const addUploadButton = (userDetails, project) => {
 	if (project.created_by_account_id !== userDetails.id) {
 		return false;
 	}
@@ -325,7 +531,7 @@ const addUploadButton = (userDetails, project) => {
 		fileInput.addEventListener('change', async (event) => {
 			const file = event.target.files[0];
 			if (!file) {
-				alert("No file selected.");
+				failToast("No file selected.");
 				return;
 			}
 
@@ -346,14 +552,14 @@ const addUploadButton = (userDetails, project) => {
 				const data = await response.json();
 
 				if (response.ok) {
-					alert('File uploaded successfully!');
+					successToast('File uploaded successfully!');
 					loadProjectFiles(project);
 				} else {
-					alert(`Error: ${data.error || 'Failed to upload file.'}`);
+					failToast(`Error: ${data.message || 'Failed to upload file.'}`);
 				}
 			} catch (error) {
 				console.error('Error uploading file:', error);
-				alert('An error occurred while uploading the file.');
+				failToast('An error occurred while uploading the file.');
 			} finally {
 				loadingMessage.remove();
 			}
@@ -365,7 +571,13 @@ const addUploadButton = (userDetails, project) => {
 	return true;
 }
 
-const populateElements = async () => {
+export const populateMilestones = async (project) => {
+	const data = await fetchMilestones(project.id);
+	document.getElementById('milestone-list').innerHTML = '';
+	pageAdder.assignListToElement(`milestone-list`, data, (item) => milestoneToHTML(project.id, item));
+}
+
+export const populateElements = async () => {
 	const project = await fetchProject();
 	if (!project) {
 		document.getElementById('projectName').innerText = "Could not display project.";
@@ -376,17 +588,49 @@ const populateElements = async () => {
 	document.getElementById('projectIsPublic').innerHTML = project.is_public ? 'Public' : 'Private';
 	document.getElementById('projectCreatedBy').innerHTML = project.author_name;
 	document.getElementById('projectDescription').innerHTML = project.description;
+	document.getElementById('milestone-form').addEventListener('submit', milestoneFormListener(project));
 
 	const info = await userInfo.fetchFromApi();
 	populateCollaborators(project);
 	addCollaboratorButton(info, project);
 	addRequestCollaboration(info, project)
 	addUploadButton(info, project);
+	addFundingButton(info.id, project);
+	populateMilestones(project);
+	document.getElementById('add-milestone-btn').addEventListener('click', toggleMilestoneForm);
 
-	document.addEventListener('DOMContentLoaded', () => {
-		loadProjectReviews(project);
-    loadProjectFiles(project);
+	const reviewListToggle = document.getElementById('review-list-drop-btn');
+	var isExpanded = true;
+	reviewListToggle.addEventListener('click', (e) => {
+		e.preventDefault();
+		const icon = document.getElementById('review-drop-icon');
+		const list = document.getElementById('reviewsList');
+		if (isExpanded) {
+			icon.classList.remove('bx-chevron-up');
+			icon.classList.add('bx', 'bx-chevron-down');
+			list.classList.add('visually-hidden');
+			list.style.maxHeight = list.scrollHeight + 'px';
+			requestAnimationFrame(() => {
+				list.style.transition = 'max-height 0.3s ease-out, opacity 0.3s ease-out';
+				list.style.maxHeight = '0';
+				list.style.opacity = '0';
+			});
+		} else {
+			icon.classList.remove('bx-chevron-down');
+			icon.classList.add('bx', 'bx-chevron-up');
+			list.classList.remove('visually-hidden');
+
+			requestAnimationFrame(() => {
+				list.style.transition = 'max-height 0.3s ease-in, opacity 0.3s ease-in';
+				list.style.maxHeight = list.scrollHeight + 'px';
+				list.style.opacity = '1';
+			});
+		}
+		isExpanded = !isExpanded;
 	});
+
+	loadProjectReviews(project);
+	loadProjectFiles(project);
 }
 
 export async function initPage() {
@@ -401,7 +645,7 @@ export async function initPage() {
 }
 
 // Fetch reviews for a project
-const fetchReviews = async (projectId, page = 1, limit = 10) => {
+export const fetchReviews = async (projectId, page = 1, limit = 10) => {
 	try {
 		const res = await fetch(`/api/reviews?projectId=${projectId}&page=${page}&limit=${limit}`);
 		if (!res.ok) {
@@ -415,13 +659,13 @@ const fetchReviews = async (projectId, page = 1, limit = 10) => {
 	}
 };
 
-const formatDate = (dateString) => {
+export const formatDate = (dateString) => {
 	const options = { year: 'numeric', month: 'short', day: 'numeric' };
 	return new Date(dateString).toLocaleDateString(undefined, options);
 };
 
 // Create a star rating display
-const createStarRating = (rating) => {
+export const createStarRating = (rating) => {
 	const figure = document.createElement('figure');
 	figure.className = 'star-rating';
 
@@ -442,71 +686,87 @@ const createStarRating = (rating) => {
 	return figure;
 };
 
-// Display reviews in the reviews section
-document.addEventListener('DOMContentLoaded', () => { //avoids this being run before loaded
-	const displayReviews = (reviews, append = false) => {
-		const reviewsList = document.getElementById('reviewsList');
+export const displayReviews = (reviews, append = false) => {
+	const reviewsList = document.getElementById('reviewsList');
 
+	if (!append) {
+		reviewsList.innerHTML = '';
+	}
+
+
+	if (!reviews || reviews.length === 0) { //reviews is undefined if empty? Bizarre
 		if (!append) {
-			reviewsList.innerHTML = '';
+			const emptyItem = document.createElement('li');
+			emptyItem.textContent = 'No reviews yet for this project.';
+			reviewsList.appendChild(emptyItem);
 		}
+		return;
+	}
 
-		if (reviews.length === 0) {
-			if (!append) {
-				const emptyItem = document.createElement('li');
-				emptyItem.textContent = 'No reviews yet for this project.';
-				reviewsList.appendChild(emptyItem);
+	reviews.forEach(review => {
+		const reviewItem = document.createElement('li');
+		reviewItem.className = 'review-item';
+
+		const ratingFigure = createStarRating(review.rating);
+
+		const commentParagraph = document.createElement('p');
+		commentParagraph.textContent = review.comment;
+
+		const reviewerInfo = document.createElement('p');
+		reviewerInfo.className = 'reviewer-info';
+		reviewerInfo.textContent = `${review.reviewer_name}, ${formatDate(review.created_at)}`;
+
+		reviewItem.appendChild(ratingFigure);
+		reviewItem.appendChild(commentParagraph);
+		reviewItem.appendChild(reviewerInfo);
+		reviewsList.appendChild(reviewItem);
+	});
+};
+
+// Load and display project reviews
+export const loadProjectReviews = async (project) => {
+	const reviewsSection = document.getElementById('reviews');
+	const paginationNav = document.getElementById('reviewsPagination');
+	let currentPage = 1;
+
+	const { reviews, totalCount } = await fetchReviews(project.id);
+	displayReviews(reviews);
+
+	if (totalCount > 10) {
+		paginationNav.style.display = 'flex';
+
+		const loadMoreBtn = document.getElementById('loadMoreReviews');
+		loadMoreBtn.addEventListener('click', async () => {
+			currentPage++;
+			const moreReviews = await fetchReviews(project.id, currentPage);
+			displayReviews(moreReviews.reviews, true);
+
+			if (currentPage * 10 >= totalCount) {
+				loadMoreBtn.style.display = 'none';
 			}
-			return;
-		}
-
-		reviews.forEach(review => {
-			const reviewItem = document.createElement('li');
-			reviewItem.className = 'review-item';
-
-			const ratingFigure = createStarRating(review.rating);
-
-			const commentParagraph = document.createElement('p');
-			commentParagraph.textContent = review.comment;
-
-			const reviewerInfo = document.createElement('p');
-			reviewerInfo.className = 'reviewer-info';
-			reviewerInfo.textContent = `${review.reviewer_name}, ${formatDate(review.created_at)}`;
-
-			reviewItem.appendChild(ratingFigure);
-			reviewItem.appendChild(commentParagraph);
-			reviewItem.appendChild(reviewerInfo);
-			reviewsList.appendChild(reviewItem);
 		});
-	};
+	}
+};
 
-	// Load and display project reviews
-	const loadProjectReviews = async (project) => {
-		const reviewsSection = document.getElementById('reviews');
-		const paginationNav = document.getElementById('reviewsPagination');
-		let currentPage = 1;
-
-		const { reviews, totalCount } = await fetchReviews(project.id);
-		displayReviews(reviews);
-
-		if (totalCount > 10) {
-			paginationNav.style.display = 'flex';
-
-			const loadMoreBtn = document.getElementById('loadMoreReviews');
-			loadMoreBtn.addEventListener('click', async () => {
-				currentPage++;
-				const moreReviews = await fetchReviews(project.id, currentPage);
-				displayReviews(moreReviews.reviews, true);
-
-				if (currentPage * 10 >= totalCount) {
-					loadMoreBtn.style.display = 'none';
-				}
-			});
-		}
-	};
-});
-
-
-
-
-
+export { //for testing
+	populateCollaborators,
+	fetchProject,
+	fetchProjectFiles,
+	downloadProjectFile,
+	getFileExt,
+	projectFileToHTML,
+	isParticipant,
+	addRequestCollaboration,
+	createUserList,
+	inviteCollaborator,
+	createInviteForm,
+	addCollaboratorButton,
+	loadProjectFiles,
+	addUploadButton,
+	populateElements,
+	fetchReviews,
+	formatDate,
+	createStarRating,
+	displayReviews,
+	loadProjectReviews,
+};

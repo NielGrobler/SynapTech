@@ -1,5 +1,6 @@
 import pageAdder from './pageAdder.js';
 import stringSearch from './stringSearch.js';
+import { failToast, successToast } from './toast.js';
 
 let cachedProjects = [];
 
@@ -7,11 +8,11 @@ export async function executeApiCall() {
 	try {
 		const response = await fetch('/api/user/project');
 		const data = await response.json();
-		console.log(data);
+		//console.log(data);
 		return data;
 	} catch (error) {
 		console.error('Error loading user:', error);
-		alert('Failed to load projects. Please try again later.');
+		failToast('Failed to load projects. Please try again later.');
 		return [];
 	}
 }
@@ -63,14 +64,14 @@ export function initDashboard() {
 		pageAdder.addProjectsToPage("project-list", projects);
 	});
 
-	form.addEventListener('submit', event => {
+	form.addEventListener('input', event => {
 		event.preventDefault();
 		const query = input.value;
 		const comparator = stringSearch.getComparator(query);
 		const queryLower = query.toLowerCase();
 
 		const filteredProjects = cachedProjects.sort(comparator).filter(x => x.name.toLowerCase().includes(queryLower));
-		console.log(filteredProjects);
+		//console.log(filteredProjects);
 		pageAdder.clearProjects("project-list");
 		pageAdder.addProjectsToPage("project-list", filteredProjects);
 	});

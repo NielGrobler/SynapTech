@@ -1,7 +1,15 @@
 import pageAdder from './pageAdder.js';
+import userInfo from './userInfo.js';
+
+//would need major refactoring to use viewProfile.js's script instead of duplicate code
+
 let projects = [];
 
 let suspend;
+
+const noneIfAbsent = (s) => {
+	return !s ? 'None' : s;
+}
 
 const checkAdmin = async () => {
 	const res = await fetch('/admin');
@@ -13,7 +21,7 @@ const checkAdmin = async () => {
 		const userId = params.get('id');
 		const status = await fetch(`/isSuspended?id=${encodeURIComponent(userId)}`);
 		const isSus = await status.json();
-		console.log(isSus);
+		//console.log(isSus);
 
 		if (isSus) {
 			suspend.innerText = 'Unsuspend User';
@@ -55,18 +63,54 @@ const populateElements = async () => {
 	if (!userId) {
 		return null;
 	}
-	const res = await fetch(`/api/user?id=${encodeURIComponent(userId)}`);
+	const res = await fetch(`/api/user/info/${encodeURIComponent(userId)}`);
 	const user = await res.json();
+	console.log(user);
 	if (!user) {
 		document.getElementById('userName').innerText = "Could not display user.";
 		return;
 	}
 
-	document.getElementById('userName').innerText = user[0].name;
-	document.getElementById('userUni').innerHTML = user[0].university;
-	document.getElementById('userDepartment').innerHTML = user[0].department;
-	document.getElementById('userBio').innerHTML = user[0].bio;
+	document.getElementById('userName').innerText = user.name;
+	document.getElementById('userUni').innerHTML = noneIfAbsent(user.university);
+	document.getElementById('userDepartment').innerHTML = noneIfAbsent(user.department);
+	document.getElementById('userBio').innerHTML = noneIfAbsent(user.bio);
 };
+
+/*
+const populateElements = async () => {
+	await checkAdmin();
+
+	const username = document.getElementById("userName");
+	const bio = document.getElementById("userBio");
+	const university = document.getElementById("userUni");
+	const department = document.getElementById("userDepartment");
+
+	try {
+		const params = new URLSearchParams(window.location.search);
+		const userId = params.get('id');
+		if (!userId) {
+			return null;
+		}
+		
+		const user = await userInfo.fetchOtherUserFromApi(userId);
+
+		username.innerHTML = user.name ? user.name : "No name available";
+		bio.innerHTML = user.bio ? user.bio : "No bio available";
+		university.innerHTML = user.university ? user.university : "Unknown";
+		department.innerHTML = user.department ? user.department : "Unknown";
+
+	} catch (error) {
+		console.error("User not authenticated:", error);
+		username.innerHTML = "Could not display user.";
+		bio.innerHTML = "No bio available";
+		university.innerHTML = "Unknown";
+		department.innerHTML = "Unknown";
+	}
+
+	
+};
+*/
 
 document.addEventListener("DOMContentLoaded", () => {
 	populateElements();
@@ -78,12 +122,12 @@ document.addEventListener("DOMContentLoaded", () => {
 	if (!userId) return;
 
 	try {
-		const res = await fetch(`/api/other/project?id=${encodeURIComponent(userId)}`);
+		const res = await fetch(`/api/projects/by/user/${userId}`);
 		if (!res.ok) {
 			throw new Error(`Failed to fetch projects: ${res.statusText}`);
 		}
 		projects = await res.json();
-		pageAdder.addProjectsToPage('projectCardList', projects);
+		pageAdder.addProjectsToPage('project-list', projects);
 	} catch (err) {
 		console.error('Error', err);
 	}

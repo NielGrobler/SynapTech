@@ -1,14 +1,10 @@
-const axios = require('axios');
-const fs = require('fs');
-const path = require('path');
-
 class BatchRequest {
 	constructor() {
-		this.items = []
+		this.items = [];
 	}
 
 	addQueryReq(query) {
-		this.items.append({
+		this.items.push({
 			queryReq: {
 				query
 			}
@@ -16,7 +12,7 @@ class BatchRequest {
 	}
 
 	addUploadReq(formData, filename) {
-		this.items.append({
+		this.items.push({
 			uploadReq: {
 				formData: formData,
 				filename: filename
@@ -24,3 +20,5 @@ class BatchRequest {
 		});
 	}
 }
+
+module.exports = BatchRequest;

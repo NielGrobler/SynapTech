@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Toast Notification</title>
+
+	<!-- Boxicons CDN -->
+	<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+
+	<style>
+		/* Toast container */
+		#toast-container {
+			position: fixed;
+			bottom: 1rem;
+			right: 1rem;
+			display: flex;
+			flex-direction: column;
+			gap: 0.5rem;
+			z-index: 9999;
+		}
+
+		/* Base toast style */
+		.toast {
+			display: flex;
+			align-items: center;
+			gap: 0.75rem;
+			padding: 1rem 1.5rem;
+			border-radius: 5px;
+			box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+			opacity: 0;
+			transform: translateY(20px);
+			animation: fadeIn 0.3s forwards, fadeOut 0.3s forwards 3s;
+			cursor: pointer;
+			color: #fff;
+			font-size: 0.95rem;
+		}
+
+		.toast-success {
+			background-color: #28a745;
+		}
+
+		.toast-error {
+			background-color: #dc3545;
+		}
+
+		.toast i {
+			font-size: 1.2rem;
+		}
+
+		@keyframes fadeIn {
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
+		}
+
+		@keyframes fadeOut {
+			to {
+				opacity: 0;
+				transform: translateY(20px);
+			}
+		}
+	</style>
+</head>
+
+<body>
+
+	<main>
+		<h1>Toast Notification System</h1>
+		<button onclick="showToast('Data saved successfully!', 'success')">Show Success</button>
+		<button onclick="showToast('Failed to save data.', 'error')">Show Error</button>
+	</main>
+
+	<section id="toast-container" aria-live="polite" aria-atomic="true"></section>
+
+	<script>
+		function showToast(message, type = 'success') {
+			const container = document.getElementById('toast-container');
+
+			const toast = document.createElement('div');
+			toast.className = `toast toast-${type}`;
+			toast.setAttribute('role', 'status');
+			toast.setAttribute('aria-live', 'polite');
+
+			const icon = document.createElement('i');
+			icon.className = type === 'success' ? 'bx bx-check-circle' : 'bx bx-error-circle';
+
+			toast.appendChild(icon);
+			toast.appendChild(document.createTextNode(message));
+
+			// Remove on click
+			toast.addEventListener('click', () => {
+				container.removeChild(toast);
+			});
+
+			// Auto remove
+			toast.addEventListener('animationend', (e) => {
+				if (e.animationName === 'fadeOut') {
+					container.removeChild(toast);
+				}
+			});
+
+			container.appendChild(toast);
+		}
+	</script>
+
+</body>
+
+</html>

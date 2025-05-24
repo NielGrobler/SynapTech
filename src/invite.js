@@ -1,5 +1,6 @@
 
 import pageAdder from './pageAdder.js';
+import { successToast, failToast } from './toast.js';
 
 const sendReply = (isAccept, projectId, role) => {
 	fetch('/api/collaboration/invite/reply', {
@@ -13,12 +14,14 @@ const sendReply = (isAccept, projectId, role) => {
 			if (!res.ok) {
 				throw new Error(`Request failed with status: ${res.status}`);
 			}
-			alert('Success!');
+
+			successToast('Successfully responded to invite!');
+
 			return res.json();
 		})
 		.catch(err => {
 			console.error('Error:', err);
-			alert('Failed to accepting/rejecting invite. Please try again.');
+			failToast('Failed to accepting/rejecting invite. Please try again.');
 		});
 
 
@@ -28,7 +31,7 @@ const genInviteReqHTML = (invite) => {
 	const container = document.createElement('li');
 	container.classList.add('highlight-hover');
 	const nameParagraph = document.createElement('p');
-	nameParagraph.innerHTML = `<strong>${invite.account_name}</strong> has sent an invite for you to colloborate on <strong>${invite.project_name}</strong> as a <strong>${invite.role}</strong>.`;
+	nameParagraph.innerHTML = `<strong>${invite.account_name}</strong> has sent an invite for you to collaborate on <strong>${invite.project_name}</strong> as a <strong>${invite.role}</strong>.`;
 	container.appendChild(nameParagraph);
 	let buttonSection = document.createElement('section');
 	buttonSection.classList.add('flex-row', 'gap', 'highlight-hover', 'width-25', 'split');
@@ -61,7 +64,7 @@ const genInviteReqHTML = (invite) => {
 const fetchInvites = async () => {
 	let res = await fetch('/api/collaboration/invites');
 	let invites = await res.json();
-	console.log(invites);
+	//console.log(invites);
 	pageAdder.assignListToElement('invite-list', invites, genInviteReqHTML);
 }
 

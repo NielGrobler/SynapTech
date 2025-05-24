@@ -1,5 +1,5 @@
-document.addEventListener('DOMContentLoaded', () => {
-	console.log("HELLO????");
+document.addEventListener('DOMContentLoaded', () => { //function has been depreciated but Keeping JUST in case something disintegrates
+
 	const root = document.documentElement;
 
 	const saved = localStorage.getItem('theme');

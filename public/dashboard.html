@@ -4,7 +4,28 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<link rel="stylesheet" href="/styles.css">
+	
+	<!-- code for loading in critical CSS because otherwise it keeps flashing white on dark mode -->
+	<script>
+	(function() {
+		const savedTheme = localStorage.getItem('theme');
+		const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+		const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+		document.documentElement.setAttribute('data-theme', theme);
+		
+		const criticalCss = `html,body{background:var(--bg-color)}[data-theme=light]{--bg-color:#fff;--text-color:#000;}[data-theme=dark]{--bg-color:#121212;--text-color:#fff;}`;
+		
+		const style = document.createElement('style');
+		style.id = 'anti-fouc';
+		style.textContent = criticalCss;
+		document.head.appendChild(style);
+	})();
+	</script>
+
+	<link rel="preload" href="/styles.css" as="style" onload="this.onload=null;this.rel='stylesheet';document.getElementById('anti-fouc').remove();">
+	<noscript><link rel="stylesheet" href="/styles.css"></noscript>
+	<script src="/styleLoad.js"></script>
+
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="icon" href="logo.png" type="image/png">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,22 +34,21 @@
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 	<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 
-
 	<title>Unilink | Dashboard</title>
 	<script src="https://accounts.google.com/gsi/client" async defer></script>
-	<script type="module" src="/savedTheme.js"></script>
 
 </head>
 
 <body>
+			<section id="toast-container" aria-live="polite" aria-atomic="true"></section>
 	<section id="navigation" class="flex-row fill-width secondary center-content accent-underline">
 		<nav class="fill-width">
 			<ul class="no-list-style flex-row gap-small center-content">
 				<li>
 					<button class="nav-item flex-row gap-small center-content-v"
 						onclick="window.location.href='/dashboard'">
-						<i class='bx bxs-dashboard'></i>
-						Dashboard
+						<i class='bx bx-home'></i>
+						Home
 					</button>
 				</li>
 				<li>
@@ -53,31 +73,30 @@
 					</button>
 				</li>
 				<li>
-					<button class="nav-item flex-row gap-small center-content-v"
-						onclick="window.location.href='/create/project'">
-						<i class='bx bx-book-content'></i>
-						Create Project
-					</button>
-				</li>
-				<li>
-					<button class="nav-item flex-row gap-small center-content-v"
-						onclick="window.location.href='/collaboration'">
-						<i class='bx bx-user-voice'></i>
-						Collaboration Requests
-					</button>
-				</li>
-				<li>
-					<button class="nav-item flex-row gap-small center-content-v"
-						onclick="window.location.href='/invite'">
-						<i class='bx bxs-party'></i>
-						Collaboration Invites
-					</button>
+					<span class="dropdown pad-right hover-rotate">
+						<button id="userButton" class="flex-row gap-small center-content-v">
+							<i class='bx bx-chevron-right'></i>
+							<span>Collaboration</span>
+						</button>
+
+						<ul class="dropdown-menu">
+							<li><a href='/collaboration'>
+									<i class='bx bx-user-voice'></i>
+									Requests
+								</a>
+							</li>
+							<li><a href='/invite'> <i class='bx bxs-party'></i>
+									Invites
+								</a>
+							</li>
+						</ul>
+					</span>
 				</li>
 			</ul>
 		</nav>
 
 		<span class="dropdown pad-right hover-rotate">
-			<button id="userButton" class="flex-row gap-small padding-vert-small center-content-v">
+			<button id="userButton" class="flex-row very-round gap-small center-content-v">
 				<i class='bx bx-chevron-right'></i>
 				<span id="username">Loading...</span>
 			</button>
@@ -90,7 +109,6 @@
 			</ul>
 		</span>
 	</section>
-
 	<main>
 		<header>
 		</header>
@@ -98,17 +116,20 @@
 		<section class="accent-underline">
 			<section class="inset">
 				<section class="split">
-					<h1 class="large-text accent-underline">Active Projects</h1>
-					<button class="very-round pad-small-h no-pad-v" onclick="window.location.href='/create/project'">
-						<i class='bx bx-plus'></i>
+					<h1 class="large-text accent-underline">Your Active Projects</h1>
+					<button class="nav-item flex-row gap-small center-content-v" onclick="window.location.href='/create/project'">
+						<i class="bx bx-book-content"></i>
+						Create Project
 					</button>
 				</section>
 				<form id="project-search-form" type="">
-					<input id="project-search-input" type="text" placeholder="Search your projects...">
-					<button id="searchButton" type="submit" class="nav-item flex-row gap-small center-content-v"> <i
+					<input id="project-search-input" type="text"
+						placeholder="Search for projects...">
+					<!-- <button id="searchButton" type="submit"
+						class="nav-item flex-row gap-small center-content-v"> <i
 							class="bx bx-search"></i>
 						Search
-					</button>
+					</button> -->
 				</form>
 			</section>
 			<ul id="project-list" class="minh no-list-style">
@@ -116,19 +137,15 @@
 		</section>
 
 	</main>
-
 	<footer class="inset">
 		<p>&copy; 2025 Unilink. All rights reserved.</p>
 	</footer>
 </body>
-<script type="module" src="/dashboard.js"></script>
+
 <script type="module">
-	import { initDashboard } from './dashboard.js';
+	import {initDashboard} from './dashboard.js';
 	initDashboard();
 </script>
-
 <script type="module" src="/fetchUsername.js"></script>
-
-
 
 </html>

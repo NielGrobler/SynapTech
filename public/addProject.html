@@ -2,75 +2,108 @@
 <html lang="en">
 
 <head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	
+	<!-- code for loading in critical CSS because otherwise it keeps flashing white on dark mode -->
+	<script>
+	(function() {
+		const savedTheme = localStorage.getItem('theme');
+		const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+		const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+		document.documentElement.setAttribute('data-theme', theme);
+		
+		const criticalCSS = `html,body{background:var(--bg-color)}[data-theme=light]{--bg-color:#fff;--text-color:#000;}[data-theme=dark]{--bg-color:#121212;--text-color:#fff;}`;
+		
+		const style = document.createElement('style');
+		style.id = 'anti-fouc';
+		style.textContent = criticalCss;
+		document.head.appendChild(style);
+	})();
+	</script>
 
-	<head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<link rel="stylesheet" href="/styles.css">
-		<link rel="preconnect" href="https://fonts.googleapis.com">
-		<link rel="icon" href="logo.png" type="image/png">
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-		<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
-			rel="stylesheet">
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-		<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+	<link rel="preload" href="/styles.css" as="style" onload="this.onload=null;this.rel='stylesheet';document.getElementById('anti-fouc').remove();">
+	<noscript><link rel="stylesheet" href="/styles.css"></noscript>
+	<script src="/styleLoad.js"></script>
+
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="icon" href="logo.png" type="image/png">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+		rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+	<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 
 
-		<title>Unilink | Create Project</title>
-		<script src="https://accounts.google.com/gsi/client" async defer></script>
-		<script type="module" src="/savedTheme.js"></script>
+	<title>Unilink | Create Project</title>
+	<script src="https://accounts.google.com/gsi/client" async defer></script>
+	<script type="module" src="/savedTheme.js"></script>
 
-	</head>
+</head>
 
 <body>
+				<section id="toast-container" aria-live="polite" aria-atomic="true"></section>
 	<nav class="inset secondary fill accent-underline">
-		<button class="nav-item flex-row center-content-v gap-small" onclick="history.back()">
+		<button class="nav-item flex-row center-content-v gap-small" 
+			onclick="window.location.href='/dashboard'">
 			<i class='bx bx-chevron-left'></i>
 			Back
 		</button>
 	</nav>
-
-
 	<main class="inset">
 		<section class="border-solid-thin shadow">
 			<h1 class="accent-underline">Create a New Project</h1>
-			<form class="inset" action="/create/project" method="POST">
-				<section>
-					<label for="project-name"><strong>Project Name</strong></label><br>
-					<input type="text" id="project-name" class="no-padding-v" name="projectName"
-						required placeholder="Project name...">
-				</section>
+			<form id="project-form" class="inset" action="/create/project" method="POST" novalidate>
 
-				<section>
-					<label for="project-description"><strong>Description</strong></label><br>
-					<textarea id="project-description" class="no-padding-v" name="description"
-						required placeholder="Project description..."></textarea>
-				</section>
+				<!-- <output id="form-errors" class="error-messages" style="display: none;"></output> -->
+				<fieldset>
+					<legend><strong>Project Details</strong></legend>
+					
+					<section>
+						<label for="project-name">Project Name</label>
+						<input type="text" id="project-name" name="projectName" 
+							placeholder="Project name (3-50 characters)">
+						<output id="name-error" class="error-message" for="project-name"></output>
+					</section>
+					
+					<section>
+						<label for="project-description">Description</label>
+						<textarea id="project-description" name="description"
+								placeholder="Project description (10-500 characters)"></textarea>
+						<output id="desc-error" class="error-message" for="project-description"></output>
+					</section>
+					
+					<section>
+						<label for="project-field">Field Of Study</label>
+						<input type="text" id="project-field" name="field"
+							placeholder="Field of Study (3-30 letters)">
+						<output id="field-error" class="error-message" for="project-field"></output>
+					</section>
 
-				<section>
-					<label for="project-field"><strong>Field Of Study</strong></label><br>
-					<input type="text" id="project-field" class="no-padding-v" name="field" required
-						placeholder="Field of Study">
-				</section>
+					<section>
+						<label for="radio-label">Visibility</label>
+						<section class="toggle-container">
+							<label class="radio-label">
+								<input type="radio" name="visibility" value="true">
+								Public
+							</label>
 
-				<section class="toggle-container">
-					<strong>Project Visibility</strong><br>
-
-					<label class="radio-label">
-						<input type="radio" name="visibility" value="public" required>
-						Public
-					</label>
-
-					<label class="radio-label">
-						<input type="radio" name="visibility" value="private" checked="checked">
-						Private
-					</label>
-				</section>
-				<button type="submit">Create Project</button>
-			</form>
+							<label class="radio-label">
+								<input type="radio" name="visibility" value="false" checked>
+								Private
+							</label>
+						</section>
+					</section>
+				</fieldset>
+                <button type="submit" id="submit-btn">Create Project</button>
+            </form>
 		</section>
 	</main>
+	<footer class="inset">
+		<p>&copy; 2025 Unilink. All rights reserved.</p>
+	</footer>
 </body>
 
+<script type="module" src="/addProject.js"></script>
 
 </html>
