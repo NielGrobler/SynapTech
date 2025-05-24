@@ -319,7 +319,7 @@ describe('Database Module Tests', () => {
 				//uniqueness check
 				const uniqunessQuery = axios.post.mock.calls[0][1].query;
 				expect(uniqunessQuery.replace(/\s+/g, ' ').trim()).toContain( //had to trim whitespaces, other methods might have similar issues
-					'SELECT * FROM Project WHERE Project.name = {{name}} AND Project.created_by_account_id = {{created_by_account_id}}'
+					'SELECT project_id FROM Project WHERE Project.name = {{name}} AND Project.created_by_account_id = {{created_by_account_id}}'
 				);
 				expect(axios.post.mock.calls[0][1].params).toEqual({
 					created_by_account_id: 1,

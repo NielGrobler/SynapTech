@@ -354,6 +354,97 @@ describe('Router Module Tests', () => {
 			});
 		});
 
+	it('PUT /api/accept/collaborator', async () => {
+		let res = await request(app).put('/api/accept/collaborator').send({});
+		expect(res.status).toBe(401);
+		res = await request(app).put('/api/accept/collaborator')
+			.set('authenticated', 'true').send({});
+		expect(res.status).toBe(400);
+		db.permittedToAcceptCollaborator.mockResolvedValue(false);
+		res = await request(app).put('/api/accept/collaborator')
+			.set('authenticated', 'true').send({ userId: 1, projectId: 1 });
+		expect(res.status).toBe(400);
+		db.permittedToAcceptCollaborator.mockResolvedValue(true);
+		res = await request(app).put('/api/accept/collaborator')
+			.set('authenticated', 'true').send({ userId: 1, projectId: 1 });
+		expect(res.text).toContain('Successful');
+	});
+
+	it('DELETE /api/reject/collaborator', async () => {
+		let res = await request(app).delete('/api/reject/collaborator').send({});
+		expect(res.status).toBe(401);
+		res = await request(app).delete('/api/reject/collaborator')
+			.set('authenticated', 'true').send({});
+		expect(res.status).toBe(400);
+		db.permittedToRejectCollaborator.mockResolvedValue(false);
+		res = await request(app).delete('/api/reject/collaborator')
+			.set('authenticated', 'true').send({ userId: 1, projectId: 2 });
+		expect(res.status).toBe(400);
+		db.permittedToRejectCollaborator.mockResolvedValue(true);
+		res = await request(app).delete('/api/reject/collaborator')
+			.set('authenticated', 'true').send({ userId: 1, projectId: 2 });
+		expect(res.text).toContain('Successful');
+	});
+
+	it('GET /api/project', async () => {
+		let res = await request(app).get('/api/project').set('authenticated', 'false');
+		expect(res.status).toBe(401);
+		res = await request(app).get('/api/project')
+			.set('authenticated', 'true');
+		expect(res.status).toBe(400);
+		db.fetchProjectById.mockResolvedValue(null);
+		res = await request(app).get('/api/project?id=5')
+			.set('authenticated', 'true');
+		expect(res.body).toStrictEqual({ error: 'Internal server error' });
+		const proj = { is_public: false, created_by_account_id: 2, collaborators: [] };
+		db.fetchProjectById.mockResolvedValue(proj);
+		res = await request(app).get('/api/project?id=5')
+			.set('authenticated', 'true').set('user', JSON.stringify({ id: 3 }));
+		expect(res.status).toBe(400);
+		proj.is_public = true;
+		res = await request(app).get('/api/project?id=5')
+			.set('authenticated', 'true');
+		expect(res.body).toEqual(proj);
+	});
+
+	it('Misc GET flows: search, user/project, collaborator', async () => {
+		let res = await request(app).get('/api/search/project')
+			.set('authenticated', 'true');
+		expect(res.status).toBe(400);
+		db.searchProjects.mockResolvedValue(['p']);
+		res = await request(app).get('/api/search/project?projectName=test')
+			.set('authenticated', 'true');
+		expect(res.body).toEqual(['p']);
+		db.fetchAssociatedProjects.mockResolvedValue([]);
+		db.appendCollaborators.mockResolvedValue();
+		res = await request(app).get('/api/user/project')
+			.set('authenticated', 'true');
+		expect(res.status).toBe(200);
+		db.fetchPendingCollaborators.mockResolvedValue(['c']);
+		res = await request(app).get('/api/collaborator')
+			.set('authenticated', 'true');
+		expect(res.body).toEqual(['c']);
+	});
+
+	/*
+	it('POST /submit/review and GET /successfulReviewPost', async () => {
+		let res = await request(app).post('/submit/review').send({});
+		expect(res.status).toBe(403);
+		res = await request(app).post('/submit/review')
+			.set('authenticated', 'true').set('user', JSON.stringify({ id: 1 }))
+			.send({ projectId: 1 });
+		expect(res.status).toBe(400);
+		db.createReview.mockResolvedValue({});
+		res = await request(app).post('/submit/review')
+			.set('authenticated', 'true').set('user', JSON.stringify({ id: 1 }))
+			.send({ projectId: 1, rating: 5, comment: 'c' });
+		expect(res.status).toBe(201);
+		expect(res.body.redirect).toBe('/successfulReviewPost');
+		res = await request(app).get('/successfulReviewPost')
+			.set('authenticated', 'true');
+		expect(res.text).toBe('served successfulReviewPost.html');
+	});
+	*/
 		describe('GET /redirect/add/milestone', () => {
 			it('should redirect unauthenticated users to /forbidden', async () => {
 				const res = await request(app).get('/redirect/add/milestone');
@@ -1410,4 +1501,3 @@ describe('Router Module Tests', () => {
 		});
 	});
 });
-

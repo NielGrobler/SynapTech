@@ -1,3 +1,4 @@
+
 import { failToast, successToast } from './toast.js';
 
 const setupEventListeners = () => {

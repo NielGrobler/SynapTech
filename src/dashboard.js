@@ -1,5 +1,6 @@
 import pageAdder from './pageAdder.js';
 import stringSearch from './stringSearch.js';
+import { failToast, successToast } from './toast.js';
 
 let cachedProjects = [];
 
@@ -11,7 +12,7 @@ export async function executeApiCall() {
 		return data;
 	} catch (error) {
 		console.error('Error loading user:', error);
-		alert('Failed to load projects. Please try again later.');
+		failToast('Failed to load projects. Please try again later.');
 		return [];
 	}
 }

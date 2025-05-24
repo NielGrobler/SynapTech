@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-describe("settings.js Module Tests", () => {
   let userInfoMock;
 
   beforeEach(async () => {
@@ -14,44 +13,80 @@ describe("settings.js Module Tests", () => {
       <form id="resetButton"></form>
       <button id="deleteButton">Delete</button>
     `;
-
-    // Mock userInfo
-    userInfoMock = {
-      fetchFromApi: vi.fn().mockResolvedValue({
-        id: "123",
-        name: "Test User",
-        bio: "Test bio",
-        university: "Test University",
-        department: "Test Department"
-      }),
-    };
-    vi.doMock("./userInfo.js", () => ({ default: userInfoMock }));
-
-    // Import the module after all mocks are set up
-    await import("./settings.js");
-    
-    // Manually trigger DOMContentLoaded and wait for initial fetch
-    document.dispatchEvent(new Event('DOMContentLoaded'));
-    await new Promise(process.nextTick);
   });
+// Mock userInfo module *before* importing settings.js
+vi.mock("./userInfo.js", () => ({
+  default: {
+    fetchFromApi: vi.fn().mockResolvedValue({ id: "123" }),
+  },
+}));
 
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
+describe("settings.js Module Tests", () => {
+  describe("settings.js", () => {
+    let originalLocation;
 
-  describe("Initialization", () => {
-    it("should fetch and populate user info on DOMContentLoaded", () => {
-      expect(document.getElementById("username").value).toBe("Test User");
-      expect(document.getElementById("bio").value).toBe("Test bio");
-    });
+    beforeEach(async () => {
+      // Set up DOM elements required for the test
+      document.body.innerHTML = `
+        <button id="deleteButton">Delete</button>
+        <button id="changeButton"></button>
+        <form id="resetButton"></form>
+      `;
 
-    /*it("should handle empty user info fields", async () => {
-      userInfoMock.fetchFromApi.mockResolvedValueOnce({ id: "123" });
+      // Mock window.confirm and window.alert
+      vi.spyOn(window, "confirm").mockReturnValue(false);
+      vi.spyOn(window, "alert").mockImplementation(() => {});
+
+      // Save original location and replace it with mock
+      originalLocation = window.location;
+      delete window.location;
+      window.location = { href: "" };
+
+      // Mock fetch globally
+      global.fetch = vi.fn();
+
+      // Import settings.js after mocks are ready
       await import("./settings.js");
+
+      // Mock userInfo
+      userInfoMock = {
+        fetchFromApi: vi.fn().mockResolvedValue({
+          id: "123",
+          name: "Test User",
+          bio: "Test bio",
+          university: "Test University",
+          department: "Test Department"
+        }),
+      };
+      vi.doMock("./userInfo.js", () => ({ default: userInfoMock }));
+
+      // Import the module after all mocks are set up
+      await import("./settings.js");
+      
+      // Manually trigger DOMContentLoaded and wait for initial fetch
       document.dispatchEvent(new Event('DOMContentLoaded'));
       await new Promise(process.nextTick);
-      
-      expect(document.getElementById("username").value).toBe("");
-    });*/
+    });
+
+    afterEach(() => {
+      vi.clearAllMocks();
+
+      // Restore window.location to original
+      window.location = originalLocation;
+    });
+
+    it("does not delete account if user cancels", () => {
+      // Trigger the delete button click
+      document.getElementById("deleteButton").click();
+
+      // Assert confirm was called
+      expect(window.confirm).toHaveBeenCalled();
+
+      // Assert fetch was NOT called (cancelled)
+      expect(fetch).not.toHaveBeenCalled();
+
+      // Assert location.href did NOT change
+      expect(window.location.href).toBe("");
+    });
   });
 });

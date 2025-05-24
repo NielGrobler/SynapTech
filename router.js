@@ -1054,7 +1054,22 @@ router.post('/api/review', makeSafeHandler(async (req, res) => {
 		message: 'Review submitted!',
 		redirect: '/successfulReviewPost'
 	});
-}, { statusCode: 401 }));
+}));
+
+
+//do these not exist already
+router.get('/successfulReviewPost', requireAuthentication((req, res) => {
+	res.sendFile(path.join(__dirname, "public", "successfulReviewPost.html"));
+}));
+
+router.get('/messages', requireAuthentication((req, res) => {
+	res.sendFile(path.join(__dirname, "public", "messages.html"));
+}));
+
+//Move to search for users page
+router.get('/view/users', requireAuthentication((req, res) => {
+	res.sendFile(path.join(__dirname, "public", "searchUsers.html"));
+}));
 
 //Searching for users 
 router.get('/api/search/user', makeSafeHandler(async (req, res) => {

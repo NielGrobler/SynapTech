@@ -1065,3 +1065,63 @@ li section button {
 	color: inherit;
 	background-color: inherit;
 }
+
+#toast-container {
+	position: fixed;
+	bottom: 1rem;
+	right: 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	z-index: 9999;
+}
+
+/* Base toast style */
+.toast {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 1rem 1.5rem;
+	border-radius: 5px;
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+	opacity: 0;
+	transform: translateY(20px);
+	animation: fadeIn 0.3s forwards, fadeOut 0.3s forwards 3s;
+	cursor: pointer;
+	color: #fff;
+	font-size: 0.95rem;
+}
+
+.toast-success {
+	background-color: #28a745;
+}
+
+.toast-error {
+	background-color: #dc3545;
+}
+
+.toast i {
+	font-size: 1.2rem;
+}
+
+@keyframes fadeIn {
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes fadeOut {
+	to {
+		opacity: 0;
+		transform: translateY(20px);
+	}
+}
+
+#scroll-to-bottom {
+	transition: opacity 0.3s ease;
+	opacity: 0;
+}
+#scroll-to-bottom[style*="block"] {
+	opacity: 1;
+}

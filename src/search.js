@@ -1,6 +1,7 @@
 
 import pageAdder from './pageAdder.js';
 import stringSearch from './stringSearch.js';
+import { failToast, successToast } from './toast.js';
 
 const fetchProjects = async (name) => {
 	try {
@@ -13,7 +14,7 @@ const fetchProjects = async (name) => {
 		return projects;
 	} catch (error) {
 		console.error("Error fetching projects:", error);
-		alert("Failed fetching projects.");
+		failToast("Failed fetching projects.");
 	}
 }
 
@@ -29,7 +30,7 @@ const fetchUsers = async (name) => {
 		return users;
 	} catch (error) {
 		console.error('Error fetching users:', error);
-		alert("Failed fetching users.");
+		failToast("Failed fetching users.");
 	}
 }
 
