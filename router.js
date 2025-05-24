@@ -509,7 +509,7 @@ router.post('/api/collaboration/invite/reply', requireAuthentication(async (req,
 router.get('/api/user/projectNames', requireAuthentication(async (req, res) => {
 	let projects = await db.fetchAssociatedProjectsByLatest(req.user);
 	res.json(projects);
-}));
+}, { statusCode: 401 }));
 
 const authenticatedForView = (project, user) => {
 	if (project.is_public || user.id === project.created_by_account_id) {
@@ -538,7 +538,7 @@ router.put('/api/accept/collaborator', requireAuthentication(async (req, res) =>
 	} catch (err) {
 		res.status(400).json({ error: 'Error.' });
 	}
-}));
+}, { statusCode: 401 }));
 
 router.delete('/api/reject/collaborator', requireAuthentication(async (req, res) => {
 	const { userId, projectId } = req.body;
@@ -558,7 +558,7 @@ router.delete('/api/reject/collaborator', requireAuthentication(async (req, res)
 	} catch (err) {
 		res.status(400).json({ error: 'Error.' });
 	}
-}));
+}, { statusCode: 401 }));
 
 // Route for when users want to fetch a specific project (based on id)
 router.get('/api/project', requireAuthentication(async (req, res) => {
@@ -630,7 +630,7 @@ router.get('/api/user/project', requireAuthentication(async (req, res) => {
 	await db.appendCollaborators(projects);
 
 	res.json(projects);
-}));
+}, { statusCode: 401 }));
 
 
 //fetch other user project
@@ -652,7 +652,7 @@ router.get('/api/other/project', async (req, res) => {
 router.get('/api/collaborator', requireAuthentication(async (req, res) => {
 	let pending_collaborators = await db.fetchPendingCollaborators(req.user);
 	res.json(pending_collaborators);
-}));
+}, { statusCode: 401 }));
 
 router.get('/api/reviews', requireAuthentication(async (req, res) => {
 	const projectId = req.query.projectId;
@@ -672,7 +672,7 @@ router.get('/api/reviews', requireAuthentication(async (req, res) => {
 		console.error('Error fetching reviews:', err);
 		res.status(500).json({ error: 'Failed to fetch reviews' });
 	}
-}));
+}, { statusCode: 401 }));
 
 router.get('/analyticsDashboard', (req, res) => {
 	if (!authenticateRequest(req)) {
@@ -695,7 +695,7 @@ router.get('/reports/funding', requireAuthentication((req, res) => {
 		console.error('Error displaying funding reports page:', err);
 		res.status(500).json({ error: 'Failed to display funding reports page' });
 	}
-}));
+}, { statusCode: 401 }));
 
 // Add this to your router.js where other API routes are defined
 router.get('/api/reports/funding', requireAuthentication(async (req, res) => {
@@ -796,7 +796,7 @@ router.get('/reports/completion-status', requireAuthentication(async (req, res) 
 		console.error('Error generating completion status report:', err);
 		res.status(500).json({ error: 'Failed to generate completion status report' });
 	}
-}));
+}, { statusCode: 401 }));
 
 // API endpoint to get the report data for the client-side JS
 router.get('/api/reports/completion-status', requireAuthentication(async (req, res) => {
@@ -880,7 +880,7 @@ router.get('/api/reports/completion-status', requireAuthentication(async (req, r
 		console.error('Error generating completion status report data:', err);
 		res.status(500).json({ error: 'Failed to generate completion status report data' });
 	}
-}));
+}, { statusCode: 401 }));
 
 // Customizable Report
 router.get('/reports/custom', requireAuthentication(async (req, res) => {
@@ -915,7 +915,7 @@ router.get('/reports/custom', requireAuthentication(async (req, res) => {
 		console.error('Error generating custom report:', err);
 		res.status(500).json({ error: 'Failed to generate custom report', details: err.message });
 	}
-}));
+}, { statusCode: 401 }));
 
 /* POST Request Routing */
 router.post('/create/project', requireAuthentication(async (req, res) => {
@@ -935,7 +935,7 @@ router.post('/create/project', requireAuthentication(async (req, res) => {
 		res.sendFile(path.join(__dirname, "public", "failureProjectPost.html"));
 		console.error(err)
 	}
-}));
+}, { statusCode: 401 }));
 
 router.post('/api/collaboration/request', requireAuthentication(async (req, res) => {
 	const { projectId } = req.body;
@@ -1078,13 +1078,15 @@ router.put('/update/profile', async (req, res) => {
 /* PUT Request Routing */
 router.put('user/details', requireAuthentication(async (req, res) => {
 	const { name, bio } = req.body;
-}));
+}, { statusCode: 401 }));
 
 /*router.use((err, req, res, next) => {
   console.error('Express error:', err);
   res.status(500).send('Internal Server Error');
 });
 */
+
+//below has no requireAuthentication nor status Code 401?
 
 router.get('/redirect/edit/milestone', (req, res) => {
 	if (!authenticateRequest(req)) {
