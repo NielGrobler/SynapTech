@@ -1,7 +1,6 @@
 
 import userInfo from './userInfo.js'
 import pageAdder from './pageAdder.js'
-import milestone from './milestones.js'
 
 function populateCollaborators(project) {
 	let list = document.getElementById('collaboratorList');
@@ -85,8 +84,8 @@ const fetchMilestones = async (projectId) => {
 		const data = await res.json();
 		return data;
 	} catch (err) {
-		console.error("Error downloading file:", err.message || err);
-		alert("There was an error downloading the file.");
+		console.error("Error:", err.message || err);
+		alert("Error fetching milestones.");
 	}
 }
 
@@ -286,7 +285,7 @@ const fundingOpportunityToHTML = (project, item) => {
 
 	article.addEventListener('click', (e) => {
 		e.preventDefault();
-		postFundingRequest(project.id, item.funding_opportunity_id);
+		postFundingRequest(item.funding_opportunity_id, project.id);
 	});
 
 	return article;
@@ -306,31 +305,13 @@ const addFundingButton = (userId, project) => {
 		const res = await fetch('/api/funding/opportunities');
 		const data = await res.json();
 		pageAdder.assignListToElement(`opportunities`, data, (item) => fundingOpportunityToHTML(project, item));
+		resultingButton.remove();
 	});
 
 	document.getElementById('opportunity-section').appendChild(resultingButton);
 
 	return resultingButton;
 }
-
-/*
-const addFundingButton = async (userDetails, project) => {
-	// Check ownership
-	if (!project || project.created_by_account_id !== userDetails.id) {
-		console.log("Not owner or project not loaded");
-	}
-	// Create button
-	const fundingSection = document.getElementById('funding');
-	const fundButton = document.createElement("button");
-	fundButton.innerText = "View Funding";
-
-	fundButton.addEventListener('click', () => {
-		window.location.href = `/redirect/view/funding?id=${encodeURIComponent(project.id)}`;
-	});
-
-	document.getElementById('funding-heading').innerText = "Funding";
-	fundingSection.appendChild(fundButton);
-};*/
 
 const addRequestCollaboration = async (userDetails, project) => {
 	if (isParticipant(userDetails.id, project)) {
@@ -585,24 +566,6 @@ const addUploadButton = (userDetails, project) => {
 
 	return true;
 }
-/*
-const addFundingButton = async (userDetails, project) => {
-	// Check ownership
-	if (!project || project.created_by_account_id !== userDetails.id) {
-		console.log("Not owner or project not loaded");
-	}
-	// Create button
-	const fundingSection = document.getElementById('funding');
-	const fundButton = document.createElement("button");
-	fundButton.innerText = "View Funding";
-
-	fundButton.addEventListener('click', () => {
-		window.location.href = `/redirect/view/funding?id=${encodeURIComponent(project.id)}`;
-	});
-
-	document.getElementById('funding-heading').innerText = "Funding";
-	fundingSection.appendChild(fundButton);
-}*/
 
 const populateMilestones = async (project) => {
 	const data = await fetchMilestones(project.id);
@@ -616,7 +579,6 @@ const populateElements = async () => {
 		document.getElementById('projectName').innerText = "Could not display project.";
 		return;
 	}
-	milestone.viewMilestones(project);
 
 	document.getElementById('projectName').innerHTML = project.name;
 	document.getElementById('projectIsPublic').innerHTML = project.is_public ? 'Public' : 'Private';
@@ -665,7 +627,6 @@ const populateElements = async () => {
 
 	loadProjectReviews(project);
 	loadProjectFiles(project);
-	//addFundingButton(info, project);
 }
 
 export async function initPage() {
@@ -728,7 +689,7 @@ const displayReviews = (reviews, append = false) => {
 		reviewsList.innerHTML = '';
 	}
 
-	
+
 	if (!reviews || reviews.length === 0) { //reviews is undefined if empty? Bizarre
 		if (!append) {
 			const emptyItem = document.createElement('li');

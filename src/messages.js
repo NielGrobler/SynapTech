@@ -1,28 +1,26 @@
-import { io } from 'socket.io-client';
+import { failToast, successToast } from './toast.js';
 
-let selectedRoomId;
-let hasJoinedRoom = false;
-export const socket = io({ auth: { token: localStorage.getItem('jwt') } });
-//io function is being called from what? added import; this might break in prod doe.
+const setupEventListeners = () => {
+	const uploadBtn = document.getElementById("uploadBtn");
+	const trueUploadBtn = document.getElementById("file");
 
-const uploadBtn = document.getElementById("uploadBtn");
-const trueUploadBtn = document.getElementById("file");
+	if (uploadBtn && trueUploadBtn) {
+		uploadBtn.addEventListener("click", () => {
+			trueUploadBtn.click();
+		});
 
-uploadBtn.addEventListener("click", () => {
-	trueUploadBtn.click();
-});
-
-trueUploadBtn.addEventListener("change", () => {
-	const txt = document.getElementById("attachment-name");
-	const file = trueUploadBtn.files[0];
-	if (file) {
-		txt.innerHTML = `Selected file '${file.name}' for upload`;
-	} else {
-		txt.innerHTML = "No file chosen";
+		trueUploadBtn.addEventListener("change", () => {
+			const txt = document.getElementById("attachment-name");
+			const file = trueUploadBtn.files[0];
+			if (file) {
+				txt.innerHTML = `Selected file '${file.name}' for upload`;
+			} else {
+				txt.innerHTML = "No file chosen";
+			}
+		});
 	}
-});
-
-function scrollToBottomIfNeeded() {
+};
+const scrollToBottomIfNeeded = () => {
 	const messages = document.getElementById('messages');
 	const delta = 100;
 
@@ -36,7 +34,7 @@ function scrollToBottomIfNeeded() {
 	});
 }
 
-async function fetchProjects() {
+const fetchProjects = async () => {
 	try {
 		const response = await fetch('/api/user/projectNames', {
 			method: 'GET',
@@ -76,12 +74,12 @@ async function fetchProjects() {
 		return data;
 	} catch (error) {
 		console.error('Failed to fetch projects:', error);
-		alert('There was an error fetching your projects. Please try again later.');
+		failToast('There was an error fetching your projects. Please try again later.');
 		return [];
 	}
 }
 
-function addMessageToDOM(msg) {
+const addMessageToDOM = (msg) => {
 	const li = document.createElement('li');
 	const name = document.createElement('strong');
 	const messageBody = document.createElement('p');
@@ -113,7 +111,67 @@ function addMessageToDOM(msg) {
 	scrollToBottomIfNeeded();
 }
 
+const scrollDown = () => {
+	const scrollBtn = document.getElementById('scroll-to-bottom');
+
+	scrollBtn.addEventListener('click', () => {
+		window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+	});
+
+	window.addEventListener('scroll', () => {
+		const scrolledToBottom =
+			window.innerHeight + window.scrollY >= document.body.scrollHeight - 10;
+
+		scrollBtn.style.display = scrolledToBottom ? 'none' : 'block';
+	});
+
+	window.dispatchEvent(new Event('scroll'));
+}
+
+let selectedRoomId;
+let hasJoinedRoom = false;
+
+const makeSocket = () => {
+	socket = io({ auth: { token: localStorage.getItem('jwt') } });
+	socket.on('connect', () => {
+		console.log('Connected to server');
+	});
+
+	socket.on('joined-room', ({ roomId, latestMessages }) => {
+		hasJoinedRoom = true;
+
+		const messagesContainer = document.getElementById('messages');
+		messagesContainer.innerHTML = '';
+		latestMessages.forEach(addMessageToDOM);
+	});
+
+	socket.on('message', addMessageToDOM);
+
+	socket.on('error', (err) => {
+		const msg = typeof err === 'string' ? err : err.message;
+		console.error('Server error:', msg);
+		failToast(msg);
+	});
+
+	socket.on('download-response', (file) => {
+		const blob = new Blob([new Uint8Array(file.buffer)], { type: file.contentType });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = file.filename || 'downloaded-file';
+		document.body.appendChild(a);
+		a.click();
+		a.remove();
+		URL.revokeObjectURL(url);
+	});
+
+	return socket;
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
+	socket = makeSocket();
+	setupEventListeners();
+	document.getElementById('sendBtn').addEventListener(sendListener);
 	const projects = await fetchProjects();
 	if (!projects.length) return;
 	selectedRoomId = projects[0].id;
@@ -121,44 +179,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 	if (messages) messages.scrollTop = messages.scrollHeight;
 
 	socket.emit('join-room', { roomId: selectedRoomId });
+	scrollDown();
 });
 
-socket.on('connect', () => {
-	console.log('Connected to server');
-});
-
-socket.on('joined-room', ({ roomId, latestMessages }) => {
-	console.log(`Joined room: ${roomId}`);
-	hasJoinedRoom = true;
-
-	const messagesContainer = document.getElementById('messages');
-	messagesContainer.innerHTML = '';
-	latestMessages.forEach(addMessageToDOM);
-});
-
-socket.on('message', addMessageToDOM);
-
-socket.on('error', (err) => {
-	const msg = typeof err === 'string' ? err : err.message;
-	console.error('Server error:', msg);
-	alert(msg);
-});
-
-socket.on('download-response', (file) => {
-	const blob = new Blob([new Uint8Array(file.buffer)], { type: file.contentType });
-	const url = URL.createObjectURL(blob);
-	const a = document.createElement('a');
-	a.href = url;
-	a.download = file.filename || 'downloaded-file';
-	document.body.appendChild(a);
-	a.click();
-	a.remove();
-	URL.revokeObjectURL(url);
-});
-
-document.getElementById('sendBtn').onclick = async () => {
+const sendListener = async (e) => {
+	e.preventDefault()
 	if (!hasJoinedRoom) {
-		alert('A room must be joined before chatting.');
+		failToast('A room must be joined before chatting.');
 		return;
 	}
 
@@ -185,16 +212,6 @@ document.getElementById('sendBtn').onclick = async () => {
 	document.getElementById('attachment-name').innerHTML = "No file chosen";
 	document.getElementById('text').value = '';
 	fileInput.value = '';
-};
-
-export {
-	scrollToBottomIfNeeded,
-	fetchProjects,
-	addMessageToDOM
 }
 
-export default{
-	scrollToBottomIfNeeded,
-	fetchProjects,
-	addMessageToDOM
-}
+export default { scrollToBottomIfNeeded, fetchProjects, addMessageToDOM };
