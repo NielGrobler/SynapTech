@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Unilink | View Project</title>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="icon" href="/logo.png" type="image/png">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+		rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+	<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+
+	<link rel="stylesheet" href="/styles.css" />
+	<script type="module" src="/savedTheme.js"></script>
+</head>
+
+<body>
+	<nav class="inset secondary fill accent-underline">
+        <button class="nav-item flex-row center-content-v gap-small" onclick="history.back()">
+            <i class='bx bx-chevron-left'></i>
+            Back
+        </button>
+    </nav>
+
+	<main class="inset flex-col gap-medium">
+		<section class="border-solid-thin shadow">
+			<section id="userCard" class="inset">
+				<section class="split gap" id="infoAndName">
+					<h1 class="large-text">Funding</h1>
+					<section
+						class="flex-row very-round secondary space-between padding-vert-xsmall small-text gap-medium">
+						<p>Total: <span id="fundingTotal">Unknown</span></p>
+						<p>Spent: <span id="fundingSpent">Unknown</span></p>
+                        <p>Remaining: <span id="fundingRemaining">Unknown</span></p>
+					</section>
+				</section>
+			</section>
+
+			<section id="funding" class="inset">
+				<h1 class="accent-underline">Current Funding:</h1>
+				<ul id="fundingCardList">
+				</ul>
+			</section>
+
+            <section id="timeline" class="inset">
+				<h1 class="accent-underline">Expenditure Timeline:</h1>
+				<ul id="timelineCardList">
+				</ul>
+			</section>
+		</section>
+	</main>
+	<footer class="inset">
+		<p>&copy; 2025 Unilink. All rights reserved.</p>
+	</footer>
+
+	<script type="module" src="/viewOtherProfile.js"></script>
+    <script typ="module" src="/Funding.js"></script>
+	
+</body>
+</html>

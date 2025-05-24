@@ -1,6 +1,7 @@
 
 import userInfo from './userInfo.js'
-import pageAdder from './pageAdder.js';
+import pageAdder from './pageAdder.js'
+import milestone from './milestones.js'
 
 function populateCollaborators(project) {
 	let list = document.getElementById('collaboratorList');
@@ -73,6 +74,135 @@ const downloadProjectFile = async (projectId, uuid, filename, ext) => {
 	}
 };
 
+const fetchMilestones = async (projectId) => {
+	try {
+		const res = await fetch(`/api/project/${projectId}/milestones`);
+
+		if (!res.ok) {
+			throw new Error(`Failed to download file: ${res.statusText}`);
+		}
+
+		const data = await res.json();
+		return data;
+	} catch (err) {
+		console.error("Error downloading file:", err.message || err);
+		alert("There was an error downloading the file.");
+	}
+}
+
+const postMilestone = async (projectId, name, description) => {
+	const resp = await fetch(`/api/post/project/${projectId}/milestone`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify({ "name": name, "description": description })
+	});
+
+	if (resp.ok) {
+		alert('Milestone successfully posted!');
+	} else {
+		const error = await resp.text();
+		alert(`Error: ${error}`);
+	}
+}
+
+const toggleMilestone = async (projectId, milestoneId) => {
+	const resp = await fetch(`/api/toggle/project/${projectId}/milestone`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify({ "milestoneId": milestoneId })
+	});
+
+	if (!resp.ok) {
+		const error = await resp.text();
+		alert(`Error: ${error}`);
+	}
+}
+
+const toggleMilestoneForm = (e) => {
+	e.preventDefault();
+	const formSection = document.getElementById('milestone-form-section');
+	const icon = document.getElementById('milestone-list-icon');
+	if (formSection.classList.contains('visually-hidden')) {
+		console.log("WENT HERE");
+		formSection.classList.remove('visually-hidden');
+		icon.classList.remove('bx-list-plus');
+		icon.classList.add('bx-list-ol');
+	} else {
+		formSection.classList.add('visually-hidden');
+		icon.classList.add('bx-list-plus');
+		icon.classList.remove('bx-list-ol');
+	}
+}
+
+const setMilestoneIcon = (icon, wasChecked) => {
+	if (wasChecked) {
+		icon.classList.remove('bx-checkbox');
+		icon.classList.add('bx-checkbox-checked');
+	} else {
+		icon.classList.remove('bx-checkbox-checked');
+		icon.classList.add('bx-checkbox');
+	}
+}
+
+const milestoneToHTML = (projectId, milestone) => {
+	const name = milestone.name;
+	const description = milestone.description;
+	const id = milestone.project_milestone_id;
+
+	const article = document.createElement('article');
+	const header = document.createElement('h4');
+	const span = document.createElement('span');
+	const icon = document.createElement('i');
+	let isChecked = milestone.completed_at !== null;
+
+	icon.id = `icon-${id}`;
+	icon.classList.add('bx');
+	span.appendChild(icon);
+	span.appendChild(header);
+	span.classList.add('flex-row', 'center-content-v', 'no-pad-v', 'tight-stack');
+
+	const para = document.createElement('p');
+	//para.classList.add('small-text');
+	header.innerText = name;
+	header.classList.add('strike-animate');
+	if (isChecked) {
+		header.classList.add('strike-now');
+		header.classList.add('green');
+	}
+	para.innerText = description;
+	article.appendChild(span);
+	article.appendChild(para);
+	article.dataset.id = id;
+	article.classList.add('highlight-hover', 'no-pad-v', 'tight-stack', 'grey-left-border');
+
+	setMilestoneIcon(icon, isChecked);
+	isChecked = !isChecked;
+	article.addEventListener('click', async (e) => {
+		e.preventDefault();
+		await toggleMilestone(projectId, article.dataset.id);
+		setMilestoneIcon(icon, isChecked);
+		header.classList.remove('strike-now', 'strike-reverse');
+		void header.offsetWidth;
+		if (isChecked) {
+			header.classList.add('green');
+			header.classList.add('strike-now');
+		} else {
+			header.classList.remove('green');
+			header.classList.add('strike-reverse');
+		}
+		isChecked = !isChecked;
+	});
+
+	const li = document.createElement('li');
+	li.appendChild(article);
+
+	return li;
+}
+
 const getFileExt = (fileName) => {
 	const parts = fileName.split('.');
 	return parts.length > 1 ? parts.pop() : '';
@@ -82,7 +212,6 @@ const projectFileToHTML = (projectFile) => {
 	const li = document.createElement('li');
 	const link = document.createElement('a');
 	link.href = '#';
-	//console.log(projectFile);
 	link.textContent = `${projectFile.original_filename}`;
 	link.dataset.projectId = projectFile.project_id;
 	link.dataset.ext = getFileExt(projectFile.original_filename);
@@ -116,6 +245,92 @@ const isParticipant = (userId, project) => {
 
 	return false;
 }
+
+const postFundingRequest = async (opportunityId, projectId) => {
+	const resp = await fetch('/api/post/funding/request', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify({ "opportunityId": opportunityId, "projectId": projectId })
+	});
+
+	if (resp.ok) {
+		alert('Funding request sent successfully!');
+	} else {
+		const error = await resp.text();
+		alert(`Error: ${error}`);
+	}
+
+}
+
+const fundingOpportunityToHTML = (project, item) => {
+	const title = item.organisation_name;
+	const description = item.description;
+	const currencyCode = item.currency_code;
+	const grantAmount = item.grant_amount;
+
+	const article = document.createElement('article');
+	const header = document.createElement('h1');
+	const para = document.createElement('p');
+	const grantBlock = document.createElement('p');
+
+	header.innerText = title;
+	para.innerText = description;
+	grantBlock.innerText = `${grantAmount} (${currencyCode})`;
+
+	article.appendChild(header);
+	article.appendChild(para);
+	article.appendChild(grantBlock);
+	article.classList.add('highlight-hover');
+
+	article.addEventListener('click', (e) => {
+		e.preventDefault();
+		postFundingRequest(project.id, item.funding_opportunity_id);
+	});
+
+	return article;
+}
+
+const addFundingButton = (userId, project) => {
+	console.log('[addFundingButton]');
+	if (!isParticipant(userId, project)) {
+		return;
+	}
+
+	let resultingButton = document.createElement('button');
+	resultingButton.innerText = 'Request Funding';
+
+	resultingButton.addEventListener('click', async (e) => {
+		e.preventDefault();
+		const res = await fetch('/api/funding/opportunities');
+		const data = await res.json();
+		pageAdder.assignListToElement(`opportunities`, data, (item) => fundingOpportunityToHTML(project, item));
+	});
+
+	document.getElementById('opportunity-section').appendChild(resultingButton);
+
+	return resultingButton;
+}
+
+/*
+const addFundingButton = async (userDetails, project) => {
+	// Check ownership
+	if (!project || project.created_by_account_id !== userDetails.id) {
+		console.log("Not owner or project not loaded");
+	}
+	// Create button
+	const fundingSection = document.getElementById('funding');
+	const fundButton = document.createElement("button");
+	fundButton.innerText = "View Funding";
+
+	fundButton.addEventListener('click', () => {
+		window.location.href = `/redirect/view/funding?id=${encodeURIComponent(project.id)}`;
+	});
+
+	document.getElementById('funding-heading').innerText = "Funding";
+	fundingSection.appendChild(fundButton);
+};*/
 
 const addRequestCollaboration = async (userDetails, project) => {
 	if (isParticipant(userDetails.id, project)) {
@@ -181,22 +396,28 @@ const inviteCollaborator = async (accountId, projectId, role) => {
 	}
 };
 
+const milestoneFormListener = (project) => {
+	return async (e) => {
+		e.preventDefault();
+		const nameInput = document.getElementById('milestoneName');
+		const descriptionInput = document.getElementById('milestoneDescription')
+		const name = nameInput.value.trim();
+		const description = descriptionInput.value.trim();
+		nameInput.value = '';
+		descriptionInput.value = '';
+		if (!name || !description) {
+			alert('Please fill out both fields.');
+			return;
+		}
+		const projectId = project.id;
+		await postMilestone(projectId, name, description);
+		await populateMilestones(project);
+	}
+}
+
 var inviteFormCreated = false;
-var count = 0;
 const createInviteForm = (project) => {
 	const projectId = project.id;
-	if (inviteFormCreated) {
-		if (count > 5) {
-			alert("Fine. You win.");
-			document.body.innerHTML = '';
-		} else if (count > 4) {
-			alert("Seriously stop.");
-		} else if (count > 3) {
-			alert("Stop clicking her.");
-		}
-		count++;
-		return;
-	}
 	inviteFormCreated = true;
 	let form = document.createElement('form');
 	form.id = "user-search-form";
@@ -238,7 +459,7 @@ const createInviteForm = (project) => {
 				description.textContent = rawUser.bio;
 				const id = rawUser.account_id;
 				let buttonSection = document.createElement('section');
-				buttonSection.classList.add('flex-row', 'gap', 'width-30', 'split');
+				buttonSection.classList.add('flex-col', 'gap', 'to-start');
 
 				const buttonAddAsResearcher = document.createElement('button');
 				const buttonAddAsReviewer = document.createElement('button');
@@ -298,6 +519,7 @@ const addCollaboratorButton = async (userDetails, project) => {
 const loadProjectFiles = (project) => {
 	fetchProjectFiles(project)
 		.then((files) => {
+			const filesList = document.getElementById("filesList");
 			filesList.innerHTML = '';
 			pageAdder.assignListToElement("filesList", files, projectFileToHTML);
 		})
@@ -363,6 +585,30 @@ const addUploadButton = (userDetails, project) => {
 
 	return true;
 }
+/*
+const addFundingButton = async (userDetails, project) => {
+	// Check ownership
+	if (!project || project.created_by_account_id !== userDetails.id) {
+		console.log("Not owner or project not loaded");
+	}
+	// Create button
+	const fundingSection = document.getElementById('funding');
+	const fundButton = document.createElement("button");
+	fundButton.innerText = "View Funding";
+
+	fundButton.addEventListener('click', () => {
+		window.location.href = `/redirect/view/funding?id=${encodeURIComponent(project.id)}`;
+	});
+
+	document.getElementById('funding-heading').innerText = "Funding";
+	fundingSection.appendChild(fundButton);
+}*/
+
+const populateMilestones = async (project) => {
+	const data = await fetchMilestones(project.id);
+	document.getElementById('milestone-list').innerHTML = '';
+	pageAdder.assignListToElement(`milestone-list`, data, (item) => milestoneToHTML(project.id, item));
+}
 
 const populateElements = async () => {
 	const project = await fetchProject();
@@ -370,23 +616,56 @@ const populateElements = async () => {
 		document.getElementById('projectName').innerText = "Could not display project.";
 		return;
 	}
+	milestone.viewMilestones(project);
 
 	document.getElementById('projectName').innerHTML = project.name;
 	document.getElementById('projectIsPublic').innerHTML = project.is_public ? 'Public' : 'Private';
 	document.getElementById('projectCreatedBy').innerHTML = project.author_name;
 	document.getElementById('projectDescription').innerHTML = project.description;
+	document.getElementById('milestone-form').addEventListener('submit', milestoneFormListener(project));
 
 	const info = await userInfo.fetchFromApi();
 	populateCollaborators(project);
 	addCollaboratorButton(info, project);
 	addRequestCollaboration(info, project)
 	addUploadButton(info, project);
+	addFundingButton(info.id, project);
+	populateMilestones(project);
+	document.getElementById('add-milestone-btn').addEventListener('click', toggleMilestoneForm);
+
+	const reviewListToggle = document.getElementById('review-list-drop-btn');
+	var isExpanded = true;
+	reviewListToggle.addEventListener('click', (e) => {
+		e.preventDefault();
+		const icon = document.getElementById('review-drop-icon');
+		const list = document.getElementById('reviewsList');
+		if (isExpanded) {
+			icon.classList.remove('bx-chevron-down');
+			icon.classList.add('bx', 'bx-plus');
+			list.classList.add('visually-hidden');
+			list.style.maxHeight = list.scrollHeight + 'px';
+			requestAnimationFrame(() => {
+				list.style.transition = 'max-height 0.3s ease-out, opacity 0.3s ease-out';
+				list.style.maxHeight = '0';
+				list.style.opacity = '0';
+			});
+		} else {
+			icon.classList.remove('bx-plus');
+			icon.classList.add('bx', 'bx-chevron-down');
+			list.classList.remove('visually-hidden');
+
+			requestAnimationFrame(() => {
+				list.style.transition = 'max-height 0.3s ease-in, opacity 0.3s ease-in';
+				list.style.maxHeight = list.scrollHeight + 'px';
+				list.style.opacity = '1';
+			});
+		}
+		isExpanded = !isExpanded;
+	});
+
 	loadProjectReviews(project);
 	loadProjectFiles(project);
-
-	/*document.addEventListener('DOMContentLoaded', () => {
-		console.log("dwqiudhwqiudhwqdihwqHELLO?");
-	});*/
+	//addFundingButton(info, project);
 }
 
 export async function initPage() {
@@ -449,7 +728,8 @@ const displayReviews = (reviews, append = false) => {
 		reviewsList.innerHTML = '';
 	}
 
-	if (reviews.length === 0) {
+	
+	if (!reviews || reviews.length === 0) { //reviews is undefined if empty? Bizarre
 		if (!append) {
 			const emptyItem = document.createElement('li');
 			emptyItem.textContent = 'No reviews yet for this project.';

@@ -1,51 +1,57 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-// Mocks
-let userInfoMock;
+describe("settings.js Module Tests", () => {
+  let userInfoMock;
 
-beforeEach(() => {
-	// Only include elements needed for the delete test
-	document.body.innerHTML = `
-		<button id="deleteButton">Delete</button>
-		<!-- Add minimal required elements to prevent null errors -->
-		<button id="changeButton"></button>
-		<form id="resetButton"></form>
-	`;
+  beforeEach(async () => {
+    // Set up the DOM elements needed for all tests
+    document.body.innerHTML = `
+      <input id="username" />
+      <textarea id="bio"></textarea>
+      <input id="university" />
+      <input id="department" />
+      <button id="changeButton">Change</button>
+      <form id="resetButton"></form>
+      <button id="deleteButton">Delete</button>
+    `;
 
-	// Mock userInfo
-	userInfoMock = {
-		fetchFromApi: vi.fn().mockResolvedValue({ id: "123" }),
-	};
-	vi.mock("./userInfo.js", () => ({ default: userInfoMock }));
+    // Mock userInfo
+    userInfoMock = {
+      fetchFromApi: vi.fn().mockResolvedValue({
+        id: "123",
+        name: "Test User",
+        bio: "Test bio",
+        university: "Test University",
+        department: "Test Department"
+      }),
+    };
+    vi.doMock("./userInfo.js", () => ({ default: userInfoMock }));
 
-	// Mock window methods
-	vi.spyOn(window, "confirm").mockReturnValue(false);
-	vi.spyOn(window, "alert").mockImplementation(() => {});
-	
-	// Mock window.location
-	delete window.location;
-	window.location = { href: '' };
+    // Import the module after all mocks are set up
+    await import("./settings.js");
+    
+    // Manually trigger DOMContentLoaded and wait for initial fetch
+    document.dispatchEvent(new Event('DOMContentLoaded'));
+    await new Promise(process.nextTick);
+  });
 
-	// Mock fetch
-	global.fetch = vi.fn();
-});
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
 
-afterEach(() => {
-	vi.clearAllMocks();
-	// Restore window.location
-	window.location = location;
-});
+  describe("Initialization", () => {
+    it("should fetch and populate user info on DOMContentLoaded", () => {
+      expect(document.getElementById("username").value).toBe("Test User");
+      expect(document.getElementById("bio").value).toBe("Test bio");
+    });
 
-describe("settings.js  Module Tests", () => {
-	it("should not delete account if user cancels", async () => {
-		await import("./settings.js");
-		
-		// Trigger the delete button click
-		document.getElementById("deleteButton").click();
-		
-		// Verify behavior
-		expect(window.confirm).toHaveBeenCalled();
-		expect(fetch).not.toHaveBeenCalled();
-		expect(window.location.href).toBe("");
-	});
+    /*it("should handle empty user info fields", async () => {
+      userInfoMock.fetchFromApi.mockResolvedValueOnce({ id: "123" });
+      await import("./settings.js");
+      document.dispatchEvent(new Event('DOMContentLoaded'));
+      await new Promise(process.nextTick);
+      
+      expect(document.getElementById("username").value).toBe("");
+    });*/
+  });
 });

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as viewProject from './viewProject.js'
+import pageAdder from './pageAdder.js'
 
 beforeEach(() => {
 	global.window = { location: { search: '' } };
@@ -250,18 +251,36 @@ describe('viewProject.js Module Tests', () => {
 		// Additional tests for other functions can be added here
 	});
 
-	/*describe('loadProjectReviews', () => {
+	//issue here regardding reviews.length throwing error because reviews is undefined.
+	describe('loadProjectReviews', () => {
+		 beforeEach(() => { //youd think one beforeEach would be enough but these buggers are persistent >:/
+			vi.clearAllMocks();
+			
+			document.getElementById.mockImplementation((id) => {
+			if (id === 'reviewsList') return { 
+				innerHTML: '',
+				appendChild: vi.fn() 
+			};
+			if (id === 'reviewsPagination') return { 
+				style: { display: '' } 
+			};
+			if (id === 'loadMoreReviews') return {
+				style: { display: '' },
+				addEventListener: vi.fn()
+			};
+			return { innerHTML: '', appendChild: vi.fn() };
+			});
+		});
+
 		it('should load and display reviews', async () => {
 			const mockReviews = {
-				reviews: [
-				{
+				reviews: [{
 					rating: 4,
 					comment: 'Great project!',
 					reviewer_name: 'Reviewer1',
-					created_at: '2023-01-01',
-				},
-				],
-				totalCount: 1,
+					created_at: '2023-01-01'
+				}],
+				totalCount: 1
 			};
 
 			fetch.mockResolvedValueOnce({
@@ -270,12 +289,14 @@ describe('viewProject.js Module Tests', () => {
 			});
 
 			const project = { id: '123' };
+
 			await viewProject.loadProjectReviews(project);
 			
 			expect(fetch).toHaveBeenCalledWith('/api/reviews?projectId=123&page=1&limit=10');
-			expect(document.createElement).toHaveBeenCalledWith('figure');
+			expect(document.getElementById).toHaveBeenCalledWith('reviewsList');
+			expect(document.createElement).toHaveBeenCalledWith('li');
 		});
-	});*/
+	});
 	
 	describe('getFileExt', () => {
 		it('should return the file extension from a filename', () => {
@@ -290,7 +311,31 @@ describe('viewProject.js Module Tests', () => {
 		});
 	});
 
-	/*describe('projectFileToHTML', () => {
+	describe('projectFileToHTML', () => {
+		beforeEach(() => {
+			vi.clearAllMocks();
+			
+			const mockLi = {
+				appendChild: vi.fn(),
+				firstChild: null
+			};
+			const mockLink = {
+				textContent: '',
+				dataset: {},
+				addEventListener: vi.fn(),
+				href: '#'
+			};
+			
+			document.createElement.mockImplementation((tagName) => {
+				if (tagName === 'li') {
+					mockLi.firstChild = mockLink;
+					return mockLi;
+				}
+				if (tagName === 'a') return mockLink;
+				return { tagName };
+			});
+		});
+
 		it('should create a list item with download link for a file', () => {
 			const mockFile = {
 				original_filename: 'test.pdf',
@@ -298,34 +343,27 @@ describe('viewProject.js Module Tests', () => {
 				file_uuid: 'uuid1'
 			};
 
-			const mockLink = {
-				textContent: '',
-				dataset: {},
-				addEventListener: vi.fn()
-			};
-			document.createElement.mockImplementationOnce(() => ({})) // li
-								.mockImplementationOnce(() => mockLink); // a
-
 			const result = viewProject.projectFileToHTML(mockFile);
-			expect(result.tagName).toBe('LI');
-			//expect(result.firstChild.tagName).toBe('A');
-			expect(result.firstChild.textContent).toBe('test.pdf');
+			expect(document.createElement).toHaveBeenCalledWith('li');
+			expect(document.createElement).toHaveBeenCalledWith('a');
+			expect(result.appendChild).toHaveBeenCalled();
 		});
 
 		it('should set correct dataset attributes on the link', () => {
 			const mockFile = {
-			original_filename: 'test.pdf',
-			project_id: '123',
-			file_uuid: 'uuid1'
+				original_filename: 'test.pdf',
+				project_id: '123',
+				file_uuid: 'uuid1'
 			};
-			const result = viewProject.projectFileToHTML(mockFile);
-			const link = result.firstChild;
+
+			viewProject.projectFileToHTML(mockFile);
+			const link = document.createElement.mock.results[1].value; 
 			expect(link.dataset.projectId).toBe('123');
 			expect(link.dataset.uuid).toBe('uuid1');
 			expect(link.dataset.name).toBe('test.pdf');
 			expect(link.dataset.ext).toBe('pdf');
 		});
-	});*/
+	});
 
 	describe('addRequestCollaboration', () => {
 		it('should not add button if user is already a participant', async () => {
@@ -443,25 +481,57 @@ describe('viewProject.js Module Tests', () => {
 	});*/
 
 	/*describe('loadProjectFiles', () => {
+		beforeEach(() => {
+			vi.clearAllMocks();
+
+			vi.mock('./pageAdder.js', () => ({
+				default: {
+					assignListToElement: vi.fn()
+				}
+			}));
+			
+			document.getElementById.mockImplementation((id) => {
+				if (id === 'filesList') return { 
+					innerHTML: '',
+					appendChild: vi.fn()
+				};
+				return { innerHTML: '', appendChild: vi.fn() };
+			});
+
+			global.console = {
+				error: vi.fn(),
+				log: vi.fn()
+			};
+		});
+
 		it('should fetch and display project files', async () => {
 			const mockFiles = [{ original_filename: 'test.pdf' }];
-			fetch.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockFiles) });
+			fetch.mockResolvedValueOnce({ 
+				ok: true, 
+				json: () => Promise.resolve(mockFiles) 
+			});
 			const mockProject = { id: '123' };
-			const mockElement = { innerHTML: '' };
-			document.getElementById.mockReturnValueOnce(mockElement);
 			
 			await viewProject.loadProjectFiles(mockProject);
 			
 			expect(fetch).toHaveBeenCalledWith('/api/project/123/files');
-			expect(viewProject.pageAdder.assignListToElement).toHaveBeenCalled();
+			expect(viewProject.pageAdder.assignListToElement).toHaveBeenCalledWith(
+				'filesList',
+				mockFiles,
+				viewProject.projectFileToHTML
+			);
 		});
 
 		it('should handle file loading errors', async () => {
-			fetch.mockResolvedValueOnce({ ok: false });
+			const error = new Error('Failed to fetch files');
+			fetch.mockRejectedValueOnce(error);
 			const mockProject = { id: '123' };
 			
+			const viewProject = await import('./viewProject.js'); //the bodging is crazy
 			await viewProject.loadProjectFiles(mockProject);
-			expect(console.error).toHaveBeenCalled();
+			
+			expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Error fetching project files:'), expect.anything()
+			);
 		});
 	});*/
 
@@ -579,21 +649,15 @@ describe('viewProject.js Module Tests', () => {
 	*/
 
 	/*describe('createStarRating', () => {
-		it('should create correct number of filled stars', () => {
+		it('should create correct number of filled and empty stars', () => {
 			const rating = 3;
 			const result = viewProject.createStarRating(rating);
-			const filledStars = result.querySelectorAll('.star.filled').length;
-			expect(filledStars).toBe(rating);
-		});
-
-		it('should create correct number of empty stars', () => {
-			const rating = 2;
-			const result = viewProject.createStarRating(rating);
+			const filledStars = result.querySelectorAll('.star.filled').length; //querySelectorAll is nonsense; DOM set up incorrectly
 			const emptyStars = result.querySelectorAll('.star:not(.filled)').length;
+			expect(filledStars).toBe(rating);
 			expect(emptyStars).toBe(5 - rating);
 		});
-	});
-	*/
+	});*/
 
 	describe('displayReviews', () => {
 		it('should display reviews in the DOM', () => {

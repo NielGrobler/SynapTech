@@ -13,7 +13,7 @@
 		const theme = savedTheme || (prefersDark ? 'dark' : 'light');
 		document.documentElement.setAttribute('data-theme', theme);
 		
-		const criticalCSS = `html,body{background:var(--bg-color)}[data-theme=light]{--bg-color:#fff;--text-color:#000;}[data-theme=dark]{--bg-color:#121212;--text-color:#fff;}`;
+		const criticalCss = `html,body{background:var(--bg-color)}[data-theme=light]{--bg-color:#fff;--text-color:#000;}[data-theme=dark]{--bg-color:#121212;--text-color:#fff;}`;
 		
 		const style = document.createElement('style');
 		style.id = 'anti-fouc';
@@ -61,7 +61,7 @@
             <ul class="flex-row gap-large no-list-style center-content-v">
 
                 <!-- Funding Used vs. Available Report -->
-                <li class="border-solid-thin shadow secondary" onclick="window.location.href='/reports/resource-usage'"
+                <li class="border-solid-thin shadow secondary" onclick="window.location.href='/reports/funding'"
                     style="flex: 1; min-width: 200px; max-width: 300px; cursor: pointer;">
                     <header>
                         <h3>Funding Used vs. Available</h3>

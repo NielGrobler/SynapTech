@@ -26,3 +26,7 @@ if (document.readyState === 'loading') {
 } else {
   	initPage();
 }
+
+if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
+	module.exports = {};
+}

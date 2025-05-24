@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Toast Notification</title>
+	<style>
+		/* Toast container */
+		#toast-container {
+			position: fixed;
+			bottom: 1rem;
+			right: 1rem;
+			display: flex;
+			flex-direction: column;
+			gap: 0.5rem;
+			z-index: 9999;
+		}
+
+		/* Individual toast */
+		.toast {
+			background-color: #333;
+			color: #fff;
+			padding: 1rem 1.5rem;
+			border-radius: 5px;
+			box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+			opacity: 0;
+			transform: translateY(20px);
+			animation: fadeIn 0.3s forwards, fadeOut 0.3s forwards 3s;
+			cursor: pointer;
+		}
+
+		@keyframes fadeIn {
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
+		}
+
+		@keyframes fadeOut {
+			to {
+				opacity: 0;
+				transform: translateY(20px);
+			}
+		}
+	</style>
+</head>
+
+<body>
+
+	<main>
+		<h1>Toast Notification System</h1>
+		<button onclick="showToast('This is a toast message!')">Show Toast</button>
+	</main>
+
+	<section id="toast-container" aria-live="polite" aria-atomic="true"></section>
+
+	<script>
+		function showToast(message) {
+			const container = document.getElementById('toast-container');
+
+			const toast = document.createElement('div');
+			toast.className = 'toast';
+			toast.setAttribute('role', 'status');
+			toast.setAttribute('aria-live', 'polite');
+			toast.textContent = message;
+
+			// Remove toast on click
+			toast.addEventListener('click', () => {
+				container.removeChild(toast);
+			});
+
+			// Auto-remove after animation
+			toast.addEventListener('animationend', (e) => {
+				if (e.animationName === 'fadeOut') {
+					container.removeChild(toast);
+				}
+			});
+
+			container.appendChild(toast);
+		}
+	</script>
+
+</body>
+
+</html>

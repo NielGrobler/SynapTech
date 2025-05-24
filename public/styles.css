@@ -14,6 +14,7 @@
 	--color-muted-text: #888;
 	--color-muted-light: #eee;
 	--color-dark: #333;
+	--color-green: #3d348b;
 
 	--color-drop: #fafafa;
 
@@ -39,6 +40,7 @@
 	--color-muted-light: #2f2f2f;
 	--color-muted: #999;
 	--color-muted-text: #bbb;
+	--color-green: #8e7cc3;
 
 	--color-accent: #8e7cc3;
 	--color-accent-highlight: #b0a4e3;
@@ -129,8 +131,41 @@ select {
 
 /* Custom classes, specify characteristics for a declarative approach*/
 
+.usual-bg {
+	background-color: var(--color-bg);
+}
+
+.numbered-ul {
+	list-style: none;
+	/* Remove default bullets */
+	counter-reset: item;
+	padding-left: 0;
+}
+
+.numbered-ul li {
+	counter-increment: item;
+	margin: 0.5em 0;
+	position: relative;
+	padding-left: 2em;
+}
+
+.numbered-ul li::before {
+	content: counter(item) ". ";
+	position: absolute;
+	left: 0;
+}
+
 .flag {
 	background-color: red;
+}
+
+.tight-stack>* {
+	margin-top: 0.20rem;
+	margin-bottom: 0.20rem;
+}
+
+.small-text {
+	font-size: 1rem;
 }
 
 .visually-hidden {
@@ -285,6 +320,10 @@ select {
 
 .small-line-height {
 	line-height: 1;
+}
+
+.small-margin-top {
+	margin-top: 0.5rem;
 }
 
 #messages li a {
@@ -874,17 +913,19 @@ select {
 	cursor: pointer;
 	accent-color: var(--color-accent);
 }
+
 .radio-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin-right: 1.5rem;
-  cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	margin-right: 1.5rem;
+	cursor: pointer;
 }
 
 .radio-label input[type="radio"] {
-  accent-color: var(--color-accent); /* Optional if you're using custom accent color */
-  cursor: pointer;
+	accent-color: var(--color-accent);
+	/* Optional if you're using custom accent color */
+	cursor: pointer;
 }
 
 .no-padding {
@@ -912,4 +953,113 @@ select {
 	.flex-row.gap-large>li {
 		margin-bottom: 1rem;
 	}
+}
+
+/* Layout container */
+.messaging-ui {
+	display: grid;
+	grid-template-columns: 240px 1fr;
+	height: 100vh;
+	font-family: system-ui, sans-serif;
+	background: #f6f7f9;
+}
+
+/* Sidebar */
+.sidebar {
+	background: #1f2937;
+	color: white;
+	padding: 1rem;
+	overflow-y: auto;
+	border-right: 1px solid #111827;
+}
+
+.sidebar-heading {
+	font-size: 1.25rem;
+	margin-bottom: 1rem;
+}
+
+.project-list {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.project-list li {
+	padding: 0.5rem 0.75rem;
+	cursor: pointer;
+	border-radius: 6px;
+}
+
+.project-list li:hover {
+	background: #374151;
+}
+
+.project-article {
+	flex: 3;
+	/* takes about 3/4 of horizontal space */
+	padding: 1.5rem;
+	border: 1px solid var(--border-color);
+	border-radius: 8px;
+	box-shadow: var(--shadow);
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+	overflow-wrap: break-word;
+}
+
+.project-sidebar {
+	flex: 1;
+	/* takes about 1/4 of horizontal space */
+	display: flex;
+	flex-direction: column;
+	gap: 2rem;
+	padding: 1.5rem;
+	border-left: 1px solid var(--color-accent);
+	max-width: 320px;
+	min-width: 280px;
+}
+
+#milestone-form-section {
+	transition: opacity 0.3s ease, max-height 0.3s ease;
+}
+
+.green {
+	color: var(--color-green);
+}
+
+.strike-animate {
+	position: relative;
+	display: inline-block;
+	color: var(--color-text);
+}
+
+.strike-animate::after {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 50%;
+	width: 0;
+	height: 3px;
+	background-color: var(--color-green);
+	transform: translateY(-50%);
+	transition: width 0.5s ease;
+}
+
+.strike-now::after {
+	width: 100%;
+}
+
+.strike-reverse::after {
+	width: 0;
+}
+
+
+li section {
+	color: inherit;
+	background-color: inherit;
+}
+
+li section button {
+	color: inherit;
+	background-color: inherit;
 }
