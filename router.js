@@ -683,8 +683,6 @@ router.get('/analyticsDashboard', (req, res) => {
 
 // Funding Report
 // Route to display the fundingReports page
-// Funding Report
-// Route to display the fundingReports page
 router.get('/reports/funding', requireAuthentication((req, res) => {
 	try {
 		if (!authenticateRequest(req)) {
@@ -692,10 +690,42 @@ router.get('/reports/funding', requireAuthentication((req, res) => {
 			return;
 		}
 
-		res.sendFile(path.join(__dirname, "public", "fundingReports.html"));
+		res.sendFile(path.join(__dirname, "public", "fundingReport.html"));
 	} catch (err) {
 		console.error('Error displaying funding reports page:', err);
 		res.status(500).json({ error: 'Failed to display funding reports page' });
+	}
+}));
+
+// Add this to your router.js where other API routes are defined
+router.get('/api/reports/funding', requireAuthentication(async (req, res) => {
+	try {
+		const userId = req.user.id;
+
+		// Get projects associated with this user
+		const userProjects = await db.fetchAssociatedProjects(req.user);
+
+		if (userProjects.length === 0) {
+			return res.json({
+				totalFunding: 0,
+				amountUsed: 0,
+				amountLeft: 0,
+				usageCategories: [],
+				grants: [],
+				projectFunding: []
+			});
+		}
+
+		// Extract project IDs
+		const projectIds = userProjects.map(project => project.id);
+
+		// Get funding data for these projects
+		const fundingData = await db.getFundingReportData(projectIds);
+
+		res.json(fundingData);
+	} catch (err) {
+		console.error('Error generating funding report:', err);
+		res.status(500).json({ error: 'Failed to generate funding report' });
 	}
 }));
 

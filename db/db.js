@@ -840,7 +840,37 @@ const createReview = async (review) => {
 	);
 };
 
-// Add these to your db.js file
+// Add this function to your db.js file
+const getFundingReportData = async (projectIds) => {
+	try {
+		// Start with a simple version to test
+		console.log("Getting funding data for projects:", projectIds);
+
+		// For initial testing, return mock data
+		return {
+			totalFunding: 100000,
+			amountUsed: 50000,
+			amountLeft: 50000,
+			usageCategories: [
+				{ category: "Research", amount: 30000 },
+				{ category: "Equipment", amount: 20000 }
+			],
+			grants: [
+				{ organization: "Sample Grant", amount: 100000 }
+			],
+			projectFunding: projectIds.map(id => ({
+				id: id,
+				name: "Project " + id,
+				allocated: 100000,
+				used: 50000
+			})),
+			reportDate: new Date()
+		};
+	} catch (err) {
+		console.error("Database error in getFundingReportData:", err);
+		throw err;
+	}
+};
 
 export const fetchUserProjectsWithResources = async (userId) => {
 	const result = await sender.getResult(new DatabaseQueryBuilder()
@@ -1224,6 +1254,7 @@ export default {
 	mayAccessProject,
 	mayUploadToProject,
 	uploadToProject,
+	getFundingReportData,
 	fetchUserProjectsWithResources,
 	fetchUserProjectsWithCompletionStatus,
 	generateCustomReport,
