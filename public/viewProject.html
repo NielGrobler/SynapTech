@@ -5,29 +5,32 @@
 	<script type="module" src="/savedTheme.js"></script>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	
+
 	<!-- code for loading in critical CSS because otherwise it keeps flashing white on dark mode -->
 	<script>
-	(function() {
-		const savedTheme = localStorage.getItem('theme');
-		const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-		const theme = savedTheme || (prefersDark ? 'dark' : 'light');
-		document.documentElement.setAttribute('data-theme', theme);
-		
-		const criticalCss = `html,body{background:var(--bg-color)}[data-theme=light]{--bg-color:#fff;--text-color:#000;}[data-theme=dark]{--bg-color:#121212;--text-color:#fff;}`;
-		
-		const style = document.createElement('style');
-		style.id = 'anti-fouc';
-		style.textContent = criticalCss;
-		document.head.appendChild(style);
-	})();
+		(function () {
+			const savedTheme = localStorage.getItem('theme');
+			const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+			const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+			document.documentElement.setAttribute('data-theme', theme);
+
+			const criticalCss = `html,body{background:var(--bg-color)}[data-theme=light]{--bg-color:#fff;--text-color:#000;}[data-theme=dark]{--bg-color:#121212;--text-color:#fff;}`;
+
+			const style = document.createElement('style');
+			style.id = 'anti-fouc';
+			style.textContent = criticalCss;
+			document.head.appendChild(style);
+		})();
 	</script>
 
-	<link rel="preload" href="/styles.css" as="style" onload="this.onload=null;this.rel='stylesheet';document.getElementById('anti-fouc').remove();">
-	<noscript><link rel="stylesheet" href="/styles.css"></noscript>
+	<link rel="preload" href="/styles.css" as="style"
+		onload="this.onload=null;this.rel='stylesheet';document.getElementById('anti-fouc').remove();">
+	<noscript>
+		<link rel="stylesheet" href="/styles.css">
+	</noscript>
 	<script src="/styleLoad.js"></script>
 
-	
+
 	<title>Unilink | View Project</title>
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
 	<link rel="preconnect" href="https://fonts.googleapis.com">
@@ -103,18 +106,6 @@
 				<ul id="collaboratorList"></ul>
 			</section>
 
-			<section id="milestone" class="inset">
-				<h1 class="accent-underline">Milestones</h1>
-				<ul id="milestoneList">
-					<li>Loading Milestones...</li>
-				</ul>
-			</section>
-
-
-			<section id="funding" class="inset">
-				<h1 class="accent-underline" id="funding-heading"></h1>
-			</section>
-
 			<section id="reviews" class="inset">
 				<section id='reviews-header' class='split accent-underline'>
 					<h2>
@@ -168,16 +159,16 @@
 	</footer>
 </body>
 
-	<script type="module">
-		import {initPage} from '/viewProject.js';
-		await initPage();
-	</script>
+<script type="module">
+	import {initPage} from '/viewProject.js';
+	await initPage();
+</script>
 
-	<script>
-		function reviewProject() {
-			const projectId = new URLSearchParams(window.location.search).get('id');
-			window.location.href = `/reviewProject?id=${projectId}`;
-		}
-	</script>
+<script>
+	function reviewProject() {
+		const projectId = new URLSearchParams(window.location.search).get('id');
+		window.location.href = `/reviewProject?id=${projectId}`;
+	}
+</script>
 
 </html>

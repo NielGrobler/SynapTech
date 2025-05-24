@@ -227,10 +227,10 @@ router.get('/auth/orcid/callback',
 	}
 );
 
-router.get('/dashboard', requireAuthentication(async(req, res) => {
+router.get('/dashboard', requireAuthentication(async (req, res) => {
 
 	const result = await isSuspended(req);
-	if(result){
+	if (result) {
 		return res.redirect('/suspended');
 	}
 	console.log("Redirecting to /dashboard");
@@ -248,7 +248,7 @@ router.get('/signup', (req, res) => {
 });
 
 router.get('/logout', (req, res, next) => {
-	req.logout(function (err) {
+	req.logout(function(err) {
 		if (err) { return next(err); }
 
 		req.session.destroy((err) => {
@@ -358,38 +358,6 @@ router.get('/suspended', (req, res) => {
 });
 
 /* API Routing */
-/*
-router.post('/api/project/:projectId/upload', upload.single('file'), requireAuthentication(async (req, res) => {
-	if (!req.file) {
-		return res.status(400).json({ error: 'No file uploaded.' });
-	}
-
-	try {
-		//console.log(req.file);
-		const maxSize = 10 * 1024 * 1024;
-		if (req.file.size > maxSize) {
-			return res.status(400).json({ error: 'File size exceeds the 10MB limit.' });
-		}
-
-		const projectId = req.params.projectId;
-		const mayUpload = await db.mayUploadToProject(projectId, req.user.id);
-		if (!mayUpload) {
-			return res.status(400).json({ error: 'Not authorized for upload to this project.' });
-		}
-
-
-		const fileBuffer = req.file.buffer;
-		const filename = req.file.originalname;
-		await db.uploadToProject(projectId, fileBuffer, filename);
-
-		return res.status(200).json({ message: 'File uploaded successfully' });
-	} catch (error) {
-		console.error('Error uploading file:', error);
-		return res.status(500).json({ error: error.message });
-	}
-}, { statusCode: 401 }));
-*/
-
 const upload = multer({
 	storage: multer.memoryStorage(),
 	limits: { fileSize: 10 * 1024 * 1024 } // 10MB
@@ -482,6 +450,57 @@ const transformOrThrow = (str, name, maxLength = 512) => {
 	return str;
 }
 
+router.get('/api/funding/opportunities', makeSafeHandler(async (req, res) => {
+	const result = await db.getFundingOpportunities();
+	return res.status(200).json(result);
+}));
+
+router.post('/api/post/funding/request', makeSafeHandler(async (req, res) => {
+	const { opportunityId, projectId } = req.body;
+	expectValidNumId(opportunityId, 'Expected valid funding opportunity id.');
+	expectValidNumId(projectId, 'Expected valid project id.');
+	const mayRequest = await db.mayRequestProjectFunding(projectId, req.user.id);
+	expectForValid(mayRequest, 'Not authorized to request funding for this project.');
+	const hasRequestedAlready = await db.alreadyRequestedFunding(opportunityId, projectId);
+	expectForValid(hasRequestedAlready, 'A request for funding from this source is still pending.');
+	await db.insertFundingRequest(opportunityId, projectId);
+	return res.status(200).json({ message: 'Funding request posted successfully.' });
+}));
+
+router.get('/api/project/:projectId/milestones', makeSafeHandler(async (req, res) => {
+	const projectId = req.params.projectId;
+	expectValidNumId(projectId, 'Expected a valid project id.');
+	const mayView = await db.mayAccessProject(projectId, req.user.id);
+	expectForAuth(mayView);
+	const milestones = await db.getMilestones(projectId);
+	return res.status(200).json(milestones);
+}));
+
+router.post('/api/post/project/:projectId/milestone', makeSafeHandler(async (req, res) => {
+	const projectId = req.params.projectId;
+	expectValidNumId(projectId, 'Expected a valid project id.');
+	const mayView = await db.mayAccessProject(projectId, req.user.id);
+	expectForAuth(mayView);
+	var { name, description } = req.body;
+	name = transformOrThrow(name, 'name');
+	description = transformOrThrow(description, 'description', 2048);
+
+	await db.insertMilestone(projectId, name, description);
+	return res.status(200).json({ message: 'Milestone posted successfully.' });
+}));
+
+router.post('/api/toggle/project/:projectId/milestone', makeSafeHandler(async (req, res) => {
+	const projectId = req.params.projectId;
+	expectValidNumId(projectId);
+	const mayView = await db.mayAccessProject(projectId, req.user.id);
+	expectForAuth(mayView);
+	const { milestoneId } = req.body;
+	expectValidNumId(milestoneId, 'Expected a valid milestone id.');
+
+	await db.toggleMilestone(milestoneId);
+	return res.status(200).json({ message: 'Milestone toggled successfully.' });
+}));
+
 router.post('/api/funding/:projectId/spend', makeSafeHandler(async (req, res) => {
 	const projectId = req.params.projectId;
 	expectValidNumId(projectId, "Expected valid project id.")
@@ -542,7 +561,7 @@ router.get('/api/project/:projectId/file/:fileId/:ext', requireAuthentication(as
 		if (!mayAccess) {
 			return res.status(403).json({ error: "cannot access project" });
 		}
-	
+
 		const result = await db.downloadFile(fileId, ext);
 		res.send(result.buffer);
 	} catch (err) {
@@ -1045,22 +1064,6 @@ router.post('/api/review', makeSafeHandler(async (req, res) => {
 	});
 }, { statusCode: 401 }));
 
-
-/* these already have normal routes
-router.get('/successfulReviewPost', requireAuthentication((req, res) => {
-	res.sendFile(path.join(__dirname, "public", "successfulReviewPost.html"));
-}));
-
-router.get('/messages', requireAuthentication((req, res) => {
-	res.sendFile(path.join(__dirname, "public", "index.html"));
-}));
-
-//Move to search for users page
-router.get('/view/users', requireAuthentication((req, res) => {
-	res.sendFile(path.join(__dirname, "public", "searchUsers.html"));
-}));
-*/
-
 //Searching for users 
 router.get('/api/search/user', makeSafeHandler(async (req, res) => {
 	const { userName } = req.query;
@@ -1095,26 +1098,6 @@ router.get('/admin', requireAuthentication(async (req, res) => {
 	return res.json(admin);
 }, { statusCode: 401 }));
 
-/* these already have normal routes
-//Redirect to other profile
-router.get('/view/other/profile', requireAuthentication((req, res) => {
-	res.sendFile(path.join(__dirname, "public", "viewOtherProfile.html"));
-}));
-
-//Redirect to my profile
-router.get('/view/curr/profile', requireAuthentication((req, res) => {
-	res.sendFile(path.join(__dirname, "public", "viewCurrProfile.html"));
-}));
-
-router.get('/suspended', requireAuthentication((req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-
-	res.sendFile(path.join(__dirname, "public", "suspended.html"));
-}));
-*/
-
 router.get('/isSuspended', requireAuthentication(async (req, res) => {
 	try {
 		const { id } = req.query
@@ -1137,108 +1120,7 @@ router.put('user/details', requireAuthentication(async (req, res) => {
 	const { name, bio } = req.body;
 }, { statusCode: 401 }));
 
-/*router.use((err, req, res, next) => {
-  console.error('Express error:', err);
-  res.status(500).send('Internal Server Error');
-});
-*/
-
-//below has no requireAuthentication nor status Code 401?
-
-router.get('/redirect/edit/milestone', (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-
-	res.sendFile(path.join(__dirname, "public", "editMilestone.html"));
-});
-
-router.get('/redirect/add/milestone', (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-
-	res.sendFile(path.join(__dirname, "public", "addMilestone.html"));
-});
-
-router.get('/get/milestones/by-project', async (req, res) => {
-	const projectId = req.query.id;
-	console.log(projectId);
-	try {
-		const result = await db.getMilestones(projectId);
-		res.json(result);
-	} catch (err) {
-		res.status(400).json({ error: 'Failed' });
-	}
-});
-
-router.get('/get/milestone/by-id', async (req, res) => {
-	const milestoneId = req.query.id;
-	try {
-		const result = await db.getMilestone(milestoneId);
-		res.json(result);
-	} catch (err) {
-		res.status(400).json({ error: 'Failed' });
-	}
-});
-
-
-router.post('/add/milestone', async(req, res) =>{
-	try {
-		const { project_id, name, description } = req.body;
-		console.log(project_id);
-		if(!project_id||!name||!description){
-			res.status(400).json({error: 'element missing'});
-			return;
-		}
-		console.log(name);
-		console.log(description);
-		await db.addMilestone({project_id, name, description});
-
-		res.send('Successfully added milestone.');
-	} catch (err) {
-		res.status(400).json({ error: 'Failed' });
-	}
-});
-
-router.put('/edit/milestone', async(req, res) =>{
-	try {
-		const {milestoneId, name, description} = req.body
-		await db.editMilestone({milestoneId, name, description});
-		res.send('Successfully edited milestone.');
-	} catch (err) {
-		res.status(400).json({ error: 'Failed' });
-	}
-});
-
-router.put('/complete/milestone', async(req, res) =>{
-	try {
-		await db.completeMilestone(req.body.id);
-		res.send('Milestone Completed!');
-	} catch (err) {
-		res.status(400).json({ error: 'Failed' });
-	}
-});
-
-router.put('/uncomplete/milestone', async(req, res) =>{
-	try {
-		await db.uncompleteMilestone(req.body.id);
-		res.send('Completion status revoked:(')
-	} catch (err) {
-		res.status(400).json({ error: 'Failed' });
-	}
-});
-
-router.delete('/delete/milestone', async(req,res)=>{
-	try {
-		await db.deleteMilestone(req.body.id);
-		res.send('Successfully deleted milestone.');
-	} catch (err) {
-		res.status(400).json({ error: 'Failed' });
-	}
-});
-
-router.get('/redirect/view/funding', (req, res) =>{
+router.get('/redirect/view/funding', (req, res) => {
 	if (!authenticateRequest(req)) {
 		return res.redirect('/forbidden');
 	}
@@ -1246,7 +1128,7 @@ router.get('/redirect/view/funding', (req, res) =>{
 	res.sendFile(path.join(__dirname, "public", "viewFunding.html"));
 });
 
-router.post('/add/funding', async(req,res)=>{
+router.post('/add/funding', async (req, res) => {
 	const { project_id, currency, funding_type, total_funding } = req.body;
 
 	try {
@@ -1258,7 +1140,7 @@ router.post('/add/funding', async(req,res)=>{
 	}
 });
 
-router.post('/add/expenditure', async(req,res)=>{
+router.post('/add/expenditure', async (req, res) => {
 	const { funding_id, amount, description } = req.body;
 
 	try {
@@ -1270,7 +1152,7 @@ router.post('/add/expenditure', async(req,res)=>{
 	}
 });
 
-router.get('/get/funding', async(req,res)=>{
+router.get('/get/funding', async (req, res) => {
 	const projectId = req.query.id;
 	try {
 		const result = await db.getFunding(projectId);
@@ -1280,7 +1162,7 @@ router.get('/get/funding', async(req,res)=>{
 	}
 });
 
-router.get('/get/expenditure', async(req,res)=>{
+router.get('/get/expenditure', async (req, res) => {
 	const fundingId = req.query.id;
 	try {
 		const result = await db.getExpenditure(fundingId);
@@ -1290,7 +1172,7 @@ router.get('/get/expenditure', async(req,res)=>{
 	}
 });
 
-router.get(`/redirect/view/suspended`, (req, res) =>{
+router.get(`/redirect/view/suspended`, (req, res) => {
 	if (!authenticateRequest(req)) {
 		return res.redirect('/forbidden');
 	}
@@ -1298,7 +1180,7 @@ router.get(`/redirect/view/suspended`, (req, res) =>{
 	res.sendFile(path.join(__dirname, "public", "viewSuspended.html"));
 });
 
-router.get(`/suspended/user`, async(req, res) =>{
+router.get(`/suspended/user`, async (req, res) => {
 	try {
 		const result = await db.getSuspendedUser();
 		res.json(result);
