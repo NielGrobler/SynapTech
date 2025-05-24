@@ -719,9 +719,23 @@ const searchUsers = async (userName) => {
 		.query(`
 			SELECT DISTINCT *
 			FROM Account
-			WHERE LOWER(Account.name) LIKE {{userName}} AND Account.is_suspended = 0
+			WHERE LOWER(Account.name) LIKE {{userName}} AND is_suspended = 0
 			ORDER BY CHAR_LENGTH(Account.name)
 			LIMIT 25;
+		`)
+		.build()
+	);
+
+	return result.recordSet;
+};
+
+const  getSuspendedUser = async () => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.query(`
+			SELECT DISTINCT *
+			FROM Account
+			WHERE is_suspended = 1
+			ORDER BY CHAR_LENGTH(Account.name)
 		`)
 		.build()
 	);
@@ -1383,5 +1397,6 @@ export default {
 	addFunding,
 	addExpenditure,
 	getExpenditure,
-	getFunding
+	getFunding,
+	getSuspendedUser
 };

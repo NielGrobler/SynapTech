@@ -27,7 +27,7 @@
 	<script src="/styleLoad.js"></script>
 
 	
-	<title>Unilink | Forbidden </title>
+	<title>Unilink | Suspended Users</title>
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="icon" href="logo.png" type="image/png">
@@ -40,20 +40,26 @@
 </head>
 
 <body>
-	<main>
-		<section aria-labelledby="forbidden-title">
-			<header>
-				<h1 id="forbidden-title">403 Forbidden</h1>
-			</header>
-			<article>
-				<h2>You do not have permission to access this page.</h2>
-				<p>It seems that you are currently suspended from this site.</p>
-				<p>Please email 2678784@students.wits.ac.za for customer support</p>
-			</article>
+	<nav class="inset secondary fill accent-underline">
+		<button class="nav-item flex-row center-content-v gap-small"
+			onclick="history.back()">
+			<i class='bx bx-chevron-left'></i>
+			Back
+		</button>
+	</nav>
+	<main class="inset flex-col gap-medium">
+		<section class="border-solid-thin shadow">
+			<h1 class="accent-underline">Suspended Users</h1>
+
+			<ul id="suspendedUserList">
+			</ul>
+		</section>
 	</main>
 	<footer class="inset">
 		<p>&copy; 2025 Unilink. All rights reserved.</p>
 	</footer>
 </body>
+
+<script type="module" src="/viewSuspended.js"></script>
 
 </html>

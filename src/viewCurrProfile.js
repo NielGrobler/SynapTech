@@ -53,4 +53,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 	} catch (err) {
 		console.error('Error loading Projects:', err);
 	}
-});
+})();
+
+(async()=>{
+	try{
+		const res = await fetch('/admin');
+		const admin = await res.json();
+		if(admin){
+			const viewSus = document.createElement('button');
+			viewSus.textContent = "View Suspended Users";
+			viewSus.addEventListener('click', () =>{
+			window.location.href = `/redirect/view/suspended`;
+			});
+			document.body.appendChild(viewSus);
+		}
+	}catch(error){
+		console.error('Error fetching admin status:', error);
+	}
+})();

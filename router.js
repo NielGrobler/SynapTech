@@ -227,7 +227,12 @@ router.get('/auth/orcid/callback',
 	}
 );
 
-router.get('/dashboard', requireAuthentication((req, res) => {
+router.get('/dashboard', requireAuthentication(async(req, res) => {
+
+	const result = await isSuspended(req);
+	if(result){
+		return res.redirect('/suspended');
+	}
 	console.log("Redirecting to /dashboard");
 	res.sendFile(path.join(__dirname, "public", "dashboard.html"));
 }));
@@ -1279,6 +1284,23 @@ router.get('/get/expenditure', async(req,res)=>{
 	const fundingId = req.query.id;
 	try {
 		const result = await db.getExpenditure(fundingId);
+		res.json(result);
+	} catch (err) {
+		res.status(400).json({ error: 'Failed' });
+	}
+});
+
+router.get(`/redirect/view/suspended`, (req, res) =>{
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+
+	res.sendFile(path.join(__dirname, "public", "viewSuspended.html"));
+});
+
+router.get(`/suspended/user`, async(req, res) =>{
+	try {
+		const result = await db.getSuspendedUser();
 		res.json(result);
 	} catch (err) {
 		res.status(400).json({ error: 'Failed' });
