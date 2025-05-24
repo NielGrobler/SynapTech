@@ -5,35 +5,26 @@ import ORCIDStrategy from 'passport-orcid';
 import session from 'express-session';
 import * as path from 'path';
 import dotenv from 'dotenv';
-
 import { fileURLToPath } from 'url';
-
-import { getDirname } from './dirname.js';
-
+//import { getDirname } from './dirname.js';
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
-
-/* Database imports */
 import db from './db/db.js';
 import { FileStorageClient } from './db/connectionInterfaces.js';
 
 // Configure .env
 dotenv.config();
 if (!process.env.SESSION_SECRET) {
-  throw new Error('SESSION_SECRET is not set. Check your .env or CI environment variables.');
+	throw new Error('SESSION_SECRET is not set. Check your .env or CI environment variables.');
 }
 
 // For convenience, as these don't exist in ES modules.
 let __dirname;
 try {
-  const __filename = fileURLToPath(import.meta.url);
-  __dirname = path.dirname(__filename);
+	const __filename = fileURLToPath(import.meta.url);
+	__dirname = path.dirname(__filename);
 } catch (err) {
-  try {
-	__dirname = getDirname(import.meta);
-  } catch (e) {
 	__dirname = '/'; // fallback for test/browser envs
-  }
 }
 
 const router = express();
@@ -150,6 +141,7 @@ router.get('/ping', (req, res) => res.send('pong'));
 
 /* GET Request Routing */
 router.get('/forbidden', (req, res) => {
+	console.log("Redirecting to /forbidden");
 	res.status(403).sendFile(path.join(__dirname, "public", "forbidden.html"));
 });
 
@@ -157,6 +149,7 @@ router.get('/collaboration', (req, res) => {
 	if (!authenticateRequest(req)) {
 		return res.redirect('/forbidden');
 	}
+	console.log("Redirecting to /collaboration");
 	res.sendFile(path.join(__dirname, "public", "viewCollaborationRequests.html"));
 });
 
@@ -174,7 +167,8 @@ router.get('/auth/google/callback',
 			{ expiresIn: '1h' }
 		);
 
-		res.redirect(`/dashboard?token=${token}`);
+		console.log("Redirecting to /dashboard");
+		res.redirect(`/dashboard`);
 	}
 );
 
@@ -200,9 +194,13 @@ const requireAuthentication = (callback, opts = {}) => {
 }
 
 /* Normal Routes */
-router.get('/dashboard', requireAuthentication((req, res) => {
-	res.sendFile(path.join(__dirname, "public", "dashboard.html"));
-}));
+router.get('/', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/login');
+	}
+	res.redirect('/dashboard');
+});
+
 
 router.get('/styles.css', (req, res) => {
 	res.sendFile(path.join(__dirname, 'public', 'styles.css'));
@@ -228,73 +226,70 @@ router.get('/auth/orcid/callback',
 	}
 );
 
-// Default route
-router.get('/', (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('login');
-	}
+router.get('/dashboard', requireAuthentication(async(req, res) => {
 
-	res.redirect('/dashboard');
-});
+	const result = await isSuspended(req);
+	if(result){
+		return res.redirect('/suspended');
+	}
+	console.log("Redirecting to /dashboard");
+	res.sendFile(path.join(__dirname, "public", "dashboard.html"));
+}));
 
 router.get('/login', (req, res) => {
+	console.log("Redirecting to /login");
 	res.sendFile(path.join(__dirname, "public", "login.html"));
 });
 
 router.get('/signup', (req, res) => {
+	console.log("Redirecting to /signup");
 	res.sendFile(path.join(__dirname, "public", "signup.html"));
 });
 
-// Logout
 router.get('/logout', (req, res, next) => {
-	req.logout(function(err) {
+	req.logout(function (err) {
 		if (err) { return next(err); }
 
 		req.session.destroy((err) => {
 			if (err) {
 				console.err('Error destroying session during logout:', err);
 			}
+			console.log("Redirecting to /login");
 			res.redirect('/');
 		});
 	});
 });
 
-// Create project
 router.get('/create/project', requireAuthentication((req, res) => {
+	console.log("Redirecting to /create/project");
 	res.sendFile(path.join(__dirname, "public", "addProject.html"));
 }));
 
-// Search public projects
-router.get('/view/public', requireAuthentication((req, res) => {
-	res.sendFile(path.join(__dirname, "public", "searchPublicProjects.html"));
-}));
-
 router.get('/view/search', requireAuthentication((req, res) => {
+	console.log("Redirecting to /view/search");
 	res.sendFile(path.join(__dirname, "public", "search.html"));
 }));
 
 router.get('/view/project', requireAuthentication((req, res) => {
-	
+	console.log("Redirecting to /view/project");
 	res.sendFile(path.join(__dirname, "public", "viewProject.html"));
 }));
 
-// Settings Page
 router.get('/settings', requireAuthentication((req, res) => {
 	if (!authenticateRequest(req)) {
 		res.status(401).json({ error: 'Not authenticated' });
 		return;
 	}
-
+	console.log("Redirecting to /settings");
 	res.sendFile(path.join(__dirname, "public", "settings.html"));
 }, { statusCode: 401 }));
 
-// Invite Collaborator Page
 router.get('/invite', requireAuthentication((req, res) => {
 	if (!authenticateRequest(req)) {
 		res.status(401).json({ error: 'Not authenticated' });
 		return;
 	}
-
+	console.log("Redirecting to /invite");
 	res.sendFile(path.join(__dirname, "public", "invite.html"));
 }, { statusCode: 401 }));
 
@@ -303,9 +298,63 @@ router.get('/message', requireAuthentication((req, res) => {
 		res.status(401).json({ error: 'Not authenticated' });
 		return;
 	}
-
+	console.log("Redirecting to /message");
 	res.sendFile(path.join(__dirname, "public", "messages.html"));
 }));
+
+router.get('/reviewProject', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+	console.log("Redirecting to /reviewProject");
+	res.sendFile(path.join(__dirname, "public", "reviewProject.html"));
+});
+
+router.get('/analyticsDashboard', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+	console.log("Redirecting to /analyticsDashboard");
+	res.sendFile(path.join(__dirname, "public", "analyticsDashboard.html"));
+});
+
+router.get('/successfulReviewPost', requireAuthentication((req, res) => {
+	console.log("Redirecting to /successfulReviewPost");
+	res.sendFile(path.join(__dirname, "public", "successfulReviewPost.html"));
+}));
+
+router.get('/messages', requireAuthentication((req, res) => { //Messages redirects to index.html?
+	console.log("Redirecting to /messages");
+	res.sendFile(path.join(__dirname, "public", "index.html"));
+}));
+
+router.get('/view/users', requireAuthentication((req, res) => {
+	res.sendFile(path.join(__dirname, "public", "searchUsers.html"));
+}));
+
+router.get('/view/other/profile', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+	console.log("Redirecting to /view/other/profile");
+	res.sendFile(path.join(__dirname, "public", "viewOtherProfile.html"));
+});
+
+router.get('/view/curr/profile', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+	console.log("Redirecting to /view/curr/profile");
+	res.sendFile(path.join(__dirname, "public", "viewCurrProfile.html"));
+});
+
+router.get('/suspended', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+	console.log("Redirecting to /suspended");
+	res.sendFile(path.join(__dirname, "public", "suspended.html"));
+});
 
 /* API Routing */
 const upload = multer({
@@ -321,7 +370,7 @@ router.post('/api/project/:projectId/upload', upload.single('file'), requireAuth
 	}
 
 	try {
-		console.log(req.file);
+		//console.log(req.file);
 		const maxSize = 10 * 1024 * 1024;
 		if (req.file.size > maxSize) {
 			return res.status(400).json({ error: 'File size exceeds the 10MB limit.' });
@@ -343,7 +392,7 @@ router.post('/api/project/:projectId/upload', upload.single('file'), requireAuth
 		console.error('Error uploading file:', error);
 		return res.status(500).json({ error: error.message });
 	}
-}));
+}, { statusCode: 401 }));
 
 router.get('/api/project/:projectId/file/:fileId/:ext', requireAuthentication(async (req, res) => {
 	try {
@@ -354,13 +403,13 @@ router.get('/api/project/:projectId/file/:fileId/:ext', requireAuthentication(as
 		if (!mayAccess) {
 			return res.status(403).json({ error: "cannot access project" });
 		}
-	
+
 		const result = await db.downloadFile(fileId, ext);
 		res.send(result.buffer);
 	} catch (err) {
 		res.json({ error: err.message || err.toString() });
 	}
-}));
+}, { statusCode: 401 }));
 
 router.get('/api/project/:projectId/files', requireAuthentication(async (req, res) => {
 	try {
@@ -375,7 +424,7 @@ router.get('/api/project/:projectId/files', requireAuthentication(async (req, re
 	} catch (err) {
 		res.json({ error: err.message || err.toString() });
 	}
-}));
+}, { statusCode: 401 }));
 
 router.get('/api/user/info', requireAuthentication((req, res) => {
 	if (!authenticateRequest(req)) {
@@ -423,7 +472,7 @@ router.post('/api/collaboration/invite', requireAuthentication(async (req, res) 
 	} catch (err) {
 		return res.status(500).json({ error: 'Internal Error' });
 	}
-}));
+}, { statusCode: 401 }));
 
 router.get('/api/collaboration/invites', requireAuthentication(async (req, res) => {
 	try {
@@ -434,7 +483,7 @@ router.get('/api/collaboration/invites', requireAuthentication(async (req, res) 
 		console.error(err);
 		return res.status(400).json({ error: 'bad request' });
 	}
-}));
+}, { statusCode: 401 }));
 
 router.post('/api/collaboration/invite/reply', requireAuthentication(async (req, res) => {
 	try {
@@ -460,12 +509,12 @@ router.post('/api/collaboration/invite/reply', requireAuthentication(async (req,
 		console.log(err);
 		return res.status(500).json({ error: 'Internal Error' });
 	}
-}));
+}, { statusCode: 401 }));
 
 router.get('/api/user/projectNames', requireAuthentication(async (req, res) => {
 	let projects = await db.fetchAssociatedProjectsByLatest(req.user);
 	res.json(projects);
-}));
+}, { statusCode: 401 }));
 
 const authenticatedForView = (project, user) => {
 	if (project.is_public || user.id === project.created_by_account_id) {
@@ -494,7 +543,7 @@ router.put('/api/accept/collaborator', requireAuthentication(async (req, res) =>
 	} catch (err) {
 		res.status(400).json({ error: 'Error.' });
 	}
-}));
+}, { statusCode: 401 }));
 
 router.delete('/api/reject/collaborator', requireAuthentication(async (req, res) => {
 	const { userId, projectId } = req.body;
@@ -514,7 +563,7 @@ router.delete('/api/reject/collaborator', requireAuthentication(async (req, res)
 	} catch (err) {
 		res.status(400).json({ error: 'Error.' });
 	}
-}));
+}, { statusCode: 401 }));
 
 // Route for when users want to fetch a specific project (based on id)
 router.get('/api/project', requireAuthentication(async (req, res) => {
@@ -522,7 +571,7 @@ router.get('/api/project', requireAuthentication(async (req, res) => {
 		res.status(401).json({ error: 'Not authenticated' });
 		return;
 	}
-	
+
 	const { id } = req.query;
 	if (!id) {
 		res.status(400).json({ error: "Bad Request." });
@@ -544,7 +593,8 @@ router.get('/api/project', requireAuthentication(async (req, res) => {
 	res.json(project);
 }, { statusCode: 401 }));
 
-/*
+
+
 // Route for when users want to view a specific user (based on site id)
 router.get('/api/user', async (req, res) => {
 	if (!authenticateRequest(req)) {
@@ -567,7 +617,7 @@ router.get('/api/user', async (req, res) => {
 
 	res.json(user);
 });
-*/
+
 
 router.get('/api/search/project', requireAuthentication(async (req, res) => {
 	const { projectName } = req.query;
@@ -578,25 +628,16 @@ router.get('/api/search/project', requireAuthentication(async (req, res) => {
 
 	res.json(await db.searchProjects(projectName));
 
-}));
-/*
-});
-
-//fetch current user project
-router.get('/api/user/project', async (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-*/
+}, { statusCode: 401 }));
 
 router.get('/api/user/project', requireAuthentication(async (req, res) => {
 	let projects = await db.fetchAssociatedProjects(req.user);
 	await db.appendCollaborators(projects);
 
 	res.json(projects);
-}));
+}, { statusCode: 401 }));
 
-/*
+
 //fetch other user project
 router.get('/api/other/project', async (req, res) => {
 	if (!authenticateRequest(req)) {
@@ -612,19 +653,11 @@ router.get('/api/other/project', async (req, res) => {
 
 	res.json(projects);
 });
-*/
 
 router.get('/api/collaborator', requireAuthentication(async (req, res) => {
 	let pending_collaborators = await db.fetchPendingCollaborators(req.user);
 	res.json(pending_collaborators);
-}));
-
-router.get('/reviewProject', (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-	res.sendFile(path.join(__dirname, "public", "reviewProject.html"));
-});
+}, { statusCode: 401 }));
 
 router.get('/api/reviews', requireAuthentication(async (req, res) => {
 	const projectId = req.query.projectId;
@@ -644,7 +677,7 @@ router.get('/api/reviews', requireAuthentication(async (req, res) => {
 		console.error('Error fetching reviews:', err);
 		res.status(500).json({ error: 'Failed to fetch reviews' });
 	}
-}));
+}, { statusCode: 401 }));
 
 router.get('/analyticsDashboard', (req, res) => {
 	if (!authenticateRequest(req)) {
@@ -653,24 +686,261 @@ router.get('/analyticsDashboard', (req, res) => {
 	res.sendFile(path.join(__dirname, "public", "analyticsDashboard.html"));
 });
 
+// Funding Report
+// Route to display the fundingReports page
+router.get('/reports/funding', requireAuthentication((req, res) => {
+	try {
+		if (!authenticateRequest(req)) {
+			res.status(401).json({ error: 'Not authenticated' });
+			return;
+		}
+
+		res.sendFile(path.join(__dirname, "public", "fundingReport.html"));
+	} catch (err) {
+		console.error('Error displaying funding reports page:', err);
+		res.status(500).json({ error: 'Failed to display funding reports page' });
+	}
+}, { statusCode: 401 }));
+
+// Add this to your router.js where other API routes are defined
+router.get('/api/reports/funding', requireAuthentication(async (req, res) => {
+	try {
+		const userId = req.user.id;
+
+		// Get projects associated with this user
+		const userProjects = await db.fetchAssociatedProjects(req.user);
+
+		if (userProjects.length === 0) {
+			return res.json({
+				totalFunding: 0,
+				amountUsed: 0,
+				amountLeft: 0,
+				usageCategories: [],
+				grants: [],
+				projectFunding: []
+			});
+		}
+
+		// Extract project IDs
+		const projectIds = userProjects.map(project => project.id);
+
+		// Get funding data for these projects
+		const fundingData = await db.getFundingReportData(projectIds);
+
+		res.json(fundingData);
+	} catch (err) {
+		console.error('Error generating funding report:', err);
+		res.status(500).json({ error: 'Failed to generate funding report' });
+	}
+}));
+
+// Completion Status Report
+router.get('/reports/completion-status', requireAuthentication(async (req, res) => {
+	try {
+		const { projectId } = req.query;
+
+		// If a specific project ID is provided, get details for that project
+		let projectData = null;
+		if (projectId) {
+			const project = await db.fetchProjectById(projectId);
+			if (!project) {
+				return res.status(404).json({ error: 'Project not found' });
+			}
+
+			// Check if user has access to this project
+			if (!authenticatedForView(project, req.user)) {
+				return res.status(403).json({ error: 'Not authorized to view this project' });
+			}
+
+			// Get milestones (use ProjectMilestone table)
+			const milestonesQuery = await sender.getResult(new DatabaseQueryBuilder()
+				.input('projectId', projectId)
+				.query(`
+          SELECT 
+            project_milestone_id AS id,
+            name,
+            description,
+            created_at,
+            completed_at
+          FROM ProjectMilestone
+          WHERE project_id = {{projectId}}
+          ORDER BY created_at
+        `)
+				.build()
+			);
+
+			// Calculate completion percentage based on completed milestones
+			const milestones = milestonesQuery.recordSet;
+			let completedMilestones = 0;
+			if (milestones && milestones.length > 0) {
+				completedMilestones = milestones.filter(m => m.completed_at).length;
+			}
+
+			const completionPercentage = milestones.length > 0
+				? Math.round((completedMilestones / milestones.length) * 100)
+				: 50; // Default to 50% if no milestones
+
+			// Add calculated fields to project
+			project.progress = completionPercentage;
+			project.milestones = milestones;
+
+			projectData = project;
+		}
+
+		// Get all user projects for comparison
+		const userProjects = await db.fetchAssociatedProjects(req.user);
+		await db.appendCollaborators(userProjects);
+
+		// Calculate progress for each project (random for demo purposes)
+		userProjects.forEach(project => {
+			project.progress = Math.floor(Math.random() * 80) + 20; // Random progress between 20-100%
+		});
+
+		res.sendFile(path.join(__dirname, "public", "completionStatusReport.html"));
+	} catch (err) {
+		console.error('Error generating completion status report:', err);
+		res.status(500).json({ error: 'Failed to generate completion status report' });
+	}
+}, { statusCode: 401 }));
+
+// API endpoint to get the report data for the client-side JS
+router.get('/api/reports/completion-status', requireAuthentication(async (req, res) => {
+	try {
+		const { projectId } = req.query;
+
+		if (!projectId) {
+			return res.status(400).json({ error: 'Project ID is required' });
+		}
+
+		// Get project details
+		const project = await db.fetchProjectById(projectId);
+		if (!project) {
+			return res.status(404).json({ error: 'Project not found' });
+		}
+
+		// Check if user has access to this project
+		if (!authenticatedForView(project, req.user)) {
+			return res.status(403).json({ error: 'Not authorized to view this project' });
+		}
+
+		// Get project milestones
+		const milestonesQuery = await sender.getResult(new DatabaseQueryBuilder()
+			.input('projectId', projectId)
+			.query(`
+        SELECT 
+          project_milestone_id AS id,
+          name,
+          description,
+          created_at,
+          completed_at
+        FROM ProjectMilestone
+        WHERE project_id = {{projectId}}
+        ORDER BY created_at
+      `)
+			.build()
+		);
+
+		const milestones = milestonesQuery.recordSet;
+
+		// Calculate completion percentage based on completed milestones
+		let completedMilestones = 0;
+		if (milestones && milestones.length > 0) {
+			completedMilestones = milestones.filter(m => m.completed_at).length;
+		}
+
+		const completionPercentage = milestones.length > 0
+			? Math.round((completedMilestones / milestones.length) * 100)
+			: 50; // Default to 50% if no milestones
+
+		// Add calculated fields to project
+		project.progress = completionPercentage;
+		project.milestones = milestones;
+
+		// Get all user projects for comparison
+		const userProjects = await db.fetchAssociatedProjects(req.user);
+
+		// Calculate progress for each project (using milestone completion if available)
+		for (const comparison_project of userProjects) {
+			if (comparison_project.id === project.id) {
+				comparison_project.progress = completionPercentage;
+			} else {
+				// For demo purposes assign random progress
+				comparison_project.progress = Math.floor(Math.random() * 80) + 20; // 20-100%
+			}
+		}
+
+		// Return the combined data
+		res.json({
+			project: project,
+			similarProjects: userProjects.filter(p => p.id !== project.id),
+			collaborators: project.collaborators || [],
+			completionData: {
+				tasksCompleted: completedMilestones,
+				totalTasks: milestones.length,
+				avgDaysToComplete: 5.6  // This would ideally be calculated from your actual data
+			}
+		});
+
+	} catch (err) {
+		console.error('Error generating completion status report data:', err);
+		res.status(500).json({ error: 'Failed to generate completion status report data' });
+	}
+}, { statusCode: 401 }));
+
+// Customizable Report
+router.get('/reports/custom', requireAuthentication(async (req, res) => {
+	try {
+		// Get parameters from the query string
+		const { metrics, projectIds, timeframe, groupBy } = req.query;
+
+		if (!metrics) {
+			return res.status(400).json({ error: 'No metrics specified for custom report' });
+		}
+
+		// Parse the metrics and validate them
+		const metricsList = metrics.split(',');
+		const validMetrics = ['completion', 'resources', 'collaborators', 'reviews', 'uploads'];
+		const filteredMetrics = metricsList.filter(m => validMetrics.includes(m));
+
+		if (filteredMetrics.length === 0) {
+			return res.status(400).json({ error: 'No valid metrics specified' });
+		}
+
+		// Generate custom report based on specified metrics
+		const customReportData = await db.generateCustomReport({
+			userId: req.user.id,
+			metrics: filteredMetrics,
+			projectIds: projectIds ? projectIds.split(',').map(id => parseInt(id)) : null,
+			timeframe: timeframe || 'all',
+			groupBy: groupBy || 'project'
+		});
+
+		res.json(customReportData);
+	} catch (err) {
+		console.error('Error generating custom report:', err);
+		res.status(500).json({ error: 'Failed to generate custom report', details: err.message });
+	}
+}, { statusCode: 401 }));
+
 /* POST Request Routing */
 router.post('/create/project', requireAuthentication(async (req, res) => {
-	const { projectName, description, field, visibility } = req.body;
-
-	const project = {
-		name: projectName,
-		description,
-		field,
-		isPublic: visibility === 'public',
-	};
-
 	try {
+		const { projectName, description, field, visibility } = req.body;
+
+		const project = {
+			name: projectName,
+			description: description,
+			field: field,
+			isPublic: visibility === 'true',
+		};
+
 		await db.createProject(project, req.user);
 		res.sendFile(path.join(__dirname, "public", "successfulProjectPost.html"));
 	} catch (err) {
 		res.sendFile(path.join(__dirname, "public", "failureProjectPost.html"));
+		console.error(err)
 	}
-}));
+}, { statusCode: 401 }));
 
 router.post('/api/collaboration/request', requireAuthentication(async (req, res) => {
 	const { projectId } = req.body;
@@ -680,11 +950,11 @@ router.post('/api/collaboration/request', requireAuthentication(async (req, res)
 
 	try {
 		await db.insertPendingCollaborator(req.user.id, projectId);
-		res.send('Successfully sent collobaroration request.');
+		res.send('Successfully sent collaboration request.');
 	} catch (err) {
 		res.status(400).json({ error: 'Failed' });
 	}
-}));
+}, { statusCode: 401 }));
 
 router.post('/remove/user', requireAuthentication(async (req, res) => {
 	if (!req.body) {
@@ -717,7 +987,7 @@ router.post('/remove/user', requireAuthentication(async (req, res) => {
 	} catch (err) {
 		res.status(400).json({ error: err });
 	}
-}));
+}, { statusCode: 401 }));
 
 //Reviews Page
 router.post('/api/review', requireAuthentication(async (req, res) => {
@@ -743,20 +1013,7 @@ router.post('/api/review', requireAuthentication(async (req, res) => {
 		console.error('Error creating review:', err);
 		res.status(500).json({ error: 'Failed to submit review', details: err.message });
 	}
-})); 
-
-router.get('/successfulReviewPost', requireAuthentication((req, res) => {
-	res.sendFile(path.join(__dirname, "public", "successfulReviewPost.html"));
-}));
-
-router.get('/messages', requireAuthentication((req, res) => {
-	res.sendFile(path.join(__dirname, "public", "index.html"));
-}));
-
-//Move to search for users page
-router.get('/view/users', requireAuthentication((req, res) => {
-	res.sendFile(path.join(__dirname, "public", "searchUsers.html"));
-}));
+}, { statusCode: 401 }));
 
 //Searching for users 
 router.get('/api/search/user', async (req, res) => {
@@ -794,39 +1051,12 @@ router.put('/suspend/user', async (req, res) => {
 	}
 });
 
-
 //Checks if user is an administrator
-router.get('/admin', async (req, res) => {
+router.get('/admin', requireAuthentication(async (req, res) => {
 	let user = req.user.id;
 	let admin = await db.is_Admin(user);
 	return res.json(admin);
-});
-
-//Redirect to other profile
-router.get('/view/other/profile', (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-
-	res.sendFile(path.join(__dirname, "public", "viewOtherProfile.html"));
-});
-
-//Redirect to my profile
-router.get('/view/curr/profile', (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-
-	res.sendFile(path.join(__dirname, "public", "viewCurrProfile.html"));
-});
-
-router.get('/suspended', (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-
-	res.sendFile(path.join(__dirname, "public", "suspended.html"));
-});
+}, { statusCode: 401 }));
 
 router.get('/isSuspended', requireAuthentication(async (req, res) => {
 	try {
@@ -836,7 +1066,7 @@ router.get('/isSuspended', requireAuthentication(async (req, res) => {
 	} catch (err) {
 		console.error('Error checking if user suspended:', err);
 	}
-}));
+}, { statusCode: 401 }));
 
 //Put request to update profile
 router.put('/update/profile', async (req, res) => {
@@ -853,12 +1083,176 @@ router.put('/update/profile', async (req, res) => {
 /* PUT Request Routing */
 router.put('user/details', requireAuthentication(async (req, res) => {
 	const { name, bio } = req.body;
-}));
+}, { statusCode: 401 }));
 
 /*router.use((err, req, res, next) => {
   console.error('Express error:', err);
   res.status(500).send('Internal Server Error');
 });
 */
+
+//below has no requireAuthentication nor status Code 401?
+
+router.get('/redirect/edit/milestone', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+
+	res.sendFile(path.join(__dirname, "public", "editMilestone.html"));
+});
+
+router.get('/redirect/add/milestone', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+
+	res.sendFile(path.join(__dirname, "public", "addMilestone.html"));
+});
+
+router.get('/get/milestones/by-project', async (req, res) => {
+	const projectId = req.query.id;
+	console.log(projectId);
+	try {
+		const result = await db.getMilestones(projectId);
+		res.json(result);
+	} catch (err) {
+		res.status(400).json({ error: 'Failed' });
+	}
+});
+
+router.get('/get/milestone/by-id', async (req, res) => {
+	const milestoneId = req.query.id;
+	try {
+		const result = await db.getMilestone(milestoneId);
+		res.json(result);
+	} catch (err) {
+		res.status(400).json({ error: 'Failed' });
+	}
+});
+
+
+router.post('/add/milestone', async(req, res) =>{
+	try {
+		const { project_id, name, description } = req.body;
+		console.log(project_id);
+		if(!project_id||!name||!description){
+			res.status(400).json({error: 'element missing'});
+			return;
+		}
+		console.log(name);
+		console.log(description);
+		await db.addMilestone({project_id, name, description});
+
+		res.send('Successfully added milestone.');
+	} catch (err) {
+		res.status(400).json({ error: 'Failed' });
+	}
+});
+
+router.put('/edit/milestone', async(req, res) =>{
+	try {
+		const {milestoneId, name, description} = req.body
+		await db.editMilestone({milestoneId, name, description});
+		res.send('Successfully edited milestone.');
+	} catch (err) {
+		res.status(400).json({ error: 'Failed' });
+	}
+});
+
+router.put('/complete/milestone', async(req, res) =>{
+	try {
+		await db.completeMilestone(req.body.id);
+		res.send('Milestone Completed!');
+	} catch (err) {
+		res.status(400).json({ error: 'Failed' });
+	}
+});
+
+router.put('/uncomplete/milestone', async(req, res) =>{
+	try {
+		await db.uncompleteMilestone(req.body.id);
+		res.send('Completion status revoked:(')
+	} catch (err) {
+		res.status(400).json({ error: 'Failed' });
+	}
+});
+
+router.delete('/delete/milestone', async(req,res)=>{
+	try {
+		await db.deleteMilestone(req.body.id);
+		res.send('Successfully deleted milestone.');
+	} catch (err) {
+		res.status(400).json({ error: 'Failed' });
+	}
+});
+
+router.get('/redirect/view/funding', (req, res) =>{
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+
+	res.sendFile(path.join(__dirname, "public", "viewFunding.html"));
+});
+
+router.post('/add/funding', async(req,res)=>{
+	const { project_id, currency, funding_type, total_funding } = req.body;
+
+	try {
+		await db.addFunding({ project_id, currency, funding_type, total_funding });
+		res.status(200).json({ message: 'Funding added successfully' });
+	} catch (error) {
+		console.error('Error adding funding:', error);
+		res.status(500).json({ message: 'Failed to add funding', error });
+	}
+});
+
+router.post('/add/expenditure', async(req,res)=>{
+	const { funding_id, amount, description } = req.body;
+
+	try {
+		await db.addExpenditure({ funding_id, amount, description });
+		res.status(200).json({ message: 'Expenditure added successfully' });
+	} catch (error) {
+		console.error('Error adding expenditure:', error);
+		res.status(500).json({ message: 'Failed to add expenditure', error });
+	}
+});
+
+router.get('/get/funding', async(req,res)=>{
+	const projectId = req.query.id;
+	try {
+		const result = await db.getFunding(projectId);
+		res.json(result);
+	} catch (err) {
+		res.status(400).json({ error: 'Failed' });
+	}
+});
+
+router.get('/get/expenditure', async(req,res)=>{
+	const fundingId = req.query.id;
+	try {
+		const result = await db.getExpenditure(fundingId);
+		res.json(result);
+	} catch (err) {
+		res.status(400).json({ error: 'Failed' });
+	}
+});
+
+router.get(`/redirect/view/suspended`, (req, res) =>{
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+
+	res.sendFile(path.join(__dirname, "public", "viewSuspended.html"));
+});
+
+router.get(`/suspended/user`, async(req, res) =>{
+	try {
+		const result = await db.getSuspendedUser();
+		res.json(result);
+	} catch (err) {
+		res.status(400).json({ error: 'Failed' });
+	}
+});
 
 export default router;

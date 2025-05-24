@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="/styles.css">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="icon" href="logo.png" type="image/png">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+            rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+        <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+
+
+        <title>Unilink | Create Project</title>
+        <script src="https://accounts.google.com/gsi/client" async defer></script>
+    </head>
+
+<body> 
+    <nav class="inset secondary fill accent-underline">
+		<button class="nav-item flex-row center-content-v gap-small" onclick="history.back()">
+			<i class='bx bx-chevron-left'></i>
+			Back
+		</button>
+	</nav>
+
+
+    <main class="inset">
+        <h1>Add a Milestone</h1>
+
+        <form form id="add-milestone" class="inset">
+            <section>
+                <label for="name"><strong>Title</strong></label><br>
+                <textarea id="name" class="no-padding-v" name="name" placeholder="Title of your milestone..."></textarea>
+            </section>
+
+            <section>
+                <label for="description"><strong>Description</strong></label><br>
+                <textarea id="description" class="no-padding-v" name="description" placeholder="Describe what to do for your milestone..."></textarea>
+            </section>
+
+            <section>
+                <button type="submit" id="submit">Add Milestone</button>
+            </section>
+
+        </form>
+        <section >
+            <p id="response"></p>
+        </section>
+    </main>
+
+</body>
+<script type="module">
+	import milestoneModule from '/milestones.js';
+	milestoneModule.addMilestone();
+</script>
+
+<script type="module" src="/savedTheme.js"></script>
+
+
+</html>
+

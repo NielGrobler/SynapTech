@@ -61,7 +61,7 @@ const genInviteReqHTML = (invite) => {
 const fetchInvites = async () => {
 	let res = await fetch('/api/collaboration/invites');
 	let invites = await res.json();
-	console.log(invites);
+	//console.log(invites);
 	pageAdder.assignListToElement('invite-list', invites, genInviteReqHTML);
 }
 

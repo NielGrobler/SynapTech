@@ -20,7 +20,7 @@ let query = new DatabaseQueryBuilder(`
 
 query.sendUsing(agent)
 	.then(response => {
-		console.log(response.data);
+		//console.log(response.data);
 	}).catch(error => {
 		console.error('Request failed:', error.message);
 	});

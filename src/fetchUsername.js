@@ -1,7 +1,7 @@
 import userInfo from './userInfo.js';
 
 const setUsername = async () => {
-	const userElement = document.getElementById("username");
+	const userElement = document.getElementById("username"); //bodging for displaying name
 	const info = await userInfo.fetchFromApi();
 	userElement.innerHTML = info["name"].trim().split(/\s+/)[0];
 };

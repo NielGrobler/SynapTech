@@ -36,7 +36,7 @@ const makeQuery = (query) => {
 	})
 		.then(response => {
 			// Handle the successful response
-			console.log('Query result:', response.data);
+			//console.log('Query result:', response.data);
 		})
 		.catch(error => {
 			// Handle the error response
