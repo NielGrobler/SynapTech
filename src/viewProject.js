@@ -748,7 +748,7 @@ export const loadProjectReviews = async (project) => {
 	}
 };
 
-export { //for testing
+/*export { //for testing
 	populateCollaborators,
 	fetchProject,
 	fetchProjectFiles,
@@ -769,4 +769,4 @@ export { //for testing
 	createStarRating,
 	displayReviews,
 	loadProjectReviews,
-};
+};*/
