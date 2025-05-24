@@ -230,7 +230,7 @@ describe('Router Module Tests', () => {
 
 		describe('GET /messages', () => {
 			it('should redirect unauthenticated users to /forbidden', async () => {
-				const res = await request(app).get('/message');
+				const res = await request(app).get('/messages');
 				expect(res.status).toBe(302);
 				expect(res.headers.location).toBe('/forbidden');
 			

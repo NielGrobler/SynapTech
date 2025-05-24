@@ -326,7 +326,7 @@ router.get('/successfulReviewPost', requireAuthentication((req, res) => {
 
 router.get('/messages', requireAuthentication((req, res) => { //Messages redirects to index.html?
 	console.log("Redirecting to /messages");
-	res.sendFile(path.join(__dirname, "public", "index.html"));
+	res.sendFile(path.join(__dirname, "public", "messages.html"));
 }));
 
 router.get('/view/users', requireAuthentication((req, res) => {
