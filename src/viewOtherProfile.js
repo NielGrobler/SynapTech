@@ -127,7 +127,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			throw new Error(`Failed to fetch projects: ${res.statusText}`);
 		}
 		projects = await res.json();
-		pageAdder.addProjectsToPage('projectCardList', projects);
+		pageAdder.addProjectsToPage('project-list', projects);
 	} catch (err) {
 		console.error('Error', err);
 	}

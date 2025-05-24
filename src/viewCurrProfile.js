@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 	try {
 		const res = await fetch('/api/user/project');
 		projects = await res.json();
-		pageAdder.addProjectsToPage('projectCardList', projects);
+		pageAdder.addProjectsToPage('project-list', projects);
 		populateElements();
 	} catch (err) {
 		console.error('Error loading Projects:', err);

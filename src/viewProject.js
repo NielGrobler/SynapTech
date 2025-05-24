@@ -602,8 +602,8 @@ const populateElements = async () => {
 		const icon = document.getElementById('review-drop-icon');
 		const list = document.getElementById('reviewsList');
 		if (isExpanded) {
-			icon.classList.remove('bx-chevron-down');
-			icon.classList.add('bx', 'bx-plus');
+			icon.classList.remove('bx-chevron-up');
+			icon.classList.add('bx', 'bx-chevron-down');
 			list.classList.add('visually-hidden');
 			list.style.maxHeight = list.scrollHeight + 'px';
 			requestAnimationFrame(() => {
@@ -612,8 +612,8 @@ const populateElements = async () => {
 				list.style.opacity = '0';
 			});
 		} else {
-			icon.classList.remove('bx-plus');
-			icon.classList.add('bx', 'bx-chevron-down');
+			icon.classList.remove('bx-chevron-down');
+			icon.classList.add('bx', 'bx-chevron-up');
 			list.classList.remove('visually-hidden');
 
 			requestAnimationFrame(() => {
