@@ -1,138 +1,197 @@
-// Initialize PDF library
-const { jsPDF } = window.jspdf;
+document.addEventListener('DOMContentLoaded', async () => {
+    const loadingOverlay = document.createElement('section');
+    loadingOverlay.className = 'loading-overlay';
+    loadingOverlay.innerHTML = '<span class="spinner"></span>';
+    document.body.appendChild(loadingOverlay);
 
-// Initialize the charts when the page loads
-document.addEventListener('DOMContentLoaded', function () {
-    fetchProjectData()
-        .then(data => {
-            if (data) {
-                initCharts(data);
-                setupDownloadButton();
-            }
-        })
-        .catch(error => {
-            console.error('Error loading dashboard data:', error);
-            document.querySelector('main').innerHTML = `
-                <section class="title-section">
-                    <h1>Error Loading Dashboard</h1>
-                </section>
-                <p>There was an error loading the project data. Please try again later.</p>
-            `;
-        });
-});
-
-// Fetch project data from the API
-// Fetch project data from the API
-async function fetchProjectData() {
-    // Get project ID from URL parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    const projectId = urlParams.get('id');
-
-    if (!projectId) {
-        throw new Error('No project ID provided');
-    }
+    const toggleLoading = (show) => loadingOverlay.style.display = show ? 'flex' : 'none';
 
     try {
-        // Fetch the project details using our new API endpoint
-        const response = await fetch(`/api/reports/completion-status?projectId=${projectId}`);
-        if (!response.ok) {
-            throw new Error('Failed to fetch report data');
-        }
-        return await response.json();
+        toggleLoading(true);
+        const response = await fetch('/api/reports/completion-status');
+        if (!response.ok) throw new Error('Failed to fetch completion data');
+        const data = await response.json();
+
+        updateSummaryMetrics(data);
+        const charts = createCharts(data);
+        setupDownloadButton(data, charts, toggleLoading);
+        toggleLoading(false);
     } catch (error) {
-        console.error('Error fetching data:', error);
-        throw error;
+        toggleLoading(false);
+        console.error('Error loading completion report:', error);
+        document.querySelector('main').innerHTML = `
+            <section class="inset">
+                <p class="error-text">Error loading completion report data: ${error.message}</p>
+                <button class="primary" onclick="location.reload()">Try Again</button>
+            </section>
+        `;
     }
-}
-// At the beginning of your initCharts function, add:
-Chart.defaults.animation.duration = 0; // Disable animations for PDF capture
-function initCharts(data) {
-    // Set project title
-    document.querySelector('h1').textContent = `${data.project.name} - Completion Report`;
+});
 
-    // Update metrics
-    document.getElementById('contributorsChart').closest('article').querySelector('.card-metric').textContent =
-        data.collaborators.length;
-
-    document.getElementById('progressChart').closest('article').querySelector('.card-metric').textContent =
-        `${data.project.progress || 50}%`;
-
-    // Initialize all charts
-    createBubbleChart(data.collaborators);
-    createGaugeChart(data.completionData);
-    createProgressChart(data.project);
-    createProgressComparisonChart(data.project, data.similarProjects);
-    createMilestonesChart(data.project);
+function updateSummaryMetrics(data) {
+    document.getElementById('totalContributors').textContent = data.totalContributors;
+    document.getElementById('avgDaysToComplete').textContent = data.avgDaysToComplete;
+    document.getElementById('projectProgress').textContent = `${data.projectProgress}%`;
+    document.getElementById('reportSubtitle').textContent =
+        `Project completion overview as of ${new Date().toLocaleDateString()}`;
 }
 
-// Contributors bubble chart
-function createBubbleChart(collaborators) {
+function createCharts(data) {
+    return {
+        contributorsChart: createContributorsChart(data),
+        progressComparisonChart: createProgressComparisonChart(data),
+        milestonesChart: createMilestonesChart(data)
+    };
+}
+
+function createContributorsChart(data) {
     const ctx = document.getElementById('contributorsChart').getContext('2d');
 
-    // Get unique roles and count them
-    const roles = {};
-    collaborators.forEach(collaborator => {
-        if (roles[collaborator.role]) {
-            roles[collaborator.role]++;
-        } else {
-            roles[collaborator.role] = 1;
+    if (data.contributorsTrend.length === 0) {
+        ctx.canvas.parentElement.innerHTML = '<p class="inset-small">No contributor data available.</p>';
+        return null;
+    }
+
+    return new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: data.contributorsTrend.map(c => c.project_name),
+            datasets: [{
+                label: 'Contributors',
+                data: data.contributorsTrend.map(c => c.contributor_count),
+                backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: context => `Contributors: ${context.raw}`
+                    }
+                }
+            }
         }
     });
+}
 
-    // Prepare data for bubble chart
-    const bubbleData = Object.keys(roles).map((role, index) => {
+function createProgressComparisonChart(data) {
+    const ctx = document.getElementById('progressComparisonChart').getContext('2d');
+
+    if (data.progressComparison.length === 0) {
+        ctx.canvas.parentElement.innerHTML = '<p class="inset-small">No progress comparison data available.</p>';
+        return null;
+    }
+
+    return new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: data.progressComparison.map(p => p.projectName),
+            datasets: [{
+                label: 'Completion Percentage',
+                data: data.progressComparison.map(p => p.progress),
+                backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: { callback: value => `${value}%` }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: context => `Completion: ${context.raw}%`
+                    }
+                }
+            }
+        }
+    });
+}
+
+function createMilestonesChart(data) {
+    const ctx = document.getElementById('milestonesChart').getContext('2d');
+
+    if (data.milestones.length === 0) {
+        ctx.canvas.parentElement.innerHTML = '<p class="inset-small">No milestone data available.</p>';
+        return null;
+    }
+
+    const colors = [
+        'rgba(54, 162, 235, 0.7)',
+        'rgba(255, 99, 132, 0.7)',
+        'rgba(255, 206, 86, 0.7)',
+        'rgba(75, 192, 192, 0.7)',
+        'rgba(153, 102, 255, 0.7)'
+    ];
+
+    const projects = [...new Set(data.milestones.map(m => m.project_name))];
+    const datasets = projects.map((project, index) => {
+        const projectMilestones = data.milestones.filter(m => m.project_name === project);
+        const color = colors[index % colors.length];
+
         return {
-            x: Math.random() * 100,
-            y: Math.random() * 100,
-            r: roles[role] * 8 + 10, // Size based on count
-            label: role
+            label: project,
+            data: projectMilestones.map(m => ({
+                x: new Date(m.created_at).toISOString().split('T')[0],
+                y: project,
+                completed: !!m.completed_at,
+                name: m.milestone_name,
+                description: m.description,
+                completedDate: m.completed_at ? new Date(m.completed_at).toISOString().split('T')[0] : 'Pending'
+            })),
+            backgroundColor: color,
+            borderColor: color.replace('0.7', '1'),
+            pointStyle: 'circle',
+            pointRadius: 6,
+            pointHoverRadius: 8
         };
     });
 
-    // Colors for bubbles
-    const colors = [
-        'rgba(75, 192, 192, 0.7)',
-        'rgba(54, 162, 235, 0.7)',
-        'rgba(153, 102, 255, 0.7)',
-        'rgba(255, 159, 64, 0.7)',
-        'rgba(255, 99, 132, 0.7)',
-        'rgba(255, 205, 86, 0.7)'
-    ];
-
-    new Chart(ctx, {
-        type: 'bubble',
-        data: {
-            datasets: [{
-                data: bubbleData,
-                backgroundColor: bubbleData.map((_, i) => colors[i % colors.length]),
-                borderColor: 'transparent',
-                borderWidth: 0
-            }]
-        },
+    return new Chart(ctx, {
+        type: 'scatter',
+        data: { datasets },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             scales: {
                 x: {
-                    display: false,
-                    min: 0,
-                    max: 100
+                    type: 'time',
+                    time: { unit: 'month' },
+                    title: { display: true, text: 'Timeline' }
                 },
                 y: {
-                    display: false,
-                    min: 0,
-                    max: 100
+                    title: { display: true, text: 'Projects' }
                 }
             },
             plugins: {
-                legend: {
-                    display: false
-                },
                 tooltip: {
                     callbacks: {
-                        label: function (context) {
-                            const dataPoint = context.raw;
-                            return `${dataPoint.label}: ${Math.round(dataPoint.r / 8)} contributors`;
+                        label: context => {
+                            const point = context.raw;
+                            return [
+                                `Project: ${point.y}`,
+                                `Milestone: ${point.name}`,
+                                `Created: ${point.x}`,
+                                `Status: ${point.completed ? 'Completed' : 'In Progress'}`,
+                                point.completed ? `Completed: ${point.completedDate}` : ''
+                            ].filter(Boolean);
                         }
                     }
                 }
@@ -141,449 +200,186 @@ function createBubbleChart(collaborators) {
     });
 }
 
-// Gauge chart for days to complete
-function createGaugeChart(completionData) {
-    const ctx = document.getElementById('gaugeChart').getContext('2d');
+async function chartToImg(chart) {
+    return chart ? chart.toBase64Image() : null;
+}
 
-    // Use actual average days to complete if available
-    const avgDaysToComplete = completionData.avgDaysToComplete || 5.6;
+function setupDownloadButton(data, charts, toggleLoading) {
+    document.getElementById('downloadBtn').addEventListener('click', async () => {
+        toggleLoading(true);
 
-    // Performance categories
-    const performance = [
-        { cutoff: 5, label: 'Excellent', color: '#4CAF50' },   // Green
-        { cutoff: 7, label: 'Good', color: '#FFC107' },        // Yellow
-        { cutoff: 10, label: 'Fair', color: '#FF9800' },       // Orange
-        { cutoff: 99, label: 'Poor', color: '#F44336' }        // Red
-    ];
+        try {
+            const chartImages = {
+                contributors: await chartToImg(charts.contributorsChart),
+                progress: await chartToImg(charts.progressComparisonChart),
+                milestones: await chartToImg(charts.milestonesChart)
+            };
 
-    // Find the performance category for the current average
-    let currentPerformance = performance[performance.length - 1];
-    for (let i = 0; i < performance.length; i++) {
-        if (avgDaysToComplete <= performance[i].cutoff) {
-            currentPerformance = performance[i];
-            break;
+            generatePDF(data, chartImages);
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            alert('Error generating PDF. Please try again later.');
+        } finally {
+            toggleLoading(false);
         }
+    });
+}
+
+function generatePDF(data, chartImages) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+    });
+
+    const pageConfig = {
+        width: doc.internal.pageSize.getWidth(),
+        height: doc.internal.pageSize.getHeight(),
+        margin: 20
+    };
+
+    pageConfig.contentWidth = pageConfig.width - (pageConfig.margin * 2);
+
+    generateTitlePage(doc, pageConfig);
+    generateSummaryPage(doc, data, pageConfig, chartImages);
+    generateMilestonesPage(doc, data, pageConfig);
+    addFooters(doc, pageConfig);
+
+    doc.save('project_completion_report.pdf');
+}
+
+function generateTitlePage(doc, config) {
+    doc.setFontSize(24);
+    doc.setTextColor(44, 62, 80);
+    doc.text('UNILINK', config.width / 2, config.margin + 20, { align: 'center' });
+
+    doc.setFontSize(20);
+    doc.text('Project Completion Report', config.width / 2, config.margin + 30, { align: 'center' });
+
+    doc.setFontSize(12);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Generated on ${new Date().toLocaleDateString()}`, config.width / 2, config.margin + 40, { align: 'center' });
+}
+
+function generateSummaryPage(doc, data, config, chartImages) {
+    doc.addPage();
+    let yPos = config.margin;
+
+    doc.setFontSize(18);
+    doc.setTextColor(44, 62, 80);
+    doc.text('Project Completion Summary', config.margin, yPos);
+    yPos += 10;
+
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Total Contributors: ${data.totalContributors}`, config.margin, yPos);
+    yPos += 8;
+    doc.text(`Average Days to Complete Task: ${data.avgDaysToComplete}`, config.margin, yPos);
+    yPos += 8;
+    doc.text(`Overall Project Progress: ${data.projectProgress}%`, config.margin, yPos);
+    yPos += 15;
+
+    if (chartImages.contributors) {
+        yPos = addChartToPage(doc, 'Contributors by Project', chartImages.contributors, config, yPos);
     }
 
-    new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            datasets: [{
-                data: [avgDaysToComplete, 15 - avgDaysToComplete], // Max value is 15 days
-                backgroundColor: [
-                    currentPerformance.color,
-                    '#E0E0E0'
-                ],
-                borderWidth: 0,
-                circumference: 180,
-                rotation: 270,
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '75%',
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    enabled: false
-                }
-            }
-        },
-        plugins: [{
-            id: 'gaugeText',
-            afterDraw: (chart) => {
-                const { ctx, chartArea: { top, bottom, left, right, width, height } } = chart;
+    if (chartImages.progress) {
+        if (yPos > config.height - 100) {
+            doc.addPage();
+            yPos = config.margin;
+        }
+        yPos = addChartToPage(doc, 'Project Progress Comparison', chartImages.progress, config, yPos);
+    }
 
-                ctx.save();
-
-                // Draw performance label
-                const fontSizeLabel = Math.min(width, height) / 10;
-                ctx.font = `${fontSizeLabel}px Arial`;
-                ctx.fillStyle = currentPerformance.color;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(currentPerformance.label, width / 2, height * 0.7);
-
-                ctx.restore();
-            }
-        }]
-    });
+    if (chartImages.milestones) {
+        if (yPos > config.height - 100) {
+            doc.addPage();
+            yPos = config.margin;
+        }
+        addChartToPage(doc, 'Project Milestones Timeline', chartImages.milestones, config, yPos);
+    }
 }
 
-// Progress percentage chart
-function createProgressChart(project) {
-    const ctx = document.getElementById('progressChart').getContext('2d');
-
-    // Get project progress (default to 50 if not available)
-    const progress = project.progress || 50;
-
-    // Create the progress bar chart
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['Progress'],
-            datasets: [
-                {
-                    label: 'Completed',
-                    data: [progress],
-                    backgroundColor: '#4CAF50',
-                    borderColor: '#4CAF50',
-                    borderWidth: 0
-                },
-                {
-                    label: 'Remaining',
-                    data: [100 - progress],
-                    backgroundColor: '#E0E0E0',
-                    borderColor: '#E0E0E0',
-                    borderWidth: 0
-                }
-            ]
-        },
-        options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                x: {
-                    stacked: true,
-                    display: false,
-                    max: 100
-                },
-                y: {
-                    stacked: true,
-                    display: false
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    enabled: false
-                }
-            }
-        },
-        plugins: [{
-            id: 'progressText',
-            afterDraw: (chart) => {
-                const { ctx, chartArea: { top, bottom, left, right, width, height } } = chart;
-                const meta = chart.getDatasetMeta(0);
-                const progressBar = meta.data[0];
-                const progressWidth = progressBar.width;
-
-                ctx.save();
-
-                // Draw percentage text
-                ctx.font = 'bold 14px Arial';
-                ctx.fillStyle = '#333';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-
-                // Only add percentage text if progress is big enough to contain it
-                if (progressWidth > 40) {
-                    ctx.fillText(`${progress}%`, left + progressWidth / 2, progressBar.y);
-                } else {
-                    ctx.fillText(`${progress}%`, left + progressWidth + 25, progressBar.y);
-                }
-
-                ctx.restore();
-            }
-        }]
-    });
+function addChartToPage(doc, title, chartImg, config, yPos) {
+    doc.setFontSize(16);
+    doc.text(title, config.margin, yPos);
+    yPos += 8;
+    doc.addImage(chartImg, 'PNG', config.margin, yPos, config.contentWidth, 70);
+    return yPos + 80;
 }
 
-// Progress comparison chart
-function createProgressComparisonChart(currentProject, similarProjects) {
-    const ctx = document.getElementById('progressComparisonChart').getContext('2d');
+function generateMilestonesPage(doc, data, config) {
+    doc.addPage();
+    let yPos = config.margin;
 
-    // Take up to 4 similar projects plus the current one
-    const projectsToDisplay = similarProjects.slice(0, 4);
+    doc.setFontSize(18);
+    doc.text('Project Milestones Details', config.margin, yPos);
+    yPos += 10;
 
-    // Add current project at the start
-    const allProjects = [currentProject, ...projectsToDisplay];
+    drawTableHeader(doc, config.margin, yPos, config.contentWidth);
+    yPos += 8;
 
-    // Create labels and data
-    const labels = allProjects.map(project => project.name);
-    const progressData = allProjects.map(project => project.progress || Math.floor(Math.random() * 50) + 30); // Default random progress if not available
+    doc.setTextColor(0, 0, 0);
+    let alternate = false;
 
-    // Highlight the current project with a different color
-    const backgroundColors = progressData.map((_, i) =>
-        i === 0 ? 'rgba(66, 153, 225, 0.8)' : 'rgba(160, 174, 192, 0.8)'
-    );
+    if (data.milestones.length === 0) {
+        doc.text('No milestone data available.', config.margin + 5, yPos + 5.5);
+        return;
+    }
 
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: progressData,
-                backgroundColor: backgroundColors,
-                borderColor: 'transparent',
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                x: {
-                    display: true,
-                    ticks: {
-                        maxRotation: 45,
-                        minRotation: 45
-                    }
-                },
-                y: {
-                    display: true,
-                    beginAtZero: true,
-                    max: 100,
-                    title: {
-                        display: true,
-                        text: 'Progress (%)'
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function (context) {
-                            return `Progress: ${context.raw}%`;
-                        }
-                    }
-                }
-            }
+    data.milestones.forEach(milestone => {
+        const status = milestone.completed_at ? 'Completed' : 'In Progress';
+        const daysToComplete = milestone.completed_at ?
+            Math.round((new Date(milestone.completed_at) - new Date(milestone.created_at)) / (1000 * 60 * 60 * 24)) :
+            '-';
+
+        if (alternate) {
+            doc.setFillColor(240, 240, 240);
+            doc.rect(config.margin, yPos, config.contentWidth, 8, 'F');
+        }
+
+        doc.text(milestone.project_name.substr(0, 20), config.margin + 5, yPos + 5.5);
+        doc.text(milestone.milestone_name.substr(0, 25), config.margin + 60, yPos + 5.5);
+        doc.text(status, config.margin + 130, yPos + 5.5);
+        doc.text(daysToComplete.toString(), config.margin + 160, yPos + 5.5);
+
+        yPos += 8;
+        alternate = !alternate;
+
+        if (yPos > config.height - 20) {
+            doc.addPage();
+            yPos = config.margin;
+            drawTableHeader(doc, config.margin, yPos, config.contentWidth);
+            yPos += 8;
+            doc.setTextColor(0, 0, 0);
+            alternate = false;
         }
     });
 }
 
-// Milestones timeline chart (simplified since we don't have actual milestone data)
-function createMilestonesChart(project) {
-    const ctx = document.getElementById('milestonesChart').getContext('2d');
-
-    // Create some hypothetical milestones based on project creation date
-    const startDate = new Date(project.created_at || new Date());
-    const endDate = new Date(startDate);
-    endDate.setMonth(endDate.getMonth() + 6); // Assume 6 month project
-
-    // Generate milestone dates
-    const milestone1 = new Date(startDate);
-    milestone1.setMonth(milestone1.getMonth() + 1);
-
-    const milestone2 = new Date(startDate);
-    milestone2.setMonth(milestone2.getMonth() + 2);
-
-    const milestone3 = new Date(startDate);
-    milestone3.setMonth(milestone3.getMonth() + 4);
-
-    const milestone4 = new Date(startDate);
-    milestone4.setMonth(milestone4.getMonth() + 6);
-
-    // Format dates
-    const formatDate = (date) => {
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    };
-
-    const milestones = [
-        { name: "Project Planning", status: "Completed", plannedDate: formatDate(startDate) },
-        { name: "Requirements Gathering", status: "Completed", plannedDate: formatDate(milestone1) },
-        { name: "Development Phase", status: "In Progress", plannedDate: formatDate(milestone2) },
-        { name: "Testing Phase", status: "Not Started", plannedDate: formatDate(milestone3) },
-        { name: "Project Closure", status: "Not Started", plannedDate: formatDate(milestone4) }
-    ];
-
-    // Today's date for reference line
-    const today = new Date();
-
-    // Get canvas
-    const canvas = document.getElementById('milestonesChart');
-    const ctx2d = canvas.getContext('2d');
-
-    // Clear the canvas
-    ctx2d.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Set canvas dimensions
-    canvas.style.height = '200px';
-    canvas.height = 200;
-    canvas.width = canvas.offsetWidth;
-
-    // Colors for status
-    const statusColors = {
-        'Completed': '#4CAF50',
-        'In Progress': '#FFC107',
-        'Not Started': '#E0E0E0'
-    };
-
-    // Draw timeline
-    const drawTimeline = () => {
-        const margin = { top: 40, right: 20, bottom: 40, left: 20 };
-        const timelineY = 100;
-        const timelineStartX = margin.left;
-        const timelineEndX = canvas.width - margin.right;
-        const timelineWidth = timelineEndX - timelineStartX;
-
-        // Draw main timeline line
-        ctx2d.beginPath();
-        ctx2d.strokeStyle = '#CBD5E0';
-        ctx2d.lineWidth = 2;
-        ctx2d.moveTo(timelineStartX, timelineY);
-        ctx2d.lineTo(timelineEndX, timelineY);
-        ctx2d.stroke();
-
-        // Calculate the total time span in milliseconds
-        const timeSpan = endDate - startDate;
-
-        // Draw today marker
-        const todayPos = Math.min(Math.max((today - startDate) / timeSpan, 0), 1);
-        const todayX = timelineStartX + (timelineWidth * todayPos);
-        ctx2d.beginPath();
-        ctx2d.strokeStyle = '#F56565';
-        ctx2d.lineWidth = 2;
-        ctx2d.moveTo(todayX, timelineY - 20);
-        ctx2d.lineTo(todayX, timelineY + 20);
-        ctx2d.stroke();
-
-        // Add "Today" label
-        ctx2d.font = '12px Arial';
-        ctx2d.fillStyle = '#F56565';
-        ctx2d.textAlign = 'center';
-        ctx2d.fillText('Today', todayX, timelineY - 25);
-
-        // Draw milestones
-        milestones.forEach((milestone, index) => {
-            const milestoneDate = new Date(milestone.plannedDate);
-            const milestonePos = Math.min(Math.max((milestoneDate - startDate) / timeSpan, 0), 1);
-            const x = timelineStartX + (timelineWidth * milestonePos);
-
-            // Draw milestone dot
-            ctx2d.beginPath();
-            ctx2d.arc(x, timelineY, 8, 0, Math.PI * 2);
-            ctx2d.fillStyle = statusColors[milestone.status];
-            ctx2d.fill();
-
-            // Draw milestone label
-            ctx2d.font = '12px Arial';
-            ctx2d.fillStyle = '#4A5568';
-            ctx2d.textAlign = 'center';
-
-            // Alternate labels above and below the timeline to prevent overlap
-            const labelY = index % 2 === 0 ? timelineY - 35 : timelineY + 35;
-            ctx2d.fillText(milestone.name, x, labelY);
-
-            // Draw date
-            ctx2d.font = '10px Arial';
-            ctx2d.fillStyle = '#A0AEC0';
-            ctx2d.fillText(milestone.plannedDate, x, labelY + (index % 2 === 0 ? -15 : 15));
-        });
-    };
-
-    // Call the drawing function
-    drawTimeline();
+function drawTableHeader(doc, margin, yPos, contentWidth) {
+    doc.setFontSize(12);
+    doc.setTextColor(255, 255, 255);
+    doc.setFillColor(44, 62, 80);
+    doc.rect(margin, yPos, contentWidth, 8, 'F');
+    doc.text('Project', margin + 5, yPos + 5.5);
+    doc.text('Milestone', margin + 60, yPos + 5.5);
+    doc.text('Status', margin + 130, yPos + 5.5);
+    doc.text('Days to Complete', margin + 160, yPos + 5.5);
 }
 
-// Setup the download button functionality
-// Setup the download button functionality
-function setupDownloadButton() {
-    document.getElementById('downloadBtn').addEventListener('click', function () {
-        // Show a loading indicator
-        const loadingText = document.createElement('span');
-        loadingText.textContent = ' Generating PDF...';
-        loadingText.id = 'loadingText';
-        this.appendChild(loadingText);
-        this.disabled = true;
-
-        // Get the dashboard content
-        const dashboardContent = document.getElementById('dashboard-content');
-
-        // Define the PDF document
-        const { jsPDF } = window.jspdf;
-
-        // Capture the content using html2canvas
-        html2canvas(dashboardContent, {
-            scale: 2, // Higher scale for better quality
-            useCORS: true, // Allow cross-origin images
-            logging: false, // Disable logging
-            allowTaint: true, // Allow tainted canvases 
-            backgroundColor: '#ffffff' // White background
-        }).then(canvas => {
-            try {
-                // Create new PDF document (landscape orientation)
-                const pdf = new jsPDF('l', 'mm', 'a4');
-
-                // Get dimensions
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = pdf.internal.pageSize.getHeight();
-                const imgWidth = canvas.width;
-                const imgHeight = canvas.height;
-
-                // Calculate the scale ratio to fit the content on the page
-                // Leave some margins
-                const ratio = Math.min((pdfWidth - 20) / imgWidth, (pdfHeight - 40) / imgHeight);
-                const imgX = (pdfWidth - imgWidth * ratio) / 2;
-                const imgY = 30;
-
-                // Add title to PDF
-                pdf.setFontSize(22);
-                pdf.setTextColor(44, 62, 80); // Dark blue text
-                pdf.text('Project Completion Report', pdfWidth / 2, 15, { align: 'center' });
-
-                // Add date
-                const today = new Date();
-                const dateStr = today.toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
-                pdf.setFontSize(10);
-                pdf.setTextColor(108, 117, 125); // Gray text
-                pdf.text(`Generated on: ${dateStr}`, pdfWidth - 15, 10, { align: 'right' });
-
-                // Add image of the dashboard
-                pdf.addImage(
-                    canvas.toDataURL('image/jpeg', 0.95), // Use JPEG with high quality
-                    'JPEG',
-                    imgX,
-                    imgY,
-                    imgWidth * ratio,
-                    imgHeight * ratio
-                );
-
-                // Add footer with page number
-                pdf.setFontSize(8);
-                pdf.setTextColor(108, 117, 125);
-                pdf.text('© 2025 Unilink - All rights reserved', 15, pdfHeight - 8);
-                pdf.text('Page 1 of 1', pdfWidth - 15, pdfHeight - 8, { align: 'right' });
-
-                // If project name is available, use it in the filename
-                const urlParams = new URLSearchParams(window.location.search);
-                const projectId = urlParams.get('id');
-                const filename = `project_${projectId}_completion_report.pdf`;
-
-                // Save the PDF
-                pdf.save(filename);
-
-                // Show success message
-                alert('PDF generated successfully!');
-            } catch (error) {
-                console.error('Error generating PDF:', error);
-                alert('There was an error generating the PDF. Please try again.');
-            } finally {
-                // Remove loading indicator
-                document.getElementById('loadingText').remove();
-                document.getElementById('downloadBtn').disabled = false;
-            }
-        }).catch(error => {
-            console.error('Error capturing content:', error);
-            alert('Failed to capture page content. Please try again.');
-
-            // Remove loading indicator
-            document.getElementById('loadingText').remove();
-            document.getElementById('downloadBtn').disabled = false;
-        });
-    });
+function addFooters(doc, config) {
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(10);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+            `Unilink Project Completion Report • Page ${i} of ${totalPages}`,
+            config.width / 2,
+            config.height - 10,
+            { align: 'center' }
+        );
+    }
 }

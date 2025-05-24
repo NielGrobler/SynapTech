@@ -758,14 +758,11 @@ router.get('/reports/funding', requireAuthentication((req, res) => {
 	}
 }, { statusCode: 401 }));
 
-// Add this to your router.js where other API routes are defined
+//api route for funding report
 router.get('/api/reports/funding', requireAuthentication(async (req, res) => {
 	try {
 		const userId = req.user.id;
-
-		// Get projects associated with this user
 		const userProjects = await db.fetchAssociatedProjects(req.user);
-
 		if (userProjects.length === 0) {
 			return res.json({
 				totalFunding: 0,
@@ -776,13 +773,8 @@ router.get('/api/reports/funding', requireAuthentication(async (req, res) => {
 				projectFunding: []
 			});
 		}
-
-		// Extract project IDs
 		const projectIds = userProjects.map(project => project.id);
-
-		// Get funding data for these projects
 		const fundingData = await db.getFundingReportData(projectIds);
-
 		res.json(fundingData);
 	} catch (err) {
 		console.error('Error generating funding report:', err);
@@ -1183,6 +1175,153 @@ router.get(`/redirect/view/suspended`, (req, res) => {
 router.get(`/suspended/user`, async (req, res) => {
 	try {
 		const result = await db.getSuspendedUser();
+		res.json(result);
+	} catch (err) {
+		res.status(400).json({ error: 'Failed' });
+	}
+});
+
+//below has no requireAuthentication nor status Code 401?
+
+router.get('/redirect/edit/milestone', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+
+	res.sendFile(path.join(__dirname, "public", "editMilestone.html"));
+});
+
+router.get('/redirect/add/milestone', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+
+	res.sendFile(path.join(__dirname, "public", "addMilestone.html"));
+});
+
+router.get('/get/milestones/by-project', async (req, res) => {
+	const projectId = req.query.id;
+	console.log(projectId);
+	try {
+		const result = await db.getMilestones(projectId);
+		res.json(result);
+	} catch (err) {
+		res.status(400).json({ error: 'Failed' });
+	}
+});
+
+router.get('/get/milestone/by-id', async (req, res) => {
+	const milestoneId = req.query.id;
+	try {
+		const result = await db.getMilestone(milestoneId);
+		res.json(result);
+	} catch (err) {
+		res.status(400).json({ error: 'Failed' });
+	}
+});
+
+
+router.post('/add/milestone', async (req, res) => {
+	try {
+		const { project_id, name, description } = req.body;
+		console.log(project_id);
+		if (!project_id || !name || !description) {
+			res.status(400).json({ error: 'element missing' });
+			return;
+		}
+		console.log(name);
+		console.log(description);
+		await db.addMilestone({ project_id, name, description });
+
+		res.send('Successfully added milestone.');
+	} catch (err) {
+		res.status(400).json({ error: 'Failed' });
+	}
+});
+
+router.put('/edit/milestone', async (req, res) => {
+	try {
+		const { milestoneId, name, description } = req.body
+		await db.editMilestone({ milestoneId, name, description });
+		res.send('Successfully edited milestone.');
+	} catch (err) {
+		res.status(400).json({ error: 'Failed' });
+	}
+});
+
+router.put('/complete/milestone', async (req, res) => {
+	try {
+		await db.completeMilestone(req.body.id);
+		res.send('Milestone Completed!');
+	} catch (err) {
+		res.status(400).json({ error: 'Failed' });
+	}
+});
+
+router.put('/uncomplete/milestone', async (req, res) => {
+	try {
+		await db.uncompleteMilestone(req.body.id);
+		res.send('Completion status revoked:(')
+	} catch (err) {
+		res.status(400).json({ error: 'Failed' });
+	}
+});
+
+router.delete('/delete/milestone', async (req, res) => {
+	try {
+		await db.deleteMilestone(req.body.id);
+		res.send('Successfully deleted milestone.');
+	} catch (err) {
+		res.status(400).json({ error: 'Failed' });
+	}
+});
+
+router.get('/redirect/view/funding', (req, res) => {
+	if (!authenticateRequest(req)) {
+		return res.redirect('/forbidden');
+	}
+
+	res.sendFile(path.join(__dirname, "public", "viewFunding.html"));
+});
+
+router.post('/add/funding', async (req, res) => {
+	const { project_id, currency, funding_type, total_funding } = req.body;
+
+	try {
+		await db.addFunding({ project_id, currency, funding_type, total_funding });
+		res.status(200).json({ message: 'Funding added successfully' });
+	} catch (error) {
+		console.error('Error adding funding:', error);
+		res.status(500).json({ message: 'Failed to add funding', error });
+	}
+});
+
+router.post('/add/expenditure', async (req, res) => {
+	const { funding_id, amount, description } = req.body;
+
+	try {
+		await db.addExpenditure({ funding_id, amount, description });
+		res.status(200).json({ message: 'Expenditure added successfully' });
+	} catch (error) {
+		console.error('Error adding expenditure:', error);
+		res.status(500).json({ message: 'Failed to add expenditure', error });
+	}
+});
+
+router.get('/get/funding', async (req, res) => {
+	const projectId = req.query.id;
+	try {
+		const result = await db.getFunding(projectId);
+		res.json(result);
+	} catch (err) {
+		res.status(400).json({ error: 'Failed' });
+	}
+});
+
+router.get('/get/expenditure', async (req, res) => {
+	const fundingId = req.query.id;
+	try {
+		const result = await db.getExpenditure(fundingId);
 		res.json(result);
 	} catch (err) {
 		res.status(400).json({ error: 'Failed' });

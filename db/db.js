@@ -902,21 +902,6 @@ const getFundingOpportunities = async () => {
 	return result.recordSet;
 }
 
-const getMilestones = async (projectId) => {
-	const result = await sender.getResult(new DatabaseQueryBuilder()
-		.input("project_id", projectId)
-		.query(`
-			SELECT *
-			FROM ProjectMilestone
-			WHERE project_id = {{project_id}}
-			ORDER BY created_at;
-		`)
-		.build()
-	);
-
-	return result.recordSet;
-}
-
 const insertMilestone = async (projectId, name, description) => {
 	const result = await sender.getResult(new DatabaseQueryBuilder()
 		.input('project_id', projectId)
@@ -1181,7 +1166,28 @@ export const generateCustomReport = async (options) => {
 	};
 };
 
-const getMilestone = async(id) =>{
+const getMilestones = async (id) => {
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('id', id)
+		.query(`
+			SELECT * 
+			FROM ProjectMilestone
+			WHERE project_id = {{id}};
+		`)
+		.build()
+	);
+
+	const milestones = result.recordSet
+
+	if (!milestones) {
+		return null;
+	}
+
+	console.log(milestones);
+	return milestones;
+};
+
+const getMilestone = async (id) => {
 	const result = await sender.getResult(new DatabaseQueryBuilder()
 		.input('id', id)
 		.query(`
@@ -1194,14 +1200,14 @@ const getMilestone = async(id) =>{
 
 	const milestone = result.recordSet
 
-	if(!milestone){
+	if (!milestone) {
 		return null;
 	}
 
 	return milestone;
 };
 
-const addMilestone = async(project_id, milestoneName, description) =>{
+const addMilestone = async (project_id, milestoneName, description) => {
 	console.log(milestoneName);
 	await sender.send(new DatabaseQueryBuilder()
 		.input('project_id', project_id)
@@ -1215,7 +1221,7 @@ const addMilestone = async(project_id, milestoneName, description) =>{
 	);
 };
 
-const editMilestone = async(milestoneId, milestoneName, description)=>{
+const editMilestone = async (milestoneId, milestoneName, description) => {
 	await sender.send(new DatabaseQueryBuilder()
 		.input('milestone_id', milestoneId)
 		.input('name', milestoneName)
@@ -1229,7 +1235,7 @@ const editMilestone = async(milestoneId, milestoneName, description)=>{
 	);
 };
 
-const completeMilestone = async(id)=>{
+const completeMilestone = async (id) => {
 	const date = new Date();
 	await sender.send(new DatabaseQueryBuilder()
 		.input('id', id)
@@ -1243,7 +1249,7 @@ const completeMilestone = async(id)=>{
 	);
 };
 
-const uncompleteMilestone = async(id)=>{
+const uncompleteMilestone = async (id) => {
 	await sender.send(new DatabaseQueryBuilder()
 		.input('id', id)
 		.query(`
@@ -1255,7 +1261,7 @@ const uncompleteMilestone = async(id)=>{
 	);
 };
 
-const deleteMilestone = async(id) =>{
+const deleteMilestone = async (id) => {
 	await sender.send(new DatabaseQueryBuilder()
 		.input('id', id)
 		.query(`
@@ -1266,8 +1272,8 @@ const deleteMilestone = async(id) =>{
 	);
 };
 
-const addFunding = async(project_id, currency, funding_type, total_funding) =>{
-		await sender.send(new DatabaseQueryBuilder()
+const addFunding = async (project_id, currency, funding_type, total_funding) => {
+	await sender.send(new DatabaseQueryBuilder()
 		.input('project_id', project_id)
 		.input('currency', currency)
 		.input('type', funding_type)
@@ -1280,8 +1286,8 @@ const addFunding = async(project_id, currency, funding_type, total_funding) =>{
 	);
 };
 
-const addExpenditure = async(project_id, currency, funding_type, total_funding) =>{
-		await sender.send(new DatabaseQueryBuilder()
+const addExpenditure = async (project_id, currency, funding_type, total_funding) => {
+	await sender.send(new DatabaseQueryBuilder()
 		.input('funding_id', project_id)
 		.input('amount', currency)
 		.input('description', funding_type)
@@ -1293,7 +1299,7 @@ const addExpenditure = async(project_id, currency, funding_type, total_funding) 
 	);
 };
 
-const getFunding = async(projectId) =>{
+const getFunding = async (projectId) => {
 	const result = await sender.getResult(new DatabaseQueryBuilder()
 		.input('id', projectId)
 		.query(`
@@ -1306,14 +1312,14 @@ const getFunding = async(projectId) =>{
 
 	const funding = result.recordSet
 
-	if(!funding){
+	if (!funding) {
 		return null;
 	}
 
 	return funding;
 };
 
-const getExpenditure = async(fundingId) =>{
+const getExpenditure = async (fundingId) => {
 	const result = await sender.getResult(new DatabaseQueryBuilder()
 		.input('id', fundingId)
 		.query(`
@@ -1326,12 +1332,276 @@ const getExpenditure = async(fundingId) =>{
 
 	const spending = result.recordSet
 
-	if(!spending){
+	if (!spending) {
 		return null;
 	}
 
 	return spending;
 };
+
+async function getCompletionStatusData(projectIds) {
+	try {
+		if (!projectIds || projectIds.length === 0) {
+			return {
+				totalContributors: 0,
+				avgDaysToComplete: 0,
+				projectProgress: 0,
+				contributorsTrend: [],
+				progressComparison: [],
+				milestones: []
+			};
+		}
+
+		const contributorsResult = await sender.getResult(new DatabaseQueryBuilder()
+			.input('projectIds', projectIds.join(','))
+			.query(`
+                SELECT COUNT(DISTINCT account_id) as total_contributors
+                FROM Collaborator
+                WHERE project_id IN ({{projectIds}})
+                AND is_active = 1
+            `)
+			.build()
+		);
+		const totalContributors = contributorsResult.recordSet[0]?.total_contributors || 0;
+
+		const milestonesResult = await sender.getResult(new DatabaseQueryBuilder()
+			.input('projectIds', projectIds.join(','))
+			.query(`
+                SELECT 
+                    p.name as project_name,
+                    COUNT(pm.project_milestone_id) as total_milestones,
+                    SUM(CASE WHEN pm.completed_at IS NOT NULL THEN 1 ELSE 0 END) as completed_milestones,
+                    AVG(CASE WHEN pm.completed_at IS NOT NULL 
+                        THEN DATEDIFF(pm.completed_at, pm.created_at) 
+                        ELSE NULL END) as avg_days_to_complete
+                FROM Project p
+                LEFT JOIN ProjectMilestone pm ON p.project_id = pm.project_id
+                WHERE p.project_id IN ({{projectIds}})
+                GROUP BY p.project_id
+            `)
+			.build()
+		);
+
+		let totalMilestones = 0;
+		let completedMilestones = 0;
+		let totalDaysToComplete = 0;
+		let milestonesWithCompletionTime = 0;
+
+		milestonesResult.recordSet.forEach(project => {
+			totalMilestones += project.total_milestones || 0;
+			completedMilestones += project.completed_milestones || 0;
+
+			if (project.avg_days_to_complete) {
+				totalDaysToComplete += project.avg_days_to_complete * (project.completed_milestones || 0);
+				milestonesWithCompletionTime += project.completed_milestones || 0;
+			}
+		});
+
+		const projectProgress = totalMilestones > 0
+			? Math.round((completedMilestones / totalMilestones) * 100)
+			: 0;
+
+		const avgDaysToComplete = milestonesWithCompletionTime > 0
+			? parseFloat((totalDaysToComplete / milestonesWithCompletionTime).toFixed(1))
+			: 0;
+
+		const contributorsTrendResult = await sender.getResult(new DatabaseQueryBuilder()
+			.input('projectIds', projectIds.join(','))
+			.query(`
+                SELECT 
+                    p.name as project_name,
+                    COUNT(c.account_id) as contributor_count
+                FROM Project p
+                JOIN Collaborator c ON p.project_id = c.project_id
+                WHERE p.project_id IN ({{projectIds}})
+                AND c.is_active = 1
+                GROUP BY p.project_id
+            `)
+			.build()
+		);
+
+		const milestonesTimelineResult = await sender.getResult(new DatabaseQueryBuilder()
+			.input('projectIds', projectIds.join(','))
+			.query(`
+                SELECT 
+                    p.name as project_name,
+                    pm.name as milestone_name,
+                    pm.description,
+                    pm.created_at,
+                    pm.completed_at
+                FROM Project p
+                JOIN ProjectMilestone pm ON p.project_id = pm.project_id
+                WHERE p.project_id IN ({{projectIds}})
+                ORDER BY pm.created_at
+            `)
+			.build()
+		);
+
+		const progressComparison = milestonesResult.recordSet.map(project => ({
+			projectName: project.project_name,
+			progress: project.total_milestones > 0
+				? Math.round((project.completed_milestones / project.total_milestones) * 100)
+				: 0
+		}));
+
+		return {
+			totalContributors,
+			avgDaysToComplete,
+			projectProgress,
+			contributorsTrend: contributorsTrendResult.recordSet,
+			progressComparison,
+			milestones: milestonesTimelineResult.recordSet
+		};
+
+	} catch (error) {
+		console.error('Error in getCompletionStatusData:', error);
+		throw error;
+	}
+}
+
+async function getUserActivityReportData(userId, startDate = null, endDate = null) {
+	try {
+		let dateCondition = '';
+		if (startDate && endDate) {
+			dateCondition = ` AND pa.created_at BETWEEN '${startDate}' AND '${endDate}'`;
+		} else if (startDate) {
+			dateCondition = ` AND pa.created_at >= '${startDate}'`;
+		} else if (endDate) {
+			dateCondition = ` AND pa.created_at <= '${endDate}'`;
+		}
+		const userResult = await sender.getResult(new DatabaseQueryBuilder()
+			.input('userId', userId)
+			.query(`
+                SELECT 
+                    account_id,
+                    name,
+                    created_at,
+                    university,
+                    department,
+                    bio
+                FROM Account
+                WHERE account_id = {{userId}}
+            `)
+			.build()
+		);
+
+		const userInfo = userResult.recordSet[0] || {};
+		const createdProjectsResult = await sender.getResult(new DatabaseQueryBuilder()
+			.input('userId', userId)
+			.query(`
+                SELECT 
+                    project_id,
+                    name,
+                    description,
+                    created_at,
+                    is_public
+                FROM Project
+                WHERE created_by_account_id = {{userId}}
+                ${startDate ? `AND created_at >= '${startDate}'` : ''}
+                ${endDate ? `AND created_at <= '${endDate}'` : ''}
+                ORDER BY created_at DESC
+            `)
+			.build()
+		);
+		const collaborativeProjectsResult = await sender.getResult(new DatabaseQueryBuilder()
+			.input('userId', userId)
+			.query(`
+                SELECT 
+                    p.project_id,
+                    p.name,
+                    p.description,
+                    p.created_at,
+                    p.is_public,
+                    c.role
+                FROM Project p
+                JOIN Collaborator c ON p.project_id = c.project_id
+                WHERE c.account_id = {{userId}} AND c.is_pending = 0
+                ${startDate ? `AND p.created_at >= '${startDate}'` : ''}
+                ${endDate ? `AND p.created_at <= '${endDate}'` : ''}
+                ORDER BY p.created_at DESC
+            `)
+			.build()
+		);
+		const fileContributionsResult = await sender.getResult(new DatabaseQueryBuilder()
+			.input('userId', userId)
+			.query(`
+                SELECT 
+                    pf.file_uuid,
+                    pf.original_filename,
+                    pa.created_at,
+                    pf.project_id,
+                    p.name AS project_name
+                FROM ProjectFile pf
+                JOIN ProjectAttachment pa ON pf.file_uuid = pa.file_uuid
+                JOIN Project p ON pf.project_id = p.project_id
+                WHERE (p.created_by_account_id = {{userId}} 
+                       OR p.project_id IN (
+                           SELECT project_id 
+                           FROM Collaborator 
+                           WHERE account_id = {{userId}} AND is_pending = 0
+                       ))
+                ${dateCondition}
+                ORDER BY pa.created_at DESC
+            `)
+			.build()
+		);
+		const contributionTimelineResult = await sender.getResult(new DatabaseQueryBuilder()
+			.input('userId', userId)
+			.query(`
+                SELECT 
+                    FORMAT(pa.created_at, 'yyyy-MM') AS month,
+                    COUNT(*) AS count
+                FROM ProjectAttachment pa
+                JOIN ProjectFile pf ON pa.file_uuid = pf.file_uuid
+                JOIN Project p ON pf.project_id = p.project_id
+                WHERE (p.created_by_account_id = {{userId}} 
+                       OR p.project_id IN (
+                           SELECT project_id 
+                           FROM Collaborator 
+                           WHERE account_id = {{userId}} AND is_pending = 0
+                       ))
+                ${dateCondition}
+                GROUP BY FORMAT(pa.created_at, 'yyyy-MM')
+                ORDER BY month
+            `)
+			.build()
+		);
+		const projectCount = createdProjectsResult.recordSet.length;
+		const collaborationCount = collaborativeProjectsResult.recordSet.length;
+		const fileContributionsCount = fileContributionsResult.recordSet.length;
+		const ratingResult = await sender.getResult(new DatabaseQueryBuilder()
+			.input('userId', userId)
+			.query(`
+                SELECT AVG(rating) AS avgRating
+                FROM Review
+                WHERE reviewer_id = {{userId}}
+            `)
+			.build()
+		);
+		const avgRating = ratingResult.recordSet[0]?.avgRating || 0;
+		return {
+			userInfo,
+			dateRange: {
+				startDate,
+				endDate
+			},
+			activitySummary: {
+				projectCount,
+				collaborationCount,
+				fileContributionsCount,
+				avgRating
+			},
+			projectsCreated: createdProjectsResult.recordSet || [],
+			projectsCollaborated: collaborativeProjectsResult.recordSet || [],
+			fileContributions: fileContributionsResult.recordSet || [],
+			contributionTimeline: contributionTimelineResult.recordSet || []
+		};
+
+	} catch (error) {
+		console.error('Error in getUserActivityReportData:', error);
+		throw error;
+	}
+}
 
 export default {
 	getUserByGUID,
