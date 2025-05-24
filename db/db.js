@@ -421,7 +421,7 @@ const suspendUser = async (userId) => {
 		.input('id', userId)
 		.input('negation', negation)
 		.query(`
-				UPDATE [dbo].[Account]
+				UPDATE Account
 				SET is_suspended = {{negation}}
 				WHERE account_id = {{id}};
 		`)
