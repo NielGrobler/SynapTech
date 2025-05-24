@@ -1185,6 +1185,7 @@ const getExpenditure = async(fundingId) =>{
 export default {
 	getUserByGUID,
 	createUser,
+	checkProjectNameUniqueness,
 	createProject,
 	fetchAssociatedProjects,
 	appendCollaborators,
