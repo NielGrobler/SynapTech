@@ -131,6 +131,7 @@ const scrollDown = () => {
 
 let selectedRoomId;
 let hasJoinedRoom = false;
+let socket;
 
 const makeSocket = () => {
 	socket = io({ auth: { token: localStorage.getItem('jwt') } });
@@ -170,11 +171,14 @@ const makeSocket = () => {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-	socket = makeSocket();
 	setupEventListeners();
-	document.getElementById('sendBtn').addEventListener(sendListener);
+	document.getElementById('sendBtn').addEventListener('click', sendListener);
+	
+
 	const projects = await fetchProjects();
+	console.log(projects);
 	if (!projects.length) return;
+	socket = makeSocket();
 	selectedRoomId = projects[0].id;
 
 	if (messages) messages.scrollTop = messages.scrollHeight;

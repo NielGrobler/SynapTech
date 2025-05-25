@@ -1,13 +1,13 @@
 import { successToast, failToast } from './toast.js';
 
 const validationRules = {
-    rating: {
-        pattern: /^[1-5]$/, //idk about this one?
-        messages: {
-            empty: 'Rating is required',
-            invalid: 'Please select a valid rating' //the chances of a user messing this up is 0, but you never know.
-        }
-    },
+	rating: {
+		pattern: /^[1-5]$/, //idk about this one?
+		messages: {
+			empty: 'Rating is required',
+			invalid: 'Please select a valid rating' //the chances of a user messing this up is 0, but you never know.
+		}
+	},
 	comment: {
 		pattern: /^[\w\s.,!?-]{10,500}$/, //confirm length restrictions
 		messages: {
@@ -22,7 +22,7 @@ let inputs = {};
 let errorDisplays = {};
 
 //new code copied over from addProject, mismatched functionality
-const initForm = () => { 
+const initForm = () => {
 	form = document.getElementById('reviewForm');
 	if (!form) return;
 
@@ -37,8 +37,8 @@ const initForm = () => {
 	errorDisplays.comment = document.getElementById('comment-error');
 
 	if (inputs.rating) { inputs.rating.addEventListener('change', () => validateField('rating')); }
-	if (inputs.comment) { inputs.comment.addEventListener('input', () => validateField('comment'));	}
-	if (submitBtn) { submitBtn.addEventListener('click', handleSubmit);	}
+	if (inputs.comment) { inputs.comment.addEventListener('input', () => validateField('comment')); }
+	if (submitBtn) { submitBtn.addEventListener('click', handleSubmit); }
 }
 
 const validateField = (field) => {
@@ -89,11 +89,11 @@ const getProjectId = () => {
 
 const handleSubmit = async (e) => {
 	e.preventDefault();
-	
+
 	if (!validateForm()) {
 		return;
 	}
-	
+
 	const review = {
 		projectId: getProjectId(),
 		rating: inputs.rating.value,
@@ -103,7 +103,7 @@ const handleSubmit = async (e) => {
 	try {
 		submitBtn.disabled = true;
 		submitBtn.textContent = 'Submitting...';
-		
+
 		//would be simplier if this was handled by router like addProject
 		const response = await fetch('/api/review', {
 			method: 'POST',
@@ -121,11 +121,11 @@ const handleSubmit = async (e) => {
 		if (data.message === 'Review submitted!') {
 			window.location.href = data.redirect || '/successfulReviewPost';
 		} else if (data.error) {
-			alert('Error: ' + data.error); //using alert is tacky
+			failToast(`Error: ${data.error}`);
 		}
 	} catch (error) {
 		console.error('Error:', error);
-		alert('Failed to submit review. Please try again.');
+		failToast('Failed to submit review. Please try again.');
 	} finally {
 		submitBtn.disabled = false;
 		submitBtn.textContent = 'Submit Review';
@@ -143,51 +143,3 @@ export {
 	handleSubmit,
 	initForm
 };
-
-
-document.addEventListener('DOMContentLoaded', function() {
-	function getProjectId() {
-		const urlParams = new URLSearchParams(window.location.search);
-		return urlParams.get('id');
-	}
-
-	document.getElementById('submitReviewBtn').addEventListener('click', function() {
-		const review = {
-			projectId: getProjectId(),
-			rating: document.getElementById('rating').value,
-			comment: document.getElementById('comment').value
-		};
-
-		if (!review.rating || !review.comment) {
-			failToast('Please fill all required fields');
-			return;
-		}
-
-		fetch('/api/review', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify(review),
-		})
-			.then(res => {
-				if (!res.ok) {
-					throw new Error(`Request failed with status: ${res.status}`);
-				}
-				return res.json();
-			})
-			.then(data => {
-				console.log('Server response:', data);
-				if (data.message === 'Review submitted!') {
-					window.location.href = data.redirect || '/successfulReviewPost';
-				} else if (data.error) {
-					failToast('Error: ' + data.error);
-				}
-			})
-			.catch(err => {
-				console.error('Error:', err);
-				failToast('Failed to submit review. Please try again.');
-			});
-	});
-});
-
