@@ -661,6 +661,11 @@ select {
 	background-color: green;
 }
 
+.pad-h {
+	padding-left: 1rem;
+	padding-right: 1rem;
+}
+
 
 .pad-top {
 	padding-top: 1rem;
@@ -1029,6 +1034,13 @@ select {
 	color: var(--color-green);
 }
 
+.bg-accent-round {
+	background-color: var(--color-accent);
+	color: white;
+	padding: 0.1rem;
+	border-radius: 0.5rem;
+}
+
 .strike-animate {
 	position: relative;
 	display: inline-block;
@@ -1088,12 +1100,13 @@ li section button {
 	transform: translateY(20px);
 	animation: fadeIn 0.3s forwards, fadeOut 0.3s forwards 3s;
 	cursor: pointer;
-	color: #fff;
+	color: var(--color-text);
 	font-size: 0.95rem;
 }
 
 .toast-success {
 	background-color: #28a745;
+	color: #fff;
 }
 
 .toast-error {
@@ -1122,6 +1135,7 @@ li section button {
 	transition: opacity 0.3s ease;
 	opacity: 0;
 }
+
 #scroll-to-bottom[style*="block"] {
 	opacity: 1;
 }

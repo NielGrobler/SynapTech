@@ -124,10 +124,10 @@ export const toggleMilestone = async (projectId, milestoneId) => {
 
 export const toggleMilestoneForm = (e) => {
 	e.preventDefault();
+	console.log("FUCK");
 	const formSection = document.getElementById('milestone-form-section');
 	const icon = document.getElementById('milestone-list-icon');
 	if (formSection.classList.contains('visually-hidden')) {
-		console.log("WENT HERE");
 		formSection.classList.remove('visually-hidden');
 		icon.classList.remove('bx-list-plus');
 		icon.classList.add('bx-list-ol');
@@ -588,7 +588,8 @@ export const populateElements = async () => {
 	document.getElementById('projectIsPublic').innerHTML = project.is_public ? 'Public' : 'Private';
 	document.getElementById('projectCreatedBy').innerHTML = project.author_name;
 	document.getElementById('projectDescription').innerHTML = project.description;
-	document.getElementById('milestone-form').addEventListener('submit', milestoneFormListener(project));
+	document.getElementById('projectDisplayId').innerHTML = `#${project.id}`;
+	document.getElementById('projectDateCreated').innerHTML = formatDate(project.created_at);
 
 	const info = await userInfo.fetchFromApi();
 	populateCollaborators(project);
@@ -598,6 +599,7 @@ export const populateElements = async () => {
 	addFundingButton(info.id, project);
 	populateMilestones(project);
 	document.getElementById('add-milestone-btn').addEventListener('click', toggleMilestoneForm);
+	document.getElementById('milestone-form').addEventListener('submit', milestoneFormListener(project));
 
 	const reviewListToggle = document.getElementById('review-list-drop-btn');
 	var isExpanded = true;

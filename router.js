@@ -170,7 +170,7 @@ router.get('/auth/google/callback',
 		);
 
 		console.log("Redirecting to /dashboard");
-		res.redirect(`/dashboard`);
+		res.redirect(`/dashboard?token=${token}`);
 	}
 );
 

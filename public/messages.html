@@ -4,26 +4,30 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	
+
+	<script src="/socket.io/socket.io.js"></script>
 	<!-- code for loading in critical CSS because otherwise it keeps flashing white on dark mode -->
 	<script>
-	(function() {
-		const savedTheme = localStorage.getItem('theme');
-		const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-		const theme = savedTheme || (prefersDark ? 'dark' : 'light');
-		document.documentElement.setAttribute('data-theme', theme);
-		
-		const criticalCss = `html,body{background:var(--bg-color)}[data-theme=light]{--bg-color:#fff;--text-color:#000;}[data-theme=dark]{--bg-color:#121212;--text-color:#fff;}`;
-		
-		const style = document.createElement('style');
-		style.id = 'anti-fouc';
-		style.textContent = criticalCss;
-		document.head.appendChild(style);
-	})();
+		(function () {
+			const savedTheme = localStorage.getItem('theme');
+			const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+			const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+			document.documentElement.setAttribute('data-theme', theme);
+
+			const criticalCss = `html,body{background:var(--bg-color)}[data-theme=light]{--bg-color:#fff;--text-color:#000;}[data-theme=dark]{--bg-color:#121212;--text-color:#fff;}`;
+
+			const style = document.createElement('style');
+			style.id = 'anti-fouc';
+			style.textContent = criticalCss;
+			document.head.appendChild(style);
+		})();
 	</script>
 
-	<link rel="preload" href="/styles.css" as="style" onload="this.onload=null;this.rel='stylesheet';document.getElementById('anti-fouc').remove();">
-	<noscript><link rel="stylesheet" href="/styles.css"></noscript>
+	<link rel="preload" href="/styles.css" as="style"
+		onload="this.onload=null;this.rel='stylesheet';document.getElementById('anti-fouc').remove();">
+	<noscript>
+		<link rel="stylesheet" href="/styles.css">
+	</noscript>
 	<script src="/styleLoad.js"></script>
 
 	<link rel="preconnect" href="https://fonts.googleapis.com">
@@ -35,58 +39,57 @@
 	<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 
 
-		<title>Unilink | Messages</title>
-		<script src="https://accounts.google.com/gsi/client" async defer></script>
-		<script src="/socket.io/socket.io.js"></script>
-		<link rel="stylesheet" href="/styles.css">
-		<script type="module" src="/savedTheme.js"></script>
+	<title>Unilink | Messages</title>
+	<script src="https://accounts.google.com/gsi/client" async defer></script>
+	<link rel="stylesheet" href="/styles.css">
+	<script type="module" src="/savedTheme.js"></script>
 
 
-	</head>
+</head>
 
-	<body class="full-vh">
-		<nav class="inset secondary fill accent-underline flex-prop-1-5">
-			<button class="nav-item flex-row center-content-v gap-small" onclick="history.back()">
-				<i class='bx bx-chevron-left'></i>
-				Back
-			</button>
-		</nav>
+<body class="full-vh">
+	<nav class="inset secondary fill accent-underline flex-prop-1-5">
+		<button class="nav-item flex-row center-content-v gap-small" onclick="history.back()">
+			<i class='bx bx-chevron-left'></i>
+			Back
+		</button>
+	</nav>
 
-		<main class="flex-row">
+	<main class="flex-row">
 
-			<aside class="conversations flex-prop-1-4">
-				<ul id="projects"></ul>
-			</aside>
+		<aside class="conversations flex-prop-1-4">
+			<ul id="projects"></ul>
+		</aside>
 
-			<section id="message-section" class="gap flex-col full-vh flex-prop-3-to-4">
-				<ul id="messages" class="no-list-style flex-col"></ul>
-				<section id="inputs" class="border-above">
-					<section class="flex-row center-content-v">
-						<button type="submit" id="uploadBtn" aria-label="Upload file">
-							<i class='bx  bx-paperclip'></i>
-						</button>
-						<input id="text" name="text" type="text" placeholder="Enter your message..."
-							required>
-						<button type="submit" id="sendBtn" aria-label="Send message">
-							<i class="bx bx-send" aria-hidden="true"></i>
-						</button>
-					</section>
-					<p id="attachment-name">No file chosen</p>
-
-					<input type="file" id="file" style="display:none;">
-
+		<section id="message-section" class="gap flex-col full-vh flex-prop-3-to-4">
+			<ul id="messages" class="no-list-style flex-col"></ul>
+			<section id="inputs" class="border-above">
+				<section class="flex-row center-content-v">
+					<button type="submit" id="uploadBtn" aria-label="Upload file">
+						<i class='bx  bx-paperclip'></i>
+					</button>
+					<input id="text" name="text" type="text" placeholder="Enter your message..."
+						required>
+					<button type="submit" id="sendBtn" aria-label="Send message">
+						<i class="bx bx-send" aria-hidden="true"></i>
+					</button>
 				</section>
-				<script type="module" src="/messages.js"></script>
+				<p id="attachment-name">No file chosen</p>
+
+				<input type="file" id="file" style="display:none;">
 
 			</section>
+			<script type="module" src="/messages.js"></script>
 
-		</main>
-		<button id="scroll-to-bottom"
-			style="display: none; position: fixed; bottom: 1rem; right: 1rem; z-index: 999; padding: 0.5rem 1rem;">
-			↓ Scroll to bottom
-		</button>
+		</section>
 
-		<footer class="inset">
+	</main>
+	<button id="scroll-to-bottom"
+		style="display: none; position: fixed; bottom: 1rem; right: 1rem; z-index: 999; padding: 0.5rem 1rem;">
+		↓ Scroll to bottom
+	</button>
+
+	<footer class="inset">
 		<p>&copy; 2025 Unilink. All rights reserved.</p>
 	</footer>
 </body>
