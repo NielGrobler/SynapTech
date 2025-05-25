@@ -11,6 +11,7 @@ vi.mock('./db/db.js', () => ({
 	default: {
 		getUserByGUID: vi.fn(),
 		createUser: vi.fn(),
+		checkProjectNameUniqueness: vi.fn(),
 		createProject: vi.fn(),
 		fetchAssociatedProjects: vi.fn(),
 		appendCollaborators: vi.fn(),
@@ -50,6 +51,31 @@ vi.mock('./db/db.js', () => ({
 		mayAccessProject: vi.fn(),
 		mayUploadToProject: vi.fn(),
 		uploadToProject: vi.fn(),
+		insertFundingRequest: vi.fn(),
+		getFundingOpportunities: vi.fn(),
+		mayRequestProjectFunding: vi.fn(),
+		alreadyRequestedFunding: vi.fn(),
+		insertMilestone: vi.fn(),
+		toggleMilestone: vi.fn(),
+		uploadToProject: vi.fn(),
+		getFundingReportData: vi.fn(),
+		fetchUserProjectsWithResources: vi.fn(),
+		fetchUserProjectsWithCompletionStatus: vi.fn(),
+		generateCustomReport: vi.fn(),
+		addMilestone: vi.fn(),
+		editMilestone: vi.fn(),
+		completeMilestone: vi.fn(),
+		uncompleteMilestone: vi.fn(),
+		deleteMilestone: vi.fn(),
+		getMilestones: vi.fn(),
+		getMilestone: vi.fn(),
+		addFunding: vi.fn(),
+		addExpenditure: vi.fn(),
+		getExpenditure: vi.fn(),
+		getFunding: vi.fn(),
+		mayEditProject: vi.fn(),
+		getSuspendedUser: vi.fn(),
+		mayViewProject: vi.fn(),
 	},
 }));
 
@@ -1109,46 +1135,117 @@ describe('Router Module Tests', () => {
 		});
 		*/
 		
-		/*describe('Milestones', () => {
+		describe('Milestones', () => {
 			describe('GET /get/milestones/by-project', () => {
 				it('should return milestones for a given project ID', async () => {
-					//code
+					const mockMilestones = [
+						{ id: 1, name: 'Milestone 1', project_id: 1 },
+						{ id: 2, name: 'Milestone 2', project_id: 1 }
+					];
+					db.getMilestones.mockResolvedValue(mockMilestones);
+					
+					const res = await request(app).get('/get/milestones/by-project?id=1')
+						.set('authenticated', 'true');
+					expect(res.status).toBe(200);
+					expect(res.body).toEqual(mockMilestones);
+				});
+
+				it('should handle errors when fetching milestones', async () => {
+					db.getMilestones.mockRejectedValue(new Error('DB Error'));
+					const res = await request(app).get('/get/milestones/by-project?id=1')
+						.set('authenticated', 'true');
+					expect(res.status).toBe(400);
 				});
 			});
 
 			describe('GET /get/milestone/by-id', () => {
 				it('should return a specific milestone by ID', async () => {
-					//code
+					const mockMilestone = { id: 1, name: 'Test Milestone' };
+					db.getMilestone.mockResolvedValue(mockMilestone);
+					
+					const res = await request(app).get('/get/milestone/by-id?id=1')
+						.set('authenticated', 'true');
+					expect(res.status).toBe(200);
+					expect(res.body).toEqual(mockMilestone);
 				});
 			});
 
 			describe('POST /add/milestone', () => {
 				it('should create a new milestone with valid data', async () => {
-					//code
+					const milestoneData = {
+						project_id: 1,
+						name: 'New Milestone',
+						description: 'Milestone description'
+					};
+					
+					db.addMilestone.mockResolvedValue({ id: 3, ...milestoneData });
+					
+					const res = await request(app).post('/add/milestone')
+						.set('authenticated', 'true')
+						.send(milestoneData);
+					expect(res.status).toBe(200);
+					expect(res.text).toBe('Successfully added milestone.');
+				});
+
+				it('should reject requests with missing data', async () => {
+					const res = await request(app).post('/add/milestone')
+						.set('authenticated', 'true')
+						.send({ project_id: 1 });
+					expect(res.status).toBe(400);
 				});
 			});
 			
 			describe('PUT /edit/milestone', () => {
 				it('should update an existing milestone', async () => {
-					//code
+					const updateData = {
+						milestoneId: 1,
+						name: 'Updated Name',
+						description: 'Updated Description'
+					};
+					
+					db.editMilestone.mockResolvedValue(true);
+					
+					const res = await request(app).put('/edit/milestone')
+						.set('authenticated', 'true')
+						.send(updateData);
+					expect(res.status).toBe(200);
+					expect(res.text).toBe('Successfully edited milestone.');
 				});
 			});
 			
 			describe('PUT /complete/milestone', () => {
 				it('should mark a milestone as completed', async () => {
-					//code
+					db.completeMilestone.mockResolvedValue(true);
+					
+					const res = await request(app).put('/complete/milestone')
+						.set('authenticated', 'true')
+						.send({ id: 1 });
+					expect(res.status).toBe(200);
+					expect(res.text).toBe('Milestone Completed!');
 				});
 			});
 
 			describe('PUT /uncomplete/milestone', () => {
 				it('should mark a completed milestone as incomplete', async () => {
-					//code
+					db.uncompleteMilestone.mockResolvedValue(true);
+      
+					const res = await request(app).put('/uncomplete/milestone')
+						.set('authenticated', 'true')
+						.send({ id: 1 });
+					expect(res.status).toBe(200);
+					expect(res.text).toBe('Completion status revoked:(');
 				});
 			});
 			
 			describe('DELETE /delete/milestone', () => {
 				it('should delete a milestone', async () => {
-					//code
+					db.deleteMilestone.mockResolvedValue(true);
+      
+					const res = await request(app).delete('/delete/milestone')
+						.set('authenticated', 'true')
+						.send({ id: 1 });
+					expect(res.status).toBe(200);
+					expect(res.text).toBe('Successfully deleted milestone.');
 				});
 			});
 			
@@ -1157,25 +1254,74 @@ describe('Router Module Tests', () => {
 		describe('Funding', () => {
 			describe('POST /add/funding', () => {
 				it('should add new funding to a project with valid data', async () => {
-					//code
+					const fundingData = {
+						project_id: 1,
+						currency: 'USD',
+						funding_type: 'Grant',
+						total_funding: 10000
+					};
+					
+					db.addFunding.mockResolvedValue(true);
+					
+					const res = await request(app).post('/add/funding')
+						.set('authenticated', 'true')
+						.send(fundingData);
+					expect(res.status).toBe(200);
+					expect(res.body.message).toBe('Funding added successfully');
+				});
+
+				it('should handle errors when adding funding', async () => {
+					db.addFunding.mockRejectedValue(new Error('DB Error'));
+					const res = await request(app).post('/add/funding')
+						.set('authenticated', 'true')
+						.send({});
+					expect(res.status).toBe(500);
 				});
 			});
 
 			describe('POST /add/expenditure', () => {
 				it('should add new expenditure to funding with valid data', async () => {
-					//code
+					const expenditureData = {
+						funding_id: 1,
+						amount: 500,
+						description: 'Equipment purchase'
+					};
+					
+					db.addExpenditure.mockResolvedValue(true);
+					
+					const res = await request(app).post('/add/expenditure')
+						.set('authenticated', 'true')
+						.send(expenditureData);
+					expect(res.status).toBe(200);
+					expect(res.body.message).toBe('Expenditure added successfully');
 				});
 			});
 
 			describe('GET /get/funding', () => {
 				it('should return funding data for a project', async () => {
-					//code
+					const mockFunding = [
+						{ id: 1, project_id: 1, total_funding: 10000 }
+					];
+					db.getFunding.mockResolvedValue(mockFunding);
+					
+					const res = await request(app).get('/get/funding?id=1')
+						.set('authenticated', 'true');
+					expect(res.status).toBe(200);
+					expect(res.body).toEqual(mockFunding);
 				});
 			});
 
 			describe('GET /get/expenditure', () => {
 				it('should return expenditure data for funding', async () => {
-					//code
+					const mockExpenditures = [
+						{ id: 1, funding_id: 1, amount: 500 }
+					];
+					db.getExpenditure.mockResolvedValue(mockExpenditures);
+					
+					const res = await request(app).get('/get/expenditure?id=1')
+						.set('authenticated', 'true');
+					expect(res.status).toBe(200);
+					expect(res.body).toEqual(mockExpenditures);
 				});
 			});
 			
@@ -1183,33 +1329,88 @@ describe('Router Module Tests', () => {
 
 		describe('Reports', () => {
 			describe('GET /api/reports/completion-status', () => {
-				it('should return completion status data for a project', async () => {
-					//code
-				});
+				/*it('should return completion status data for a project', async () => {
+					const mockProject = { 
+						id: 1, 
+						name: 'Test Project',
+						progress: 75,
+						milestones: [
+						{ id: 1, name: 'Milestone 1', completed: true }
+						]
+					};
+					
+					db.fetchProjectById.mockResolvedValue(mockProject);
+					db.fetchAssociatedProjects.mockResolvedValue([mockProject]);
+					
+					const res = await request(app).get('/api/reports/completion-status?projectId=1')
+						.set('authenticated', 'true');
+					expect(res.status).toBe(200);
+					expect(res.body.project).toEqual(mockProject);
+				});*/
 
 				it('should verify project access permissions', async () => {
-					//code
+					const privateProject = { 
+						id: 1, 
+						is_public: false,
+						created_by_account_id: 2,
+						collaborators: []
+					};
+					
+					db.fetchProjectById.mockResolvedValue(privateProject);
+					
+					const res = await request(app).get('/api/reports/completion-status?projectId=1')
+						.set('authenticated', 'true')
+						.set('user', JSON.stringify({ id: 3 })); // Different user
+					expect(res.status).toBe(403);
 				});
 
-				it('should calculate completion percentages correctly', async () => {
-					//code
-				});
+				/*it('should calculate completion percentages correctly', async () => {
+					const projectWithMilestones = {
+						id: 1,
+						milestones: [
+						{ id: 1, completed_at: new Date() }, // Completed
+						{ id: 2, completed_at: null }        // Not completed
+						]
+					};
+					
+					db.fetchProjectById.mockResolvedValue(projectWithMilestones);
+					
+					const res = await request(app).get('/api/reports/completion-status?projectId=1')
+						.set('authenticated', 'true');
+					expect(res.body.completionData.tasksCompleted).toBe(1);
+					expect(res.body.completionData.totalTasks).toBe(2);
+				});*/
 			});
 			
 			describe('GET /reports/custom', () => {
-				it('should generate custom reports based on parameters', async () => {
-					//code
-				});
+				/*it('should generate custom reports based on parameters', async () => {
+					const mockReport = {
+						metrics: ['completion'],
+						data: { completion: 75 }
+					};
+					
+					db.generateCustomReport.mockResolvedValue(mockReport);
+					
+					const res = await request(app).get('/reports/custom?metrics=completion')
+						.set('authenticated', 'true');
+					expect(res.status).toBe(200);
+					expect(res.body).toEqual(mockReport);
+				});*/
 
 				it('should validate report metrics', async () => {
-					//code
+					const res = await request(app).get('/reports/custom?metrics=invalid')
+						.set('authenticated', 'true');
+					expect(res.status).toBe(400);
 				});
 
 				it('should handle errors during report generation', async () => {
-					//code
+					db.generateCustomReport.mockRejectedValue(new Error('DB Error'));
+					const res = await request(app).get('/reports/custom?metrics=completion')
+						.set('authenticated', 'true');
+					expect(res.status).toBe(500);
 				});
 			});
-		});*/
+		});
 	});
 
 	//unsorted, get back to this later
