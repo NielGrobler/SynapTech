@@ -7,23 +7,26 @@
 
     <!-- code for loading in critical CSS because otherwise it keeps flashing white on dark mode -->
     <script>
-    (function() {
-        const savedTheme = localStorage.getItem('theme');
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const theme = savedTheme || (prefersDark ? 'dark' : 'light');
-        document.documentElement.setAttribute('data-theme', theme);
-        
-        const criticalCss = `html,body{background:var(--bg-color)}[data-theme=light]{--bg-color:#fff;--text-color:#000;}[data-theme=dark]{--bg-color:#121212;--text-color:#fff;}`;
-        
-        const style = document.createElement('style');
-        style.id = 'anti-fouc';
-        style.textContent = criticalCss;
-        document.head.appendChild(style);
-    })();
+        (function () {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+
+            const criticalCss = `html,body{background:var(--bg-color)}[data-theme=light]{--bg-color:#fff;--text-color:#000;}[data-theme=dark]{--bg-color:#121212;--text-color:#fff;}`;
+
+            const style = document.createElement('style');
+            style.id = 'anti-fouc';
+            style.textContent = criticalCss;
+            document.head.appendChild(style);
+        })();
     </script>
 
-    <link rel="preload" href="/styles.css" as="style" onload="this.onload=null;this.rel='stylesheet';document.getElementById('anti-fouc').remove();">
-    <noscript><link rel="stylesheet" href="/styles.css"></noscript>
+    <link rel="preload" href="/styles.css" as="style"
+        onload="this.onload=null;this.rel='stylesheet';document.getElementById('anti-fouc').remove();">
+    <noscript>
+        <link rel="stylesheet" href="/styles.css">
+    </noscript>
     <script src="/styleLoad.js"></script>
 
     <link rel="stylesheet" href="/styles.css">
@@ -119,7 +122,8 @@
     <footer class="inset">
         <p>&copy; 2025 Unilink. All rights reserved.</p>
     </footer>
-
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3.0.1/build/global/luxon.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon"></script>
     <script type="module" src="/savedTheme.js"></script>
     <script src="/completionStatusReport.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>

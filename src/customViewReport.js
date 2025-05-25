@@ -8,7 +8,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     try {
         toggleLoading(true);
-        const data = await fetchReportData();
+        // Include default metrics in the initial API call
+        const data = await fetchReportData('metrics=completion,resources,collaborators,reviews,uploads');
 
         updateSummaryMetrics(data);
         const charts = createCharts(data);
@@ -29,9 +30,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function fetchReportData(queryParams) {
-    const url = '/api/reports/custom' + (queryParams ? `?${queryParams}` : '');
+    const params = queryParams || 'metrics=completion,resources,collaborators,reviews,uploads';
+    const url = `/api/reports/custom?${params}`;
+    console.log('Fetching data from:', url);
+
     const response = await fetch(url);
-    if (!response.ok) throw new Error('Failed to fetch user activity data');
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch custom report data');
+    }
     return await response.json();
 }
 
@@ -223,14 +230,17 @@ function setupDateFilter(toggleLoading) {
         const startDate = document.getElementById('startDate').value;
         const endDate = document.getElementById('endDate').value;
 
-        let queryParams = new URLSearchParams();
-        if (startDate) queryParams.append('startDate', startDate);
-        if (endDate) queryParams.append('endDate', endDate);
+        let params = '';
+        if (startDate) params += `startDate=${startDate}`;
+        if (endDate) {
+            if (params) params += '&';
+            params += `endDate=${endDate}`;
+        }
 
         toggleLoading(true);
 
         try {
-            const data = await fetchReportData(queryParams.toString());
+            const data = await fetchReportData(params);
             updateSummaryMetrics(data);
 
             recreateChartCanvases();

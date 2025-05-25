@@ -1367,126 +1367,6 @@ const getExpenditure = async (fundingId) => {
 	return spending;
 };
 
-async function getCompletionStatusData(projectIds) {
-	try {
-		if (!projectIds || projectIds.length === 0) {
-			return {
-				totalContributors: 0,
-				avgDaysToComplete: 0,
-				projectProgress: 0,
-				contributorsTrend: [],
-				progressComparison: [],
-				milestones: []
-			};
-		}
-
-		const contributorsResult = await sender.getResult(new DatabaseQueryBuilder()
-			.input('projectIds', projectIds.join(','))
-			.query(`
-                SELECT COUNT(DISTINCT account_id) as total_contributors
-                FROM Collaborator
-                WHERE project_id IN ({{projectIds}})
-                AND is_active = 1
-            `)
-			.build()
-		);
-		const totalContributors = contributorsResult.recordSet[0]?.total_contributors || 0;
-
-		const milestonesResult = await sender.getResult(new DatabaseQueryBuilder()
-			.input('projectIds', projectIds.join(','))
-			.query(`
-                SELECT 
-                    p.name as project_name,
-                    COUNT(pm.project_milestone_id) as total_milestones,
-                    SUM(CASE WHEN pm.completed_at IS NOT NULL THEN 1 ELSE 0 END) as completed_milestones,
-                    AVG(CASE WHEN pm.completed_at IS NOT NULL 
-                        THEN DATEDIFF(pm.completed_at, pm.created_at) 
-                        ELSE NULL END) as avg_days_to_complete
-                FROM Project p
-                LEFT JOIN ProjectMilestone pm ON p.project_id = pm.project_id
-                WHERE p.project_id IN ({{projectIds}})
-                GROUP BY p.project_id
-            `)
-			.build()
-		);
-
-		let totalMilestones = 0;
-		let completedMilestones = 0;
-		let totalDaysToComplete = 0;
-		let milestonesWithCompletionTime = 0;
-
-		milestonesResult.recordSet.forEach(project => {
-			totalMilestones += project.total_milestones || 0;
-			completedMilestones += project.completed_milestones || 0;
-
-			if (project.avg_days_to_complete) {
-				totalDaysToComplete += project.avg_days_to_complete * (project.completed_milestones || 0);
-				milestonesWithCompletionTime += project.completed_milestones || 0;
-			}
-		});
-
-		const projectProgress = totalMilestones > 0
-			? Math.round((completedMilestones / totalMilestones) * 100)
-			: 0;
-
-		const avgDaysToComplete = milestonesWithCompletionTime > 0
-			? parseFloat((totalDaysToComplete / milestonesWithCompletionTime).toFixed(1))
-			: 0;
-
-		const contributorsTrendResult = await sender.getResult(new DatabaseQueryBuilder()
-			.input('projectIds', projectIds.join(','))
-			.query(`
-                SELECT 
-                    p.name as project_name,
-                    COUNT(c.account_id) as contributor_count
-                FROM Project p
-                JOIN Collaborator c ON p.project_id = c.project_id
-                WHERE p.project_id IN ({{projectIds}})
-                AND c.is_active = 1
-                GROUP BY p.project_id
-            `)
-			.build()
-		);
-
-		const milestonesTimelineResult = await sender.getResult(new DatabaseQueryBuilder()
-			.input('projectIds', projectIds.join(','))
-			.query(`
-                SELECT 
-                    p.name as project_name,
-                    pm.name as milestone_name,
-                    pm.description,
-                    pm.created_at,
-                    pm.completed_at
-                FROM Project p
-                JOIN ProjectMilestone pm ON p.project_id = pm.project_id
-                WHERE p.project_id IN ({{projectIds}})
-                ORDER BY pm.created_at
-            `)
-			.build()
-		);
-
-		const progressComparison = milestonesResult.recordSet.map(project => ({
-			projectName: project.project_name,
-			progress: project.total_milestones > 0
-				? Math.round((project.completed_milestones / project.total_milestones) * 100)
-				: 0
-		}));
-
-		return {
-			totalContributors,
-			avgDaysToComplete,
-			projectProgress,
-			contributorsTrend: contributorsTrendResult.recordSet,
-			progressComparison,
-			milestones: milestonesTimelineResult.recordSet
-		};
-
-	} catch (error) {
-		console.error('Error in getCompletionStatusData:', error);
-		throw error;
-	}
-}
-
 async function getUserActivityReportData(userId, startDate = null, endDate = null) {
 	try {
 		let dateCondition = '';
@@ -1631,6 +1511,126 @@ async function getUserActivityReportData(userId, startDate = null, endDate = nul
 	}
 }
 
+async function getCompletionStatusData(projectIds) {
+	try {
+		if (!projectIds || projectIds.length === 0) {
+			return {
+				totalContributors: 0,
+				avgDaysToComplete: 0,
+				projectProgress: 0,
+				contributorsTrend: [],
+				progressComparison: [],
+				milestones: []
+			};
+		}
+
+		const contributorsResult = await sender.getResult(new DatabaseQueryBuilder()
+			.input('projectIds', projectIds.join(','))
+			.query(`
+                SELECT COUNT(DISTINCT account_id) as total_contributors
+                FROM Collaborator
+                WHERE project_id IN ({{projectIds}})
+                AND is_active = 1
+            `)
+			.build()
+		);
+		const totalContributors = contributorsResult.recordSet[0]?.total_contributors || 0;
+
+		const milestonesResult = await sender.getResult(new DatabaseQueryBuilder()
+			.input('projectIds', projectIds.join(','))
+			.query(`
+                SELECT 
+                    p.name as project_name,
+                    COUNT(pm.project_milestone_id) as total_milestones,
+                    SUM(CASE WHEN pm.completed_at IS NOT NULL THEN 1 ELSE 0 END) as completed_milestones,
+                    AVG(CASE WHEN pm.completed_at IS NOT NULL 
+                        THEN DATEDIFF(pm.completed_at, pm.created_at) 
+                        ELSE NULL END) as avg_days_to_complete
+                FROM Project p
+                LEFT JOIN ProjectMilestone pm ON p.project_id = pm.project_id
+                WHERE p.project_id IN ({{projectIds}})
+                GROUP BY p.project_id
+            `)
+			.build()
+		);
+
+		let totalMilestones = 0;
+		let completedMilestones = 0;
+		let totalDaysToComplete = 0;
+		let milestonesWithCompletionTime = 0;
+
+		milestonesResult.recordSet.forEach(project => {
+			totalMilestones += project.total_milestones || 0;
+			completedMilestones += project.completed_milestones || 0;
+
+			if (project.avg_days_to_complete) {
+				totalDaysToComplete += project.avg_days_to_complete * (project.completed_milestones || 0);
+				milestonesWithCompletionTime += project.completed_milestones || 0;
+			}
+		});
+
+		const projectProgress = totalMilestones > 0
+			? Math.round((completedMilestones / totalMilestones) * 100)
+			: 0;
+
+		const avgDaysToComplete = milestonesWithCompletionTime > 0
+			? parseFloat((totalDaysToComplete / milestonesWithCompletionTime).toFixed(1))
+			: 0;
+
+		const contributorsTrendResult = await sender.getResult(new DatabaseQueryBuilder()
+			.input('projectIds', projectIds.join(','))
+			.query(`
+                SELECT 
+                    p.name as project_name,
+                    COUNT(c.account_id) as contributor_count
+                FROM Project p
+                JOIN Collaborator c ON p.project_id = c.project_id
+                WHERE p.project_id IN ({{projectIds}})
+                AND c.is_active = 1
+                GROUP BY p.project_id
+            `)
+			.build()
+		);
+
+		const milestonesTimelineResult = await sender.getResult(new DatabaseQueryBuilder()
+			.input('projectIds', projectIds.join(','))
+			.query(`
+                SELECT 
+                    p.name as project_name,
+                    pm.name as milestone_name,
+                    pm.description,
+                    pm.created_at,
+                    pm.completed_at
+                FROM Project p
+                JOIN ProjectMilestone pm ON p.project_id = pm.project_id
+                WHERE p.project_id IN ({{projectIds}})
+                ORDER BY pm.created_at
+            `)
+			.build()
+		);
+
+		const progressComparison = milestonesResult.recordSet.map(project => ({
+			projectName: project.project_name,
+			progress: project.total_milestones > 0
+				? Math.round((project.completed_milestones / project.total_milestones) * 100)
+				: 0
+		}));
+
+		return {
+			totalContributors,
+			avgDaysToComplete,
+			projectProgress,
+			contributorsTrend: contributorsTrendResult.recordSet,
+			progressComparison,
+			milestones: milestonesTimelineResult.recordSet
+		};
+
+	} catch (error) {
+		console.error('Error in getCompletionStatusData:', error);
+		throw error;
+	}
+}
+
 export default {
 	getUserByGUID,
 	createUser,
@@ -1698,5 +1698,7 @@ export default {
 	getFunding,
 	mayEditProject,
 	getSuspendedUser,
-	mayViewProject
+	mayViewProject,
+	getCompletionStatusData,
+	getUserActivityReportData
 };

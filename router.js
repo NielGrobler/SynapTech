@@ -245,7 +245,7 @@ router.get('/signup', (req, res) => {
 });
 
 router.get('/logout', (req, res, next) => {
-	req.logout(function(err) {
+	req.logout(function (err) {
 		if (err) { return next(err); }
 
 		req.session.destroy((err) => {
@@ -796,33 +796,16 @@ router.get('/reports/completion-status', requireAuthentication(async (req, res) 
 				return res.status(403).json({ error: 'Not authorized to view this project' });
 			}
 
-			// Get milestones (use ProjectMilestone table)
-			const milestonesQuery = await sender.getResult(new DatabaseQueryBuilder()
-				.input('projectId', projectId)
-				.query(`
-          SELECT 
-            project_milestone_id AS id,
-            name,
-            description,
-            created_at,
-            completed_at
-          FROM ProjectMilestone
-          WHERE project_id = {{projectId}}
-          ORDER BY created_at
-        `)
-				.build()
+			// Get completion data using db function instead of direct query
+			const completionData = await db.getCompletionStatusData([projectId]);
+
+			// Get milestones from the completion data instead of direct query
+			const milestones = completionData.milestones.filter(m =>
+				m.project_name === project.name
 			);
 
-			// Calculate completion percentage based on completed milestones
-			const milestones = milestonesQuery.recordSet;
-			let completedMilestones = 0;
-			if (milestones && milestones.length > 0) {
-				completedMilestones = milestones.filter(m => m.completed_at).length;
-			}
-
-			const completionPercentage = milestones.length > 0
-				? Math.round((completedMilestones / milestones.length) * 100)
-				: 50; // Default to 50% if no milestones
+			// Calculate completion percentage
+			const completionPercentage = completionData.projectProgress;
 
 			// Add calculated fields to project
 			project.progress = completionPercentage;
@@ -867,64 +850,34 @@ router.get('/api/reports/completion-status', requireAuthentication(async (req, r
 			return res.status(403).json({ error: 'Not authorized to view this project' });
 		}
 
-		// Get project milestones
-		const milestonesQuery = await sender.getResult(new DatabaseQueryBuilder()
-			.input('projectId', projectId)
-			.query(`
-        SELECT 
-          project_milestone_id AS id,
-          name,
-          description,
-          created_at,
-          completed_at
-        FROM ProjectMilestone
-        WHERE project_id = {{projectId}}
-        ORDER BY created_at
-      `)
-			.build()
-		);
-
-		const milestones = milestonesQuery.recordSet;
-
-		// Calculate completion percentage based on completed milestones
-		let completedMilestones = 0;
-		if (milestones && milestones.length > 0) {
-			completedMilestones = milestones.filter(m => m.completed_at).length;
-		}
-
-		const completionPercentage = milestones.length > 0
-			? Math.round((completedMilestones / milestones.length) * 100)
-			: 50; // Default to 50% if no milestones
-
-		// Add calculated fields to project
-		project.progress = completionPercentage;
-		project.milestones = milestones;
+		// Get completion data using the db function
+		const completionData = await db.getCompletionStatusData([projectId]);
 
 		// Get all user projects for comparison
 		const userProjects = await db.fetchAssociatedProjects(req.user);
 
-		// Calculate progress for each project (using milestone completion if available)
-		for (const comparison_project of userProjects) {
-			if (comparison_project.id === project.id) {
-				comparison_project.progress = completionPercentage;
+		// Calculate progress for each project using milestone data or fall back to random
+		for (const comparisonProject of userProjects) {
+			if (comparisonProject.id === parseInt(projectId)) {
+				comparisonProject.progress = completionData.projectProgress;
 			} else {
 				// For demo purposes assign random progress
-				comparison_project.progress = Math.floor(Math.random() * 80) + 20; // 20-100%
+				comparisonProject.progress = Math.floor(Math.random() * 80) + 20; // 20-100%
 			}
 		}
 
 		// Return the combined data
 		res.json({
+			totalContributors: completionData.totalContributors,
+			avgDaysToComplete: completionData.avgDaysToComplete,
+			projectProgress: completionData.projectProgress,
+			contributorsTrend: completionData.contributorsTrend,
+			progressComparison: completionData.progressComparison,
+			milestones: completionData.milestones,
 			project: project,
-			similarProjects: userProjects.filter(p => p.id !== project.id),
-			collaborators: project.collaborators || [],
-			completionData: {
-				tasksCompleted: completedMilestones,
-				totalTasks: milestones.length,
-				avgDaysToComplete: 5.6  // This would ideally be calculated from your actual data
-			}
+			similarProjects: userProjects.filter(p => p.id !== parseInt(projectId)),
+			collaborators: project.collaborators || []
 		});
-
 	} catch (err) {
 		console.error('Error generating completion status report data:', err);
 		res.status(500).json({ error: 'Failed to generate completion status report data' });
@@ -934,14 +887,23 @@ router.get('/api/reports/completion-status', requireAuthentication(async (req, r
 // Customizable Report
 router.get('/reports/custom', requireAuthentication(async (req, res) => {
 	try {
-		// Get parameters from the query string
+		// This route should just return the HTML page
+		res.sendFile(path.join(__dirname, "public", "customViewReport.html"));
+	} catch (err) {
+		console.error('Error serving custom report page:', err);
+		res.status(500).send('Error loading custom report page');
+	}
+}, { statusCode: 401 }));
+
+// API endpoint for custom report data
+router.get('/api/reports/custom', requireAuthentication(async (req, res) => {
+	try {
 		const { metrics, projectIds, timeframe, groupBy } = req.query;
 
 		if (!metrics) {
 			return res.status(400).json({ error: 'No metrics specified for custom report' });
 		}
 
-		// Parse the metrics and validate them
 		const metricsList = metrics.split(',');
 		const validMetrics = ['completion', 'resources', 'collaborators', 'reviews', 'uploads'];
 		const filteredMetrics = metricsList.filter(m => validMetrics.includes(m));
@@ -950,16 +912,20 @@ router.get('/reports/custom', requireAuthentication(async (req, res) => {
 			return res.status(400).json({ error: 'No valid metrics specified' });
 		}
 
-		// Generate custom report based on specified metrics
-		const customReportData = await db.generateCustomReport({
+		const reportData = await db.generateCustomReport({
 			userId: req.user.id,
 			metrics: filteredMetrics,
 			projectIds: projectIds ? projectIds.split(',').map(id => parseInt(id)) : null,
 			timeframe: timeframe || 'all',
 			groupBy: groupBy || 'project'
 		});
+		const activityData = await db.getUserActivityReportData(req.user.id);
+		const combinedData = {
+			...activityData,
+			reportData: reportData
+		};
 
-		res.json(customReportData);
+		res.json(combinedData);
 	} catch (err) {
 		console.error('Error generating custom report:', err);
 		res.status(500).json({ error: 'Failed to generate custom report', details: err.message });
