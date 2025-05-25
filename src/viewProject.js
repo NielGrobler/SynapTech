@@ -79,14 +79,14 @@ export const fetchMilestones = async (projectId) => {
 		const res = await fetch(`/api/project/${projectId}/milestones`);
 
 		if (!res.ok) {
-			throw new Error(`Failed to download file: ${res.statusText}`);
+			throw new Error(`Failed to fetching milestones: ${res.statusText}`);
 		}
 
 		const data = await res.json();
 		return data;
 	} catch (err) {
 		console.error("Error:", err.message || err);
-		failToast("Error fetching milestones.");
+		failToast(`${err.error || err}`);
 	}
 }
 
@@ -122,17 +122,40 @@ export const toggleMilestone = async (projectId, milestoneId) => {
 	}
 }
 
+export function fadeOutAndHide(elem) {
+	elem.classList.remove('fade-in');
+	elem.classList.add('fade-out');
+
+	elem.addEventListener('transitionend', function handler() {
+		elem.classList.add('hidden');
+		elem.classList.remove('fade-out');
+		elem.removeEventListener('transitionend', handler);
+	});
+}
+
+function fadeIn(elem) {
+	elem.classList.remove('hidden');
+	elem.classList.remove('fade-out');
+	requestAnimationFrame(() => {
+		elem.classList.remove('fade-out');
+		elem.classList.add('fade-in');
+	});
+}
+
+
 export const toggleMilestoneForm = (e) => {
 	e.preventDefault();
 	const formSection = document.getElementById('milestone-form-section');
+	const listSection = document.getElementById('milestone-list');
 	const icon = document.getElementById('milestone-list-icon');
-	if (formSection.classList.contains('visually-hidden')) {
-		console.log("WENT HERE");
-		formSection.classList.remove('visually-hidden');
+	if (formSection.classList.contains('hidden')) {
+		fadeIn(formSection);
+		fadeOutAndHide(listSection);
 		icon.classList.remove('bx-list-plus');
 		icon.classList.add('bx-list-ol');
 	} else {
-		formSection.classList.add('visually-hidden');
+		fadeIn(listSection);
+		fadeOutAndHide(formSection);
 		icon.classList.add('bx-list-plus');
 		icon.classList.remove('bx-list-ol');
 	}
@@ -148,7 +171,7 @@ export const setMilestoneIcon = (icon, wasChecked) => {
 	}
 }
 
-export const milestoneToHTML = (projectId, milestone) => {
+export const milestoneToHTML = (project, accountId, milestone) => {
 	const name = milestone.name;
 	const description = milestone.description;
 	const id = milestone.project_milestone_id;
@@ -166,7 +189,6 @@ export const milestoneToHTML = (projectId, milestone) => {
 	span.classList.add('flex-row', 'center-content-v', 'no-pad-v', 'tight-stack');
 
 	const para = document.createElement('p');
-	//para.classList.add('small-text');
 	header.innerText = name;
 	header.classList.add('strike-animate');
 	if (isChecked) {
@@ -177,13 +199,20 @@ export const milestoneToHTML = (projectId, milestone) => {
 	article.appendChild(span);
 	article.appendChild(para);
 	article.dataset.id = id;
-	article.classList.add('highlight-hover', 'no-pad-v', 'tight-stack', 'grey-left-border');
-
 	setMilestoneIcon(icon, isChecked);
 	isChecked = !isChecked;
+	const li = document.createElement('li');
+	article.classList.add('no-pad-v', 'tight-stack', 'grey-left-border');
+	li.appendChild(article);
+
+	if (!isParticipant(accountId, project)) {
+		return li;
+	}
+
+	article.classList.add('highlight-hover');
 	article.addEventListener('click', async (e) => {
 		e.preventDefault();
-		await toggleMilestone(projectId, article.dataset.id);
+		await toggleMilestone(project.id, article.dataset.id);
 		setMilestoneIcon(icon, isChecked);
 		header.classList.remove('strike-now', 'strike-reverse');
 		void header.offsetWidth;
@@ -196,9 +225,6 @@ export const milestoneToHTML = (projectId, milestone) => {
 		}
 		isChecked = !isChecked;
 	});
-
-	const li = document.createElement('li');
-	li.appendChild(article);
 
 	return li;
 }
@@ -233,6 +259,7 @@ export const projectFileToHTML = (projectFile) => {
 }
 
 export const isParticipant = (userId, project) => {
+	console.log(project);
 	if (userId === project.created_by_account_id) {
 		return true;
 	}
@@ -295,7 +322,6 @@ export const fundingOpportunityToHTML = (project, item) => {
 }
 
 export const addFundingButton = (userId, project) => {
-	console.log('[addFundingButton]');
 	if (!isParticipant(userId, project)) {
 		return;
 	}
@@ -417,7 +443,8 @@ export const createInviteForm = (project) => {
 	button.appendChild(icon);
 
 	form.appendChild(input);
-	form.appendChild(button);
+	form.addEventListener('submit', (e) => e.preventDefault());
+	//form.appendChild(button);
 
 	form.addEventListener('input', async (e) => {
 		e.preventDefault();
@@ -555,7 +582,7 @@ export const addUploadButton = (userDetails, project) => {
 					successToast('File uploaded successfully!');
 					loadProjectFiles(project);
 				} else {
-					failToast(`Error: ${data.message || 'Failed to upload file.'}`);
+					failToast(`Error: ${data.error || 'Failed to upload file.'}`);
 				}
 			} catch (error) {
 				console.error('Error uploading file:', error);
@@ -571,10 +598,10 @@ export const addUploadButton = (userDetails, project) => {
 	return true;
 }
 
-export const populateMilestones = async (project) => {
+export const populateMilestones = async (project, accountId) => {
 	const data = await fetchMilestones(project.id);
 	document.getElementById('milestone-list').innerHTML = '';
-	pageAdder.assignListToElement(`milestone-list`, data, (item) => milestoneToHTML(project.id, item));
+	pageAdder.assignListToElement(`milestone-list`, data, (item) => milestoneToHTML(project, accountId, item));
 }
 
 export const populateElements = async () => {
@@ -588,7 +615,8 @@ export const populateElements = async () => {
 	document.getElementById('projectIsPublic').innerHTML = project.is_public ? 'Public' : 'Private';
 	document.getElementById('projectCreatedBy').innerHTML = project.author_name;
 	document.getElementById('projectDescription').innerHTML = project.description;
-	document.getElementById('milestone-form').addEventListener('submit', milestoneFormListener(project));
+	document.getElementById('projectDisplayId').innerHTML = `#${project.id}`;
+	document.getElementById('projectDateCreated').innerHTML = formatDate(project.created_at);
 
 	const info = await userInfo.fetchFromApi();
 	populateCollaborators(project);
@@ -596,8 +624,13 @@ export const populateElements = async () => {
 	addRequestCollaboration(info, project)
 	addUploadButton(info, project);
 	addFundingButton(info.id, project);
-	populateMilestones(project);
-	document.getElementById('add-milestone-btn').addEventListener('click', toggleMilestoneForm);
+	populateMilestones(project, info.id);
+	if (isParticipant(info.id, project)) {
+		document.getElementById('add-milestone-btn').addEventListener('click', toggleMilestoneForm);
+		document.getElementById('milestone-form').addEventListener('submit', milestoneFormListener(project));
+	} else {
+		document.getElementById('add-milestone-btn').classList.add('visually-hidden');
+	}
 
 	const reviewListToggle = document.getElementById('review-list-drop-btn');
 	var isExpanded = true;

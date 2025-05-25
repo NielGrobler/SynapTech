@@ -52,7 +52,7 @@ describe('invite.js Module Tests', () =>{
 			document.body.appendChild(element);
 
 			expect(element.tagName).toBe('LI');
-			expect(element.querySelector('p').innerHTML).toContain('Alice');
+			expect(element.querySelector('p').innerHTML).toContain('You have received an invite for you to collaborate on <strong>AI Project</strong> as a <strong>Researcher</strong>.');
 			expect(element.querySelectorAll('button').length).toBe(2);
 		});
 	});

@@ -1,11 +1,31 @@
+export const formatDate = (dateString) => {
+	const options = { year: 'numeric', month: 'short', day: 'numeric' };
+	return new Date(dateString).toLocaleDateString(undefined, options);
+};
+
 const projectToElement = (project) => {
+	const id = !project.id ? project.project_id : project.id;
+
 	const li = document.createElement("li");
-	const title = document.createElement("strong");
-	title.textContent = project.name;
+	const title = document.createElement("span");
+	const idSpan = document.createElement("span");
+	const nameSpan = document.createElement("strong");
+	const dateSpan = document.createElement("span");
+	const infoSpan = document.createElement("span");
+	idSpan.classList.add("green", "to-end");
+	nameSpan.classList.add("to-start");
+	title.classList.add("space-between", "flex-row");
+	dateSpan.textContent = `, ${formatDate(project.created_at)}`;
+	idSpan.textContent = `ID: #${id}`;
+	infoSpan.append(idSpan);
+	infoSpan.append(dateSpan);
+
+	nameSpan.textContent = `${project.name} `;
+	title.appendChild(nameSpan);
+	title.appendChild(infoSpan);
 	li.dataset.type = "project";
 	const description = document.createElement("p");
 	description.textContent = project.description;
-	const id = !project.id ? project.project_id : project.id;
 
 
 	li.appendChild(title);
@@ -69,7 +89,7 @@ const assignListToElement = (elementId, rawElements, elementHTMLFormatter, noDis
 	}
 
 	if (rawElements.length === 0) {
-		document.getElementById(elementId).innerHTML = `<p>${noDisplayText}</p>`;
+		document.getElementById(elementId).innerHTML = `<p> ${noDisplayText}</p> `;
 		return;
 	}
 

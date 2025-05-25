@@ -132,6 +132,10 @@ describe('viewCollaborators.js', () => {
       toast.failToast.mockClear();
       toast.successToast.mockClear();
       pageAdder.assignListToElement.mockClear();
+
+      document.body.innerHTML = `
+      <div id="collaboratorRequests"></div>
+    `;
     });
 
     it('calls API and assigns collaborator data', async () => {
