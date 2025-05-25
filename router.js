@@ -571,8 +571,13 @@ router.get('/api/project/:projectId/files', makeSafeHandler(async (req, res) => 
 	return res.json(result);
 }));
 
-router.get('/api/user/info', makeSafeHandler((req, res) => {
-	res.json(req.user);
+router.get('/api/user/info', makeSafeHandler(async (req, res) => {
+	const userId = req.user.id;
+	expectValidNumId(userId, 'Expected valid account id.')
+
+	const user = await db.fetchUserById(userId);
+
+	return res.json(user);
 }));
 
 const expectValidRole = (role) => {
