@@ -130,6 +130,7 @@ const scrollDown = () => {
 
 let selectedRoomId;
 let hasJoinedRoom = false;
+let socket;
 
 const makeSocket = () => {
 	socket = io({ auth: { token: localStorage.getItem('jwt') } });
