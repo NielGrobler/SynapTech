@@ -147,14 +147,6 @@ router.get('/forbidden', (req, res) => {
 	res.status(403).sendFile(path.join(__dirname, "public", "forbidden.html"));
 });
 
-router.get('/collaboration', (req, res) => {
-	if (!authenticateRequest(req)) {
-		return res.redirect('/forbidden');
-	}
-	console.log("Redirecting to /collaboration");
-	res.sendFile(path.join(__dirname, "public", "viewCollaborationRequests.html"));
-});
-
 /* Authorization routes */
 router.get('/auth/google', passport.authenticate('google', {
 	scope: ['profile', 'email'],
@@ -211,6 +203,11 @@ router.get('/styles.css', (req, res) => {
 router.get('/message_style.css', (req, res) => {
 	res.sendFile(path.join(__dirname, 'public', 'message_style.css'));
 });
+
+router.get('/collaboration', requireAuthentication((req, res) => {
+	console.log("Redirecting to /collaboration");
+	res.sendFile(path.join(__dirname, "public", "viewCollaborationRequests.html"));
+}));
 
 router.get('/auth/orcid', passport.authenticate('orcid'));
 
@@ -426,14 +423,13 @@ const expectForValid = (isValidCondition, msgOnFalse) => {
 	}
 }
 
-const expectForAuth = (isAuthCondition, msgOnFalse) => {
+const expectForAuth = (isAuthCondition, msgOnFalse = "Not authorized for this action.") => {
 	if (!isAuthCondition) {
 		throw new AuthorizationError(msgOnFalse);
 	}
 }
 
 const transformOrThrow = (str, name, maxLength = 512) => {
-	console.log(typeof str);
 	if (typeof str !== 'string') {
 		throw new ValidationError(`Expected argument ${name} to be a string.`);
 	}
@@ -468,22 +464,26 @@ router.post('/api/post/funding/request', makeSafeHandler(async (req, res) => {
 }));
 
 router.get('/api/project/:projectId/milestones', makeSafeHandler(async (req, res) => {
+	console.log("[milestones] Wasting my time");
 	const projectId = req.params.projectId;
 	expectValidNumId(projectId, 'Expected a valid project id.');
-	const mayView = await db.mayAccessProject(projectId, req.user.id);
+
+	const mayView = await db.mayViewProject(projectId, req.user.id);
 	expectForAuth(mayView);
+
 	const milestones = await db.getMilestones(projectId);
 	return res.status(200).json(milestones);
 }));
 
 router.post('/api/post/project/:projectId/milestone', makeSafeHandler(async (req, res) => {
-	const projectId = req.params.projectId;
-	expectValidNumId(projectId, 'Expected a valid project id.');
-	const mayView = await db.mayAccessProject(projectId, req.user.id);
-	expectForAuth(mayView);
 	var { name, description } = req.body;
 	name = transformOrThrow(name, 'name');
 	description = transformOrThrow(description, 'description', 2048);
+	const projectId = req.params.projectId;
+	expectValidNumId(projectId, 'Expected a valid project id.');
+
+	const mayEdit = await db.mayEditProject(projectId, req.user.id);
+	expectForAuth(mayEdit);
 
 	await db.insertMilestone(projectId, name, description);
 	return res.status(200).json({ message: 'Milestone posted successfully.' });
@@ -492,10 +492,11 @@ router.post('/api/post/project/:projectId/milestone', makeSafeHandler(async (req
 router.post('/api/toggle/project/:projectId/milestone', makeSafeHandler(async (req, res) => {
 	const projectId = req.params.projectId;
 	expectValidNumId(projectId);
-	const mayView = await db.mayAccessProject(projectId, req.user.id);
-	expectForAuth(mayView);
 	const { milestoneId } = req.body;
 	expectValidNumId(milestoneId, 'Expected a valid milestone id.');
+
+	const mayEdit = await db.mayEditProject(projectId, req.user.id);
+	expectForAuth(mayEdit);
 
 	await db.toggleMilestone(milestoneId);
 	return res.status(200).json({ message: 'Milestone toggled successfully.' });
@@ -508,8 +509,8 @@ router.post('/api/funding/:projectId/spend', makeSafeHandler(async (req, res) =>
 	expectForValid(typeof amount === 'number' && !isNaN(amount) && amount > 0);
 	const processedName = transformOrThrow(name);
 
-	const mayView = await db.mayAccessProject(projectId, req.user.id);
-	expectForAuth(mayView);
+	const mayEdit = await db.mayEditProject(projectId, req.user.id);
+	expectForAuth(mayEdit);
 
 	await db.deductFunding(projectId, amount, processedName);
 
@@ -530,43 +531,35 @@ router.get('/api/funding/:projectId', makeSafeHandler(async (req, res) => {
 
 // File upload route
 router.post('/api/project/:projectId/upload', upload.single('file'), makeSafeHandler(async (req, res) => {
-	try {
-		expectForValid(req.file, 'No file uploaded.')
-		const maxSize = 10 * 1024 * 1024;
-		expectForValid(req.file.size <= maxSize, 'File size exceeds the 10MB limit');
-		const projectId = req.params.projectId;
-		expectValidNumId(projectId);
+	expectForValid(req.file, 'No file uploaded.')
+	const maxSize = 10 * 1024 * 1024;
+	expectForValid(req.file.size <= maxSize, 'File size exceeds the 10MB limit');
+	const projectId = req.params.projectId;
+	expectValidNumId(projectId);
 
-		const mayUpload = await db.mayUploadToProject(projectId, req.user.id);
-		expectForAuth(mayUpload, 'Not authorized for upload to this project.')
+	const mayUpload = await db.mayUploadToProject(projectId, req.user.id);
+	expectForAuth(mayUpload, 'Not authorized for upload to this project.')
 
-		const fileBuffer = req.file.buffer;
-		const filename = req.file.originalname;
-		await db.uploadToProject(projectId, fileBuffer, filename);
+	const fileBuffer = req.file.buffer;
+	const filename = req.file.originalname;
+	await db.uploadToProject(projectId, fileBuffer, filename);
 
-		return res.status(200).json({ message: 'File uploaded successfully' });
-	} catch (error) {
-		console.error('Error uploading file:', error);
-		return res.status(500).json({ error: error.message });
-	}
+	return res.status(200).json({ message: 'File uploaded successfully' });
 }));
 
 
-router.get('/api/project/:projectId/file/:fileId/:ext', requireAuthentication(async (req, res) => {
-	try {
-		const projectId = req.params.projectId;
-		const fileId = req.params.fileId;
-		const ext = req.params.ext;
-		const mayAccess = await db.mayAccessProject(projectId, req.user.id);
-		if (!mayAccess) {
-			return res.status(403).json({ error: "cannot access project" });
-		}
+router.get('/api/project/:projectId/file/:fileId/:ext', makeSafeHandler(async (req, res) => {
+	const projectId = req.params.projectId;
+	const fileId = req.params.fileId;
+	expectValidNumId(projectId);
+	expectValidUuid(fileId);
 
-		const result = await db.downloadFile(fileId, ext);
-		res.send(result.buffer);
-	} catch (err) {
-		res.json({ error: err.message || err.toString() });
-	}
+	const ext = req.params.ext;
+	const mayAccess = await db.mayAccessProject(projectId, req.user.id);
+	expectForAuth(mayAccess, "Cannot access project.");
+
+	const result = await db.downloadFile(fileId, ext);
+	res.send(result.buffer);
 }));
 
 router.get('/api/project/:projectId/files', makeSafeHandler(async (req, res) => {
@@ -697,8 +690,6 @@ router.get('/api/user/project', makeSafeHandler(async (req, res) => {
 
 router.get(`/api/projects/by/user/:userId`, makeSafeHandler(async (req, res) => {
 	const id = req.params.userId;
-	console.log(`Id received was ${id}`);
-	console.log("USED");
 	expectValidNumId(id, 'Expected valid account id');
 	const projects = await db.fetchPublicAssociatedProjects(id);
 	return res.json(projects);

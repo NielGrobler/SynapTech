@@ -51,19 +51,29 @@ const handleReject = async (collaborator) => {
 	}
 }
 const fetchCollaborators = async () => {
+	console.log("reijqoijw");
 	try {
 		const res = await fetch('/api/collaborator');
 		if (!res.ok) {
 			throw new Error(await res.json());
 		}
 		let collaboratorData = await res.json();
+		console.log(collaboratorData);
+		document.getElementById('collaboratorRequests').innerHTML = '';
 		pageAdder.assignListToElement('collaboratorRequests', collaboratorData, generateCollaboratorRequestHTML);
 	} catch (error) {
 		failToast('Failed to fetch collaborators.');
 	}
 }
 
-if (typeof vi === 'undefined' && process.env.VITEST !== 'true') { //to account for a specific testing issue
-	(async () => { await fetchCollaborators(); })();
+if (
+	typeof process === 'undefined' ||
+		typeof vi === 'undefined' ||
+		process?.env?.VITEST !== 'true'
+) {
+	(async () => {
+		await fetchCollaborators();
+	})();
 }
+
 export default { fetchCollaborators, handleAccept, handleReject, generateCollaboratorRequestHTML }

@@ -79,14 +79,14 @@ export const fetchMilestones = async (projectId) => {
 		const res = await fetch(`/api/project/${projectId}/milestones`);
 
 		if (!res.ok) {
-			throw new Error(`Failed to download file: ${res.statusText}`);
+			throw new Error(`Failed to fetching milestones: ${res.statusText}`);
 		}
 
 		const data = await res.json();
 		return data;
 	} catch (err) {
 		console.error("Error:", err.message || err);
-		failToast("Error fetching milestones.");
+		failToast(`${err.error || err}`);
 	}
 }
 

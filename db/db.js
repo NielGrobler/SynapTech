@@ -90,7 +90,8 @@ const uploadToProject = async (projectId, fileBuffer, filename) => {
 	);
 }
 
-const mayUploadToProject = async (projectId, accountId) => {
+const mayEditProject = async (projectId, accountId) => {
+	console.log(`Received project ${projectId} and account ${accountId}`);
 	const result = await sender.getResult(new DatabaseQueryBuilder()
 		.input("project_id", projectId)
 		.input("account_id", accountId)
@@ -105,17 +106,22 @@ const mayUploadToProject = async (projectId, accountId) => {
 				AND Collaborator.role = 'Researcher'
 				AND Collaborator.is_pending = 0
 			)
-				OR (Project.created_by_account_id = {{account_id}});
+				OR (Project.project_id = {{project_id}} AND Project.created_by_account_id = {{account_id}});
 		`)
 		.build()
 	);
 
+	console.log(result);
 	return result.recordSet.length > 0;
+}
+
+const mayUploadToProject = async (projectId, accountId) => {
+	return await mayEditProject(projectId, accountId);
 }
 
 const mayRequestProjectFunding = async (projectId, accountId) => {
 	// same conditions
-	return await mayUploadToProject(projectId, accountId);
+	return await mayEditProject(projectId, accountId);
 }
 
 const getProjectFiles = async (projectId) => {
@@ -143,14 +149,20 @@ const mayAccessProject = async (projectId, accountId) => {
 			FROM Collaborator
 			RIGHT JOIN Project
 				ON Collaborator.project_id = Project.project_id
-			WHERE (Project.project_id = {{project_id}} AND Collaborator.account_id = {{account_id}}) 
-				OR (Project.created_by_account_id = {{account_id}});
+	
+			WHERE   (Project.is_public = 1)
+				OR (Project.project_id = {{project_id}} AND Collaborator.account_id = {{account_id}}) 
+				OR (Project.project_id = {{project_id}} AND Project.created_by_account_id = {{account_id}});
 		`)
 		.build()
 	);
 
 	return result.recordSet.length > 0;
 };
+
+const mayViewProject = async (projectId, accountId) => {
+	return await mayAccessProject(projectId, accountId);
+}
 
 const getPendingCollabInvites = async (accountId) => {
 	const result = await sender.getResult(new DatabaseQueryBuilder()
@@ -559,6 +571,24 @@ const fetchPendingCollaborators = async (user) => {
 }
 
 const insertPendingCollaborator = async (userId, projectId) => {
+	// should check if already in the database in the first instance
+	const result = await sender.getResult(new DatabaseQueryBuilder()
+		.input('account_id', userId)
+		.input('project_id', projectId)
+		.query(`
+			SELECT is_pending
+			FROM Collaborator
+			WHERE account_id = {{account_id}} AND project_id = {{project_id}};
+		`)
+		.build()
+	);
+
+	if (result.recordSet.length > 0) {
+		const msg = result.recordSet[0].is_pending ? "Already requested collaboration on this project."
+			: "Already a collaborator on this project.";
+		throw new ValidationError(msg);
+	}
+
 	await sender.send(new DatabaseQueryBuilder()
 		.input('account_id', userId)
 		.input('project_id', projectId)
@@ -1666,5 +1696,7 @@ export default {
 	addExpenditure,
 	getExpenditure,
 	getFunding,
-	getSuspendedUser
+	mayEditProject,
+	getSuspendedUser,
+	mayViewProject
 };
