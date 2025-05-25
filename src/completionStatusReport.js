@@ -5,10 +5,63 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.body.appendChild(loadingOverlay);
 
     const toggleLoading = (show) => loadingOverlay.style.display = show ? 'flex' : 'none';
+    const main = document.querySelector('main');
 
     try {
         toggleLoading(true);
-        const response = await fetch('/api/reports/completion-status');
+
+        // Get projectId from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const projectId = urlParams.get('projectId');
+
+        if (!projectId) {
+            // Fetch available projects
+            const projectsResponse = await fetch('/api/user/project');
+            if (!projectsResponse.ok) throw new Error('Failed to fetch projects');
+            const projects = await projectsResponse.json();
+
+            if (projects.length === 0) {
+                main.innerHTML = `
+                    <section class="inset">
+                        <p>No projects found. Create a project first.</p>
+                        <a href="/dashboard" class="button primary">Back to Dashboard</a>
+                    </section>
+                `;
+                toggleLoading(false);
+                return;
+            }
+
+            // Display project selection dropdown
+            main.innerHTML = `
+                <section class="inset">
+                    <h2>Select a Project</h2>
+                    <p>Choose a project to view its completion status report</p>
+                    <fieldset class="form-group">
+                        <select id="projectSelect" class="form-control">
+                            <option value="">-- Select a Project --</option>
+                            ${projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+                        </select>
+                        <button id="viewReportBtn" class="button primary">View Report</button>
+                    </fieldset>
+                </section>
+            `;
+
+            // Add event listener to the button
+            document.getElementById('viewReportBtn').addEventListener('click', () => {
+                const selectedProject = document.getElementById('projectSelect').value;
+                if (selectedProject) {
+                    window.location.href = `/reports/completion-status?projectId=${selectedProject}`;
+                } else {
+                    alert('Please select a project');
+                }
+            });
+
+            toggleLoading(false);
+            return;
+        }
+
+        // Continue with the original code for fetching report data
+        const response = await fetch(`/api/reports/completion-status?projectId=${projectId}`);
         if (!response.ok) throw new Error('Failed to fetch completion data');
         const data = await response.json();
 
@@ -19,7 +72,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
         toggleLoading(false);
         console.error('Error loading completion report:', error);
-        document.querySelector('main').innerHTML = `
+        main.innerHTML = `
             <section class="inset">
                 <p class="error-text">Error loading completion report data: ${error.message}</p>
                 <button class="primary" onclick="location.reload()">Try Again</button>
