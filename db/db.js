@@ -18,7 +18,7 @@ try {
 	const __filename = fileURLToPath(import.meta.url);
 	__dirname = path.dirname(__filename);
 } catch (err) {
-    __dirname = '/'; // fallback for test/browser envs
+	__dirname = '/'; // fallback for test/browser envs
 }
 
 const ca = fs.readFileSync(path.join(__dirname, 'server.crt'));
@@ -729,7 +729,7 @@ const searchUsers = async (userName) => {
 	return result.recordSet;
 };
 
-const  getSuspendedUser = async () => {
+const getSuspendedUser = async () => {
 	const result = await sender.getResult(new DatabaseQueryBuilder()
 		.query(`
 			SELECT DISTINCT *
@@ -819,7 +819,7 @@ const getProjectReviews = async (projectId, limit = 10, offset = 0) => {
 		.input('limit', limit)
 		.input('offset', offset)
 		.query(`
-			SELECT 
+			SELECT DISTINCT
 			Review.review_id,
 			Review.project_id,
 			Review.reviewer_id,

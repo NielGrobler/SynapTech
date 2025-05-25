@@ -122,17 +122,41 @@ export const toggleMilestone = async (projectId, milestoneId) => {
 	}
 }
 
+export function fadeOutAndHide(elem) {
+	elem.classList.remove('fade-in');
+	elem.classList.add('fade-out');
+
+	elem.addEventListener('transitionend', function handler() {
+		elem.classList.add('hidden');
+		elem.classList.remove('fade-out');
+		elem.removeEventListener('transitionend', handler);
+	});
+}
+
+function fadeIn(elem) {
+	elem.classList.remove('hidden');
+	elem.classList.remove('fade-out');
+	requestAnimationFrame(() => {
+		elem.classList.remove('fade-out');
+		elem.classList.add('fade-in');
+	});
+}
+
+
 export const toggleMilestoneForm = (e) => {
+	// this should also hide the list to be honest. Let me add that
 	e.preventDefault();
-	console.log("FUCK");
 	const formSection = document.getElementById('milestone-form-section');
+	const listSection = document.getElementById('milestone-list');
 	const icon = document.getElementById('milestone-list-icon');
-	if (formSection.classList.contains('visually-hidden')) {
-		formSection.classList.remove('visually-hidden');
+	if (formSection.classList.contains('hidden')) {
+		fadeIn(formSection);
+		fadeOutAndHide(listSection);
 		icon.classList.remove('bx-list-plus');
 		icon.classList.add('bx-list-ol');
 	} else {
-		formSection.classList.add('visually-hidden');
+		fadeIn(listSection);
+		fadeOutAndHide(formSection);
 		icon.classList.add('bx-list-plus');
 		icon.classList.remove('bx-list-ol');
 	}
@@ -417,7 +441,8 @@ export const createInviteForm = (project) => {
 	button.appendChild(icon);
 
 	form.appendChild(input);
-	form.appendChild(button);
+	form.addEventListener('submit', (e) => e.preventDefault());
+	//form.appendChild(button);
 
 	form.addEventListener('input', async (e) => {
 		e.preventDefault();
@@ -555,7 +580,7 @@ export const addUploadButton = (userDetails, project) => {
 					successToast('File uploaded successfully!');
 					loadProjectFiles(project);
 				} else {
-					failToast(`Error: ${data.message || 'Failed to upload file.'}`);
+					failToast(`Error: ${data.error || 'Failed to upload file.'}`);
 				}
 			} catch (error) {
 				console.error('Error uploading file:', error);

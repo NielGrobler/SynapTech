@@ -1042,6 +1042,12 @@ router.post('/api/review', makeSafeHandler(async (req, res) => {
 	expectAllPresentForValid(req.body, req.body.projectId, req.body.rating, req.body.comment);
 	const { projectId, rating, comment } = req.body;
 	expectValidNumId(projectId);
+	expectAllPresentForValid(projectId, rating, comment);
+	const ratingPattern = /^[1-5]$/;
+	expectForValid(ratingPattern.test(String(rating)), "Expected valid rating.");
+	// 4. Validate comment (length 10-500)
+	const trimmedComment = comment.trim();
+	expectForValid(trimmedComment && trimmedComment.length >= 10 && trimmedComment.length <= 500, "Expected valid comment.");
 
 	await db.createReview({
 		project_id: parseInt(projectId),

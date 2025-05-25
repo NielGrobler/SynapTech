@@ -118,6 +118,8 @@ textarea,
 select {
 	font: inherit;
 	margin: 0.3rem;
+	resize: vertical;
+	min-height: 2.5rem;
 	background-color: var(--color-bg);
 	color: var(--color-text);
 
@@ -1138,4 +1140,21 @@ li section button {
 
 #scroll-to-bottom[style*="block"] {
 	opacity: 1;
+}
+
+/* Fades element to transparent */
+.fade-out {
+	opacity: 0;
+	transition: opacity 0.15s ease;
+}
+
+/* Hides element from layout after fade */
+.hidden {
+	display: none;
+}
+
+/* Optional: When showing again, ensure opacity is back */
+.fade-in {
+	opacity: 1;
+	transition: opacity 0.15s ease;
 }
