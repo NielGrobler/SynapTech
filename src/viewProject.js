@@ -144,7 +144,6 @@ function fadeIn(elem) {
 
 
 export const toggleMilestoneForm = (e) => {
-	// this should also hide the list to be honest. Let me add that
 	e.preventDefault();
 	const formSection = document.getElementById('milestone-form-section');
 	const listSection = document.getElementById('milestone-list');
@@ -172,7 +171,7 @@ export const setMilestoneIcon = (icon, wasChecked) => {
 	}
 }
 
-export const milestoneToHTML = (projectId, milestone) => {
+export const milestoneToHTML = (project, accountId, milestone) => {
 	const name = milestone.name;
 	const description = milestone.description;
 	const id = milestone.project_milestone_id;
@@ -190,7 +189,6 @@ export const milestoneToHTML = (projectId, milestone) => {
 	span.classList.add('flex-row', 'center-content-v', 'no-pad-v', 'tight-stack');
 
 	const para = document.createElement('p');
-	//para.classList.add('small-text');
 	header.innerText = name;
 	header.classList.add('strike-animate');
 	if (isChecked) {
@@ -201,13 +199,20 @@ export const milestoneToHTML = (projectId, milestone) => {
 	article.appendChild(span);
 	article.appendChild(para);
 	article.dataset.id = id;
-	article.classList.add('highlight-hover', 'no-pad-v', 'tight-stack', 'grey-left-border');
-
 	setMilestoneIcon(icon, isChecked);
 	isChecked = !isChecked;
+	const li = document.createElement('li');
+	article.classList.add('no-pad-v', 'tight-stack', 'grey-left-border');
+	li.appendChild(article);
+
+	if (!isParticipant(accountId, project)) {
+		return li;
+	}
+
+	article.classList.add('highlight-hover');
 	article.addEventListener('click', async (e) => {
 		e.preventDefault();
-		await toggleMilestone(projectId, article.dataset.id);
+		await toggleMilestone(project.id, article.dataset.id);
 		setMilestoneIcon(icon, isChecked);
 		header.classList.remove('strike-now', 'strike-reverse');
 		void header.offsetWidth;
@@ -220,9 +225,6 @@ export const milestoneToHTML = (projectId, milestone) => {
 		}
 		isChecked = !isChecked;
 	});
-
-	const li = document.createElement('li');
-	li.appendChild(article);
 
 	return li;
 }
@@ -257,6 +259,7 @@ export const projectFileToHTML = (projectFile) => {
 }
 
 export const isParticipant = (userId, project) => {
+	console.log(project);
 	if (userId === project.created_by_account_id) {
 		return true;
 	}
@@ -319,7 +322,6 @@ export const fundingOpportunityToHTML = (project, item) => {
 }
 
 export const addFundingButton = (userId, project) => {
-	console.log('[addFundingButton]');
 	if (!isParticipant(userId, project)) {
 		return;
 	}
@@ -596,10 +598,10 @@ export const addUploadButton = (userDetails, project) => {
 	return true;
 }
 
-export const populateMilestones = async (project) => {
+export const populateMilestones = async (project, accountId) => {
 	const data = await fetchMilestones(project.id);
 	document.getElementById('milestone-list').innerHTML = '';
-	pageAdder.assignListToElement(`milestone-list`, data, (item) => milestoneToHTML(project.id, item));
+	pageAdder.assignListToElement(`milestone-list`, data, (item) => milestoneToHTML(project, accountId, item));
 }
 
 export const populateElements = async () => {
@@ -622,9 +624,13 @@ export const populateElements = async () => {
 	addRequestCollaboration(info, project)
 	addUploadButton(info, project);
 	addFundingButton(info.id, project);
-	populateMilestones(project);
-	document.getElementById('add-milestone-btn').addEventListener('click', toggleMilestoneForm);
-	document.getElementById('milestone-form').addEventListener('submit', milestoneFormListener(project));
+	populateMilestones(project, info.id);
+	if (isParticipant(info.id, project)) {
+		document.getElementById('add-milestone-btn').addEventListener('click', toggleMilestoneForm);
+		document.getElementById('milestone-form').addEventListener('submit', milestoneFormListener(project));
+	} else {
+		document.getElementById('add-milestone-btn').classList.add('visually-hidden');
+	}
 
 	const reviewListToggle = document.getElementById('review-list-drop-btn');
 	var isExpanded = true;
