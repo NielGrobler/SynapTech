@@ -20,14 +20,10 @@ const setOrElse = (elementId, field, elementName) => {
 
 const loadInfo = async () => {
 	try {
-		const uni = info.university;
-		const department = info.department;
-		console.log(info);
-
 		document.getElementById('username').value = info.name;
 		setOrElse('bio', info.bio, 'bio');
-		setOrElse('university', uni, 'listed university');
-		setOrElse('department', department, 'listed department');
+		setOrElse('university', info.university, 'listed university');
+		setOrElse('department', info.department, 'listed department');
 	} catch (err) {
 		console.error('Error loading user:', err);
 	}

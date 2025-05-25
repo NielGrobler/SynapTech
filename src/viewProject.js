@@ -259,7 +259,7 @@ export const projectFileToHTML = (projectFile) => {
 }
 
 export const isParticipant = (userId, project) => {
-	console.log(project);
+	//console.log(project);
 	if (userId === project.created_by_account_id) {
 		return true;
 	}
@@ -274,7 +274,7 @@ export const isParticipant = (userId, project) => {
 }
 
 export const postFundingRequest = async (opportunityId, projectId) => {
-	console.log(opportunityId, projectId);
+	//console.log(opportunityId, projectId);
 	const resp = await fetch('/api/post/funding/request', {
 		method: 'POST',
 		headers: {
@@ -287,7 +287,7 @@ export const postFundingRequest = async (opportunityId, projectId) => {
 		successToast('Funding request sent successfully!');
 	} else {
 		const error = await resp.json();
-		console.log(error);
+		console.error(error);
 		failToast(`Error: ${error.error}`);
 	}
 
@@ -421,8 +421,9 @@ export const milestoneFormListener = (project) => {
 			return;
 		}
 		const projectId = project.id;
+		const info = await userInfo.fetchFromApi();
 		await postMilestone(projectId, name, description);
-		await populateMilestones(project);
+		await populateMilestones(project, info.id);
 	}
 }
 
